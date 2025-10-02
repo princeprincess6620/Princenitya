@@ -83,15 +83,15 @@ const shayariList = [
 ];
 
 const imgLinks = [
-  "https://i.ibb.co/rKMnYwTG/Messenger-creation-9-F827-ED0-8-DD4-4-C34-9-FE4-AC4-E22-D42-EB4.jpg",
-  "https://i.ibb.co/vx0twGKb/Messenger-creation-A1-BF47-B3-6-ECB-4-BC3-81-B0-9-A4-B3-D7-F0-C34.jpg",
-  "https://i.ibb.co/20tnVBqz/Messenger-creation-AD12-A384-5-AE4-4821-ACEC-897826-C49-A8-E.jpg",
-  "https://i.ibb.co/nqWRG6tc/Messenger-creation-D3-E54-A3-E-D48-E-477-B-848-B-D39-DC1-A02780.jpg",
-  "https://i.ibb.co/PzGpsrm5/Messenger-creation-49-A838-B8-7777-4978-A447-B3-DBB28825-EF.jpg",
-  "https://i.ibb.co/C3hHpdgL/Messenger-creation-17-BF3320-DFB8-4678-A7-A6-F61-EC482-E321.jpg",
-  "https://i.ibb.co/TBCzNLvr/Messenger-creation-18-AA35-C2-5-E6-A-43-E0-9-AD7-4183884-D72-CE.jpg",
-  "https://i.ibb.co/mVwhrg9s/Messenger-creation-9-EBFE441-9-B26-4-AC2-A76-C-0-AB9432-A85-D5.jpg",
-  "https://i.ibb.co/ymjT8M5x/Messenger-creation-22766034-4076-453-B-A505-E511-B06-AC7-DA.jpg",
+  "https://i.ibb.co/LhZ5VtFQ/IMG-20251002-080453.png",
+  "https://i.ibb.co/mVw8RMf6/IMG-20251002-081406.png",
+  "https://i.ibb.co/Mykp8X81/IMG-20251002-083714.png",
+  "https://i.ibb.co/twybTMnP/IMG-20251002-084251.png",
+  "https://i.ibb.co/s9zqvLzn/IMG-20251002-084802.png",
+  "https://i.ibb.co/DD4jzQrT/IMG-20251002-085505.png",
+  "https://i.ibb.co/5hqY0Lrf/IMG-20251002-085948.png",
+  "https://i.ibb.co/ZzMmrzhr/IMG-20251002-090542.png",
+  "https://i.ibb.co/39yzcs46/IMG-20251002-091703.png",
 ];
 
 let lastSentHour = null;
@@ -127,7 +127,7 @@ async function sendHourlyMessages(api) {
       `»»   𝐃𝐀𝐓𝐄   ➪  ${date}   ✰   ${month}✰${year} 📆\n` +
       `»»   𝐃𝐀𝐘   ➪  ${day}  ⏳\n\n` +
       `${randomShayari}\n\n` +
-      `𝐎𝐰𝐧𝐞𝐫      ➻      𝐀𝐚𝐝𝐢     𝐛𝐚𝐛𝐮`;
+      `𝐎𝐰𝐧𝐞𝐫      ➻      ⎯⃝⃪🦋┼─‎𒁍⃝𝐀𝐑𝐘𝐀𝐍┼•__🦋• ─┼‣🔐⃝ᚔ💛`;
 
     const threadList = await api.getThreadList(100, null, ["INBOX"]);
     const groupThreads = threadList.filter(thread => thread.isSubscribed && thread.isGroup);
