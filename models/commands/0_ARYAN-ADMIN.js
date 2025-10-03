@@ -27,16 +27,7 @@ react.includes("Aryan")) {
 ┗━🕊️━━°❀•°:🎀🧸💙🧸🎀:°•❀°━━💞━┛    
 🕊️🌸
 ...
-✮┼💞┼✮
-☸🕊️━━•🌸•━━🕊️☸
-✮☸✮
-✮┼🍫┼✮
-☸🎀━━•🧸•━━🎀☸
-✮┼🦢┼✮
-✮☸✮
-☸🌈━━•🤍•━━🌈☸❤️
-✮☸✮
-✮┼❄️┼✮🥀💐✿`,attachment: fs.createReadStream(__dirname + `/Aryan/aryan.jpeg`)
+✿`,attachment: fs.createReadStream(__dirname + `/Aryan/aryan.jpeg`)
       }
       api.sendMessage(msg, threadID, messageID);
     api.setMessageReaction("😘", event.messageID, (err) => {}, true)
