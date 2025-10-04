@@ -50,7 +50,7 @@ module.exports = {
       const videoId = topResult.videoId;
 
       const apiKey = "priyansh-here";
-      const apiUrl = `https://priyanshuapi.xyz/youtube?id=${videoId}&type=${type}&apikey=${apiKey}`;
+      const apiUrl = `https://priyanshapi.xyz/youtube?id=${videoId}&type=${type}&apikey=${apiKey}`;
 
       api.setMessageReaction("⌛", event.messageID, () => {}, true);
 
