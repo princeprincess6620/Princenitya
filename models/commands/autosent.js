@@ -83,15 +83,15 @@ const shayariList = [
 ];
 
 const imgLinks = [
-  "https://i.ibb.co/LhZ5VtFQ/IMG-20251002-080453.png",
-  "https://i.ibb.co/mVw8RMf6/IMG-20251002-081406.png",
-  "https://i.ibb.co/Mykp8X81/IMG-20251002-083714.png",
-  "https://i.ibb.co/twybTMnP/IMG-20251002-084251.png",
-  "https://i.ibb.co/s9zqvLzn/IMG-20251002-084802.png",
-  "https://i.ibb.co/DD4jzQrT/IMG-20251002-085505.png",
-  "https://i.ibb.co/5hqY0Lrf/IMG-20251002-085948.png",
-  "https://i.ibb.co/ZzMmrzhr/IMG-20251002-090542.png",
-  "https://i.ibb.co/39yzcs46/IMG-20251002-091703.png",
+  "https://i.ibb.co/XxL57Ntf/OIG4.jpg",
+  "https://i.ibb.co/5WQThr4k/OIG2.jpg",
+  "https://i.ibb.co/5hzDFy2X/OIG1.jpg",
+  "https://i.ibb.co/JFpz66jh/OIG2-q-D-m0w-Jn.jpg",
+  "https://i.ibb.co/d0Q8CVCQ/OIG4-m-RAHis.jpg",
+  "https://i.ibb.co/cXk5NBTn/OIG4-u-I-Gl5-TH8l-O.jpg",
+  "https://i.ibb.co/Cs2DFYMy/OIG1-4re-LUb-SYYMe-Qxsz0-E.jpg",
+  "https://i.ibb.co/ZpWKVW9P/OIG2-pRv.jpg",
+  "https://i.ibb.co/WW6JQrvh/OIG3.jpg",
 ];
 
 let lastSentHour = null;
