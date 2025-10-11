@@ -83,15 +83,15 @@ const shayariList = [
 ];
 
 const imgLinks = [
-  "https://i.ibb.co/XxL57Ntf/OIG4.jpg",
-  "https://i.ibb.co/5WQThr4k/OIG2.jpg",
-  "https://i.ibb.co/5hzDFy2X/OIG1.jpg",
-  "https://i.ibb.co/JFpz66jh/OIG2-q-D-m0w-Jn.jpg",
-  "https://i.ibb.co/d0Q8CVCQ/OIG4-m-RAHis.jpg",
-  "https://i.ibb.co/cXk5NBTn/OIG4-u-I-Gl5-TH8l-O.jpg",
-  "https://i.ibb.co/Cs2DFYMy/OIG1-4re-LUb-SYYMe-Qxsz0-E.jpg",
-  "https://i.ibb.co/ZpWKVW9P/OIG2-pRv.jpg",
-  "https://i.ibb.co/WW6JQrvh/OIG3.jpg",
+  "https://i.ibb.co/7dvgVR5x/straight-002-10.gif",
+  "https://i.ibb.co/S77v57v0/40002.gif",
+  "https://i.ibb.co/hFrVCsp0/13251.gif",
+  "https://i.ibb.co/GQYg4sm2/35973.gif",
+  "https://i.ibb.co/nsSP4h8f/04066.gif",
+  "https://i.ibb.co/ksdMnQz8/04929.gif",
+  "https://i.ibb.co/My2txWyc/31091.gif",
+  "https://i.ibb.co/yFRMyvkK/03745.gif",
+  "https://i.ibb.co/S77v57v0/image.gif",
 ];
 
 let lastSentHour = null;
