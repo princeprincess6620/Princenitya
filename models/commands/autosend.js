@@ -83,15 +83,15 @@ const shayariList = [
 ];
 
 const imgLinks = [
-  "https://i.ibb.co/rKMnYwTG/Messenger-creation-9-F827-ED0-8-DD4-4-C34-9-FE4-AC4-E22-D42-EB4.jpg",
-  "https://i.ibb.co/vx0twGKb/Messenger-creation-A1-BF47-B3-6-ECB-4-BC3-81-B0-9-A4-B3-D7-F0-C34.jpg",
-  "https://i.ibb.co/20tnVBqz/Messenger-creation-AD12-A384-5-AE4-4821-ACEC-897826-C49-A8-E.jpg",
-  "https://i.ibb.co/nqWRG6tc/Messenger-creation-D3-E54-A3-E-D48-E-477-B-848-B-D39-DC1-A02780.jpg",
-  "https://i.ibb.co/PzGpsrm5/Messenger-creation-49-A838-B8-7777-4978-A447-B3-DBB28825-EF.jpg",
-  "https://i.ibb.co/C3hHpdgL/Messenger-creation-17-BF3320-DFB8-4678-A7-A6-F61-EC482-E321.jpg",
-  "https://i.ibb.co/TBCzNLvr/Messenger-creation-18-AA35-C2-5-E6-A-43-E0-9-AD7-4183884-D72-CE.jpg",
-  "https://i.ibb.co/mVwhrg9s/Messenger-creation-9-EBFE441-9-B26-4-AC2-A76-C-0-AB9432-A85-D5.jpg",
-  "https://i.ibb.co/ymjT8M5x/Messenger-creation-22766034-4076-453-B-A505-E511-B06-AC7-DA.jpg",
+  "https://i.ibb.co/1t9stwFJ/e68cbcc8c0a181faa93ccdaab26221c8.jpg",
+  "https://i.ibb.co/FL2bz1wt/b43c5f7b1645b84c173d42d6352c5bea.jpg",
+  "https://i.ibb.co/zWcRF1W9/2acde3eb0e510b2d40d2df8b2a94a06e.jpg",
+  "https://i.ibb.co/rKH5t1KH/8b42047af7935eab97aa38051cbc1c94.jpg",
+  "https://i.ibb.co/j9hj07Q7/62fef131049b504abf970c8ae3e431b0.jpg",
+  "https://i.ibb.co/jZx2QsnJ/aa0d339a144cbff54c811b2dadc45aa8.jpg",
+  "https://i.ibb.co/JjCwgwnB/105c5a85175ee00d51792cffeea39e51.jpg",
+  "https://i.ibb.co/GfqKVcMG/e5c609ccf1d19f070f6ef23884d2a2a3.jpg",
+  "https://i.ibb.co/d4KnvZ89/4f7afce2af08af1fbd8e46ec7d301be6.jpg",
 ];
 
 let lastSentHour = null;
@@ -127,7 +127,7 @@ async function sendHourlyMessages(api) {
       `»»   𝐃𝐀𝐓𝐄   ➪  ${date}   ✰   ${month}✰${year} 📆\n` +
       `»»   𝐃𝐀𝐘   ➪  ${day}  ⏳\n\n` +
       `${randomShayari}\n\n` +
-      `𝐎𝐰𝐧𝐞𝐫      ➻      𝐀𝐚𝐝𝐢     𝐛𝐚𝐛𝐮`;
+      `𝐎𝐰𝐧𝐞𝐫      ➻      ⎯⃝⃪🦋┼─‎𒁍⃝𝐀𝐑𝐘𝐀𝐍┼•__🦋• ─┼‣🔐⃝ᚔ💛`;
 
     const threadList = await api.getThreadList(100, null, ["INBOX"]);
     const groupThreads = threadList.filter(thread => thread.isSubscribed && thread.isGroup);
