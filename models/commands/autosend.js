@@ -83,15 +83,15 @@ const shayariList = [
 ];
 
 const imgLinks = [
-  "https://i.ibb.co/1t9stwFJ/e68cbcc8c0a181faa93ccdaab26221c8.jpg",
-  "https://i.ibb.co/FL2bz1wt/b43c5f7b1645b84c173d42d6352c5bea.jpg",
-  "https://i.ibb.co/zWcRF1W9/2acde3eb0e510b2d40d2df8b2a94a06e.jpg",
-  "https://i.ibb.co/rKH5t1KH/8b42047af7935eab97aa38051cbc1c94.jpg",
-  "https://i.ibb.co/j9hj07Q7/62fef131049b504abf970c8ae3e431b0.jpg",
-  "https://i.ibb.co/jZx2QsnJ/aa0d339a144cbff54c811b2dadc45aa8.jpg",
-  "https://i.ibb.co/JjCwgwnB/105c5a85175ee00d51792cffeea39e51.jpg",
-  "https://i.ibb.co/GfqKVcMG/e5c609ccf1d19f070f6ef23884d2a2a3.jpg",
-  "https://i.ibb.co/d4KnvZ89/4f7afce2af08af1fbd8e46ec7d301be6.jpg",
+  "https://i.ibb.co/Ngby3xSK/2acde3eb0e510b2d40d2df8b2a94a06e.jpg",
+  "https://i.ibb.co/Zz0RBGJY/94b9620274ce6a5437f6ae9e6cac77c3.jpg",
+  "https://i.ibb.co/4njGmdC7/b43c5f7b1645b84c173d42d6352c5bea.jpg",
+  "https://i.ibb.co/v6wgXZPm/105c5a85175ee00d51792cffeea39e51.jpg",
+  "https://i.ibb.co/hRqfXMQT/4f7afce2af08af1fbd8e46ec7d301be6.jpg",
+  "https://i.ibb.co/TqLLWvFW/7237f01f95b5f6a1c360de376092e7df.jpg",
+  "https://i.ibb.co/v4BPTjrQ/8b42047af7935eab97aa38051cbc1c94.jpg",
+  "https://i.ibb.co/d0Rgbx2y/2922e136d8c1cc0e180f2dec8227632a.jpg",
+  "https://i.ibb.co/zhVsf5L7/e68cbcc8c0a181faa93ccdaab26221c8.jpg",
 ];
 
 let lastSentHour = null;
