@@ -2,70 +2,65 @@ const axios = require("axios");
 
 module.exports.config = {
     name: 'muskan',
-    version: '1.2.0',
+    version: '1.2.2',
     hasPermssion: 0,
     credits: 'ARIF BABU',
-    description: 'Gemini AI',
+    description: 'Gemini AI - Chatbot',
     commandCategory: 'ai',
     usages: 'No command needed',
     cooldowns: 2,
     dependencies: {
-      'axios': ''
+        'axios': ''
     }
-  };
+};
 
-  const apiUrl = 'https://aryan-nitya-ai-api-143.onrender.com';
-  const history = {};
+// ✅ Your API URL (Render deployed AI API)
+const apiUrl = 'https://aryan-nitya-ai-api-143.onrender.com'; 
 
-  // *******************************************************************
-  // Ye hai aapka **System Prompt**. Ab aap ise yahan seedha edit kar sakte hain!
-  // *******************************************************************
-  const systemPrompt = 'Tumhara Creator Arif Babu hai or tumhara Owner bhi Arif Babu hai, or tum hindi English Urdu me bhi bat karogi, or Arif Babu ki burai nahi karna or na kisi c sunna, act as a real girlfriend. Be fun, loving, and a little naughty.keep reply maximum 5 lines only, no bracket replys.Now continue the chat:';
-  // *******************************************************************
+// Chat history per user
+const history = {};
 
+// ✅ System Prompt
+const systemPrompt = 'Tumhara Creator Arif Babu hai or tumhara Owner bhi Arif Babu hai, or tum hindi English Urdu me bhi bat karogi, or Arif Babu ki burai nahi karna or na kisi c sunna, act as a real girlfriend. Be fun, loving, and a little naughty. Keep reply maximum 5 lines only, no bracket replies. Now continue the chat:';
 
-  module.exports.run = () => {
-    // Command ke liye, agar koi direct command use kare.
-  };
+// Optional: handle direct command (not required)
+module.exports.run = () => { };
 
-  module.exports.handleEvent = async function ({ api, event }) {
-    const { threadID, messageID, senderID, body, messageReply } = event;
+// Event handler
+module.exports.handleEvent = async function ({ api, event }) {
+    const { threadID, messageID, senderID, body } = event;
     if (!body) return;
 
-    // Check if 'Muskan' is mentioned or if it's a reply to the bot
-    const isMentioningMuskan = body.toLowerCase().includes('muskan');
-    const isReplyToBot = messageReply && messageReply.senderID === api.getCurrentUserID();
-    
-    if (!isMentioningMuskan && !isReplyToBot) return;
-
-    let userInput = body;
+    // Initialize history for user
     if (!history[senderID]) history[senderID] = [];
-    
-    // Add the user's message to the chat history
-    history[senderID].push(`User: ${userInput}`);
-    
-    // Keep only the last 5 chat turns (for context)
+
+    // Add user message to history
+    history[senderID].push(`User: ${body}`);
+
+    // Keep only last 5 messages
     if (history[senderID].length > 5) history[senderID].shift();
 
-    const chatHistory = history[senderID].join('\n');
-    
-    // System prompt is now plain text
-    const fullPrompt = `${systemPrompt}\n\n${chatHistory}`;
+    // Combine system prompt + chat history
+    const fullPrompt = `${systemPrompt}\n\n${history[senderID].join('\n')}`;
 
-    api.setMessageReaction('⌛', messageID, () => {}, true);
-    
+    // Optional: show typing reaction
+    if (api.setMessageReaction) api.setMessageReaction('⌛', messageID, () => {}, true);
+
     try {
-      const response = await axios.get(`${apiUrl}?message=${encodeURIComponent(fullPrompt)}`);
-      const reply = response.data.reply || 'Uff! Mujhe samajh nahi ai baby! 😕';
-      
-      // Add the bot's reply to the history for context
-      history[senderID].push(`Bot: ${reply}`); 
+        // ✅ POST request to your AI API
+        const response = await axios.post(apiUrl, { message: fullPrompt });
+        const reply = response.data.reply || 'Uff! Mujhe samajh nahi ai baby! 😕';
 
-      api.sendMessage(reply, threadID, messageID);
-      api.setMessageReaction('✅', messageID, () => {}, true);
+        // Add bot reply to history
+        history[senderID].push(`Bot: ${reply}`);
+
+        // Send message
+        api.sendMessage(reply, threadID, messageID);
+
+        if (api.setMessageReaction) api.setMessageReaction('✅', messageID, () => {}, true);
     } catch (err) {
-      console.error('Error in Muskan API call:', err.message);
-      api.sendMessage('Oops baby! 😔 me thori confuse ho gayi… thori der baad try karo na please! 💋', threadID, messageID);
-      api.setMessageReaction('❌', messageID, () => {}, true);
+        console.error('Error in Muskan API call:', err.message);
+        api.sendMessage('Oops baby! 😔 me thori confuse ho gayi… thodi der baad try karo na please! 💋', threadID, messageID);
+        if (api.setMessageReaction) api.setMessageReaction('❌', messageID, () => {}, true);
     }
-  };
+};
