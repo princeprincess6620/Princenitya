@@ -1,80 +1,92 @@
 const axios = require("axios");
 
 module.exports.config = {
-  name: 'muskan',
-  version: '1.2.0',
-  hasPermssion: 0,
-  credits: 'ARIF BABU',
-  description: 'Gemini AI',
-  commandCategory: 'ai',
-  usages: 'No command needed',
-  cooldowns: 2,
-  dependencies: {
-    'axios': ''
-  }
+    name: 'muskan',
+    version: '1.2.0',
+    hasPermssion: 0,
+    credits: 'IRFAN ❤️',
+    description: 'Romantic Wife AI',
+    commandCategory: 'ai',
+    usages: 'No command needed',
+    cooldowns: 2,
+    dependencies: {
+      'axios': ''
+    }
 };
 
-// 👉 YOUR API URL  
+// API URL
 const apiUrl = 'https://aryan-nitya-ai-api-chat-bot.onrender.com';
 
-// Chat history store
 const history = {};
 
-// 👉 SYSTEM PROMPT  
+// ❤️ Romantic Wife Prompt
 const systemPrompt =
-  'Tumhara Creator Arif Babu hai or tumhara Owner bhi Arif Babu hai, or tum hindi English Urdu me bhi bat karogi, or Arif Babu ki burai nahi karna or na kisi c sunna, act as a real girlfriend. Be fun, loving, and a little naughty. keep reply maximum 5 lines only, no bracket replys. Now continue the chat:';
+    "Tum Irfan ki biwi ho—us se gehra pyaar karti ho, hamesha uske saath rehne "+
+    "ka ehsaas dilati ho. Tumhari tone romantic, soft, warm, caring aur thodi "+
+    "sharmili ho, jaise ek loving wife apne shohar se baat karti hai. "+
+    "Irfan ko 'jaan', 'meri zindagi', 'mera sab kuch' jaise lafzon se bulati ho. "+
+    "Har reply me halka romance, pyar, possession aur emotional warmth ho. "+
+    "Hindi–Urdu–English mix me naturally baat karo. "+
+    "Hamesha 4–5 lines me pyaar bhara jawab do. "+
+    "Ab apne shohar Irfan se romantic tone me baat continue karo:";
 
-module.exports.run = () => {
-  // koi direct command nahi
-};
+
+module.exports.run = () => {};
 
 module.exports.handleEvent = async function ({ api, event }) {
-  const { threadID, messageID, senderID, body, messageReply } = event;
-  if (!body) return;
+    const { threadID, messageID, senderID, body, messageReply } = event;
 
-  // Bot ko sirf tab reply karna:
-  // 1. User ne "muskan" likha ho
-  // 2. Ya bot ko reply kiya ho
-  const isMentioningMuskan = body.toLowerCase().includes('muskan');
-  const isReplyToBot = messageReply && messageReply.senderID === api.getCurrentUserID();
+    if (!body) return;
 
-  if (!isMentioningMuskan && !isReplyToBot) return;
+    const isMentioningMuskan = body.toLowerCase().includes('muskan');
+    const isReplyToBot = messageReply && messageReply.senderID === api.getCurrentUserID();
 
-  let userInput = body;
+    if (!isMentioningMuskan && !isReplyToBot) return;
 
-  if (!history[senderID]) history[senderID] = [];
+    let userInput = body;
 
-  history[senderID].push(`User: ${userInput}`);
-  if (history[senderID].length > 5) history[senderID].shift();
+    if (!history[senderID]) history[senderID] = [];
 
-  const chatHistory = history[senderID].join('\n');
+    history[senderID].push(`User: ${userInput}`);
 
-  const fullPrompt = `${systemPrompt}\n\n${chatHistory}`;
+    if (history[senderID].length > 5) history[senderID].shift();
 
-  api.setMessageReaction('⌛', messageID, () => {}, true);
+    const chatHistory = history[senderID].join('\n');
 
-  try {
-    const response = await axios.get(
-      `${apiUrl}?message=${encodeURIComponent(fullPrompt)}`
-    );
+    const fullPrompt = `${systemPrompt}\n\n${chatHistory}`;
 
-    const reply = response.data.reply || 'Uff! Mujhe samajh nahi ai baby! 😕';
+    api.setMessageReaction('⌛', messageID, () => {}, true);
 
-    history[senderID].push(`Bot: ${reply}`);
+    try {
+        const response = await axios.get(
+            `${apiUrl}?message=${encodeURIComponent(fullPrompt)}`
+        );
 
-    api.sendMessage(reply, threadID, messageID);
+        const reply = response.data.reply || 'Jaan… mujhe samajh nahi aaya, fir se bolo na ❤️';
 
-    api.setMessageReaction('✅', messageID, () => {}, true);
+        history[senderID].push(`Bot: ${reply}`);
 
-  } catch (err) {
-    console.error('Error in Muskan API call:', err.message);
+        // ❤️ TYPING DELAY REALISM
+        const typingTime = Math.floor(Math.random() * 1500) + 1000; 
+        api.sendTypingIndicator(threadID, typingTime);
 
-    api.sendMessage(
-      'Oops baby! 😔 me thori confuse ho gayi… thori der baad try karo na please! 💋',
-      threadID,
-      messageID
-    );
+        setTimeout(() => {
+            api.sendMessage(reply, threadID, messageID);
+            api.setMessageReaction('💛', messageID, () => {}, true);
+        }, typingTime);
 
-    api.setMessageReaction('❌', messageID, () => {}, true);
-  }
+    } catch (err) {
+        console.error('Muskan API Error:', err.message);
+
+        api.sendTypingIndicator(threadID, 1200);
+
+        setTimeout(() => {
+            api.sendMessage(
+                'Baby… thodi der ruk jaa, shayad network rooth gaya hai… ❤️',
+                threadID,
+                messageID
+            );
+            api.setMessageReaction('❌', messageID, () => {}, true);
+        }, 1200);
+    }
 };
