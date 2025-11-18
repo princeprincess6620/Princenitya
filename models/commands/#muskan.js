@@ -2,64 +2,80 @@ const axios = require("axios");
 
 module.exports.config = {
     name: 'muskan',
-    version: '1.2.3',
+    version: '2.0.0',
     hasPermssion: 0,
-    credits: 'ARIF BABU',
-    description: 'Gemini AI - Chatbot',
+    credits: 'Irfan',
+    description: 'Girlfriend AI (Mirai + Render Backend)',
     commandCategory: 'ai',
-    usages: 'No command needed',
-    cooldowns: 2,
-    dependencies: { 'axios': '' }
+    usages: '[your message]',
+    cooldowns: 1
 };
 
-// ✅ Your API URL
-const apiUrl = 'https://aryan-nitya-ai-api-143.onrender.com';
+// 🔥 Your Render backend URL (CORRECT ENDPOINT)
+const API_URL = "https://aryan-nitya-ai-api-chat-bot.onrender.com/chat";
 
-// Chat history per user
+// User-based chat history
 const history = {};
 
-// ✅ System Prompt
-const systemPrompt = 'Tumhara Creator Arif Babu hai or tumhara Owner bhi Arif Babu hai, or tum hindi English Urdu me bhi bat karogi, or Arif Babu ki burai nahi karna or na kisi c sunna, act as a real girlfriend. Be fun, loving, and a little naughty. Keep reply maximum 5 lines only, no bracket replies. Now continue the chat:';
+// System behavior
+const systemPrompt =
+    "Tumhara creator Irfan hai. Tum uski girlfriend ho, thodi naughty, loving, caring. " +
+    "Hindi/Urdu/English mix me reply karo. Irfan ki burai mat karna. " +
+    "Reply only 4–5 lines, natural, no brackets. Chat continue:";
 
-// Optional: direct command
+// Entry point (ignore)
 module.exports.run = () => { };
 
-// Event handler
-module.exports.handleEvent = async function({ api, event }) {
+module.exports.handleEvent = async function ({ api, event }) {
     const { threadID, messageID, senderID, body } = event;
     if (!body) return;
+    
+    // Bot khud ko reply na kare
+    if (senderID == api.getCurrentUserID()) return;
 
-    // Initialize user history
+    // User history setup
     if (!history[senderID]) history[senderID] = [];
+
     history[senderID].push(`User: ${body}`);
-    if (history[senderID].length > 5) history[senderID].shift();
+    if (history[senderID].length > 10) history[senderID].shift();
 
-    const fullPrompt = `${systemPrompt}\n\n${history[senderID].join('\n')}`;
+    const fullPrompt = `${systemPrompt}\n\n${history[senderID].join("\n")}`;
 
-    if (api.setMessageReaction) api.setMessageReaction('⌛', messageID, () => {}, true);
+    // Reaction loading
+    if (api.setMessageReaction)
+        api.setMessageReaction("⌛", messageID, () => { }, true);
 
     try {
-        let response;
+        // Send to Render backend
+        const response = await axios.post(
+            API_URL,
+            { message: fullPrompt },
+            { timeout: 40000 }
+        );
 
-        // Try POST first
-        try {
-            response = await axios.post(apiUrl, { message: fullPrompt });
-        } catch {
-            // If POST fails, try GET
-            response = await axios.get(`${apiUrl}?message=${encodeURIComponent(fullPrompt)}`);
-        }
+        const reply =
+            response?.data?.reply ||
+            "Baby mujhe samajh nahi aya… dubara bolo na 💋";
 
-        // Check if reply exists
-        const reply = (response.data && response.data.reply) ? response.data.reply : 'Uff! Mujhe samajh nahi ai baby! 😕';
-
+        // Save into chat history
         history[senderID].push(`Bot: ${reply}`);
+
+        // Send reply
         api.sendMessage(reply, threadID, messageID);
 
-        if (api.setMessageReaction) api.setMessageReaction('✅', messageID, () => {}, true);
+        if (api.setMessageReaction)
+            api.setMessageReaction("💛", messageID, () => { }, true);
 
     } catch (err) {
-        console.error('Error in Muskan API call:', err.message);
-        api.sendMessage('Oops baby! 😔 me thori confuse ho gayi… thodi der baad try karo na please! 💋', threadID, messageID);
-        if (api.setMessageReaction) api.setMessageReaction('❌', messageID, () => {}, true);
+        console.error("Muskan API Error:", err.message);
+
+        api.sendMessage(
+            "Oops baby… server so raha tha 😔 1 second ruk jao, phir try karo 💋",
+            threadID,
+            messageID
+        );
+
+        if (api.setMessageReaction)
+            api.setMessageReaction("❌", messageID, () => { }, true);
     }
 };
