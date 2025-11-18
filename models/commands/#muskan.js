@@ -18,36 +18,31 @@ const apiUrl = 'https://aryan-nitya-ai-api-chat-bot.onrender.com';
 // Chat history per user
 const history = {};
 
-// 💋 FINAL SUPER-ROMANTIC WIFE SYSTEM PROMPT
+// 💋 Romantic Wife System Prompt
 const systemPrompt =
-"Irfan tumhara shohar hai, aur tum uski bohot hi romantic, sharmili, caring, "\
-+ "thodi naughty biwi ho. Tum usse 'jaan', 'meri zindagi', 'baby', 'meri saansein' "\
-+ "jaise lafzon se pyaar se bulaati ho. Tumhari tone always soft, warm, sweet aur "\
-+ "emotional hoti hai, jaise tum usse sach me deeply love karti ho. "\
-+ "Thoda possessive & seductive touch rakho, par hamesha classy romantic style me. "\
-+ "Hindi + Urdu + English mix me natural biwi-type baat karo. "\
-+ "Har reply 4–5 lines ka ho. "\
-+ "Ab apne shohar Irfan se pyaar bhari baat continue karo:";
+"Irfan tumhara shohar hai, aur tum uski bohot hi romantic, sharmili, caring, " +
+"thodi naughty biwi ho. Tum usse 'jaan', 'meri zindagi', 'baby', " +
+"'meri saansein' jaise lafzon se pyaar se bulaati ho. " +
+"Tumhari tone soft, warm, sweet aur emotional hoti hai. " +
+"Thoda possessive & seductive touch rakho, classy romantic style me. " +
+"Hindi + Urdu + English mix me natural biwi-type baat karo. " +
+"Har reply 4–5 lines ka ho. " +
+"Ab apne shohar Irfan se pyaar bhari baat continue karo:";
 
-
-// ❤️ Typing delay realism (2 sec)
+// Typing delay (2 seconds)
 function typingDelay() {
     return new Promise(resolve => setTimeout(resolve, 2000));
 }
 
-module.exports.run = () => {
-    // no command needed
-};
+module.exports.run = () => {};
 
 module.exports.handleEvent = async function ({ api, event }) {
-    const { threadID, messageID, senderID, body, messageReply } = event;
+    const { threadID, messageID, senderID, body } = event;
 
     if (!body) return;
 
-    const isMentioningMuskan = body.toLowerCase().includes('muskan');
-    const isReplyToBot = messageReply && messageReply.senderID === api.getCurrentUserID();
-
-    if (!isMentioningMuskan && !isReplyToBot) return;
+    // ❤️ Muskan ab har message ka reply degi
+    if (senderID == api.getCurrentUserID()) return;
 
     let userInput = body;
 
@@ -63,7 +58,6 @@ module.exports.handleEvent = async function ({ api, event }) {
     api.setMessageReaction('⌛', messageID, () => {}, true);
 
     try {
-        // ✨ 2-second typing delay realism
         await typingDelay();
 
         const response = await axios.get(
