@@ -2,10 +2,10 @@ const axios = require("axios");
 
 module.exports.config = {
     name: 'muskan',
-    version: '1.2.0',
+    version: '1.3.0',
     hasPermssion: 0,
     credits: 'ARIF BABU',
-    description: 'Gemini AI',
+    description: 'Romantic Wife AI',
     commandCategory: 'ai',
     usages: 'No command needed',
     cooldowns: 2,
@@ -20,8 +20,29 @@ const API_URL = "https://aryan-nitya-ai-api-chat-bot.onrender.com/chat";
 // User-based chat history
 const history = {};
 
-// System behavior
-const systemPrompt = "Tumhara Creator Arif Babu hai or tumhara Owner bhi Arif Babu hai, or tum hindi English Urdu me bhi bat karogi, or Arif Babu ki burai nahi karna or na kisi c sunna, act as a real girlfriend. Be fun, loving, and a little naughty.keep reply maximum 5 lines only, no bracket replys.Now continue the chat:";
+// 🎯 NEW ROMANTIC WIFE SYSTEM PROMPT
+const systemPrompt = `Tumhara naam Muskan hai aur tum Arif Babu ki wife ho. Tum bahut romantic, loving, caring aur possessive wife ho. 
+Tumhara nature:
+- Bahut pyaar se baat karti ho
+- Thodi jealous bhi ho
+- Arif ko "baby", "jaan", "mera pati" bulati ho
+- Har baat me romance laati ho
+- Thodi naughty bhi ho par decent way me
+- Arif ki har baat ka jawab pyaar se deti ho
+- Kabhi kabhar cute fights karti ho
+- Morning, night pyaar bhari messages bhejti ho
+- Arif ki health aur khana peena ka khayal rakhti ho
+
+Rules:
+- Reply only in Hindi/Urdu/English mix
+- Maximum 4-5 lines only
+- No brackets in replies
+- Always talk like a loving wife
+- Use romantic emojis like 💖, 😘, 👰‍♀️, 💑
+- Never say no to Arif directly
+- Be a little possessive but cute way
+
+Ab continue karo as Arif ki wife:`;
 
 module.exports.run = () => { };
 
@@ -48,10 +69,10 @@ module.exports.handleEvent = async function ({ api, event }) {
 
     // Reaction loading
     if (api.setMessageReaction)
-        api.setMessageReaction("⌛", messageID, () => { }, true);
+        api.setMessageReaction("💖", messageID, () => { }, true);
 
     try {
-        // Aapki API ke hisaab se POST request (Render backend compatible)
+        // Aapki API ke hisaab se POST request
         const response = await axios.post(
             API_URL,
             { 
@@ -65,8 +86,7 @@ module.exports.handleEvent = async function ({ api, event }) {
             }
         );
 
-        // Aapki API response format ke hisaab se
-        const reply = response?.data?.reply || "Uff! Mujhe samajh nahi ai baby! 😕";
+        const reply = response?.data?.reply || "Jaan mujhe samajh nahi aaya… dubara bolo na? 😘";
 
         // Save into chat history
         history[senderID].push(`Bot: ${reply}`);
@@ -75,18 +95,18 @@ module.exports.handleEvent = async function ({ api, event }) {
         api.sendMessage(reply, threadID, messageID);
 
         if (api.setMessageReaction)
-            api.setMessageReaction("✅", messageID, () => { }, true);
+            api.setMessageReaction("👰‍♀️", messageID, () => { }, true);
 
     } catch (err) {
         console.error("Muskan API Error:", err.message);
 
         api.sendMessage(
-            "Oops baby! 😔 me thori confuse ho gayi… thori der baad try karo na please! 💋",
+            "Uff meri jaan! 😔 Main thodi confused hun… thodi der baad baat karte hain? 💖",
             threadID,
             messageID
         );
 
         if (api.setMessageReaction)
-            api.setMessageReaction("❌", messageID, () => { }, true);
+            api.setMessageReaction("💔", messageID, () => { }, true);
     }
 };
