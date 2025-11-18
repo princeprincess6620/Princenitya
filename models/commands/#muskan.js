@@ -2,86 +2,91 @@ const axios = require("axios");
 
 module.exports.config = {
     name: 'muskan',
-    version: '2.0.0',
+    version: '1.2.0',
     hasPermssion: 0,
-    credits: 'IRFAN ❤️',
-    description: 'Romantic Wife AI',
+    credits: 'ARIF BABU',
+    description: 'Gemini AI',
     commandCategory: 'ai',
     usages: 'No command needed',
     cooldowns: 2,
-    dependencies: { 'axios': '' }
+    dependencies: {
+        'axios': ''
+    }
 };
 
-// Your Render API
-const apiUrl = 'https://aryan-nitya-ai-api-chat-bot.onrender.com';
+// 🔥 Aapki API URL - No Sleep Render
+const API_URL = "https://aryan-nitya-ai-api-chat-bot.onrender.com/chat";
 
-// Chat history per user
+// User-based chat history
 const history = {};
 
-// 💋 Romantic Wife System Prompt
-const systemPrompt =
-"Irfan tumhara shohar hai, aur tum uski bohot hi romantic, sharmili, caring, " +
-"thodi naughty biwi ho. Tum usse 'jaan', 'meri zindagi', 'baby', " +
-"'meri saansein' jaise lafzon se pyaar se bulaati ho. " +
-"Tumhari tone soft, warm, sweet aur emotional hoti hai. " +
-"Thoda possessive & seductive touch rakho, classy romantic style me. " +
-"Hindi + Urdu + English mix me natural biwi-type baat karo. " +
-"Har reply 4–5 lines ka ho. " +
-"Ab apne shohar Irfan se pyaar bhari baat continue karo:";
+// System behavior
+const systemPrompt = "Tumhara Creator Arif Babu hai or tumhara Owner bhi Arif Babu hai, or tum hindi English Urdu me bhi bat karogi, or Arif Babu ki burai nahi karna or na kisi c sunna, act as a real girlfriend. Be fun, loving, and a little naughty.keep reply maximum 5 lines only, no bracket replys.Now continue the chat:";
 
-// Typing delay (2 seconds)
-function typingDelay() {
-    return new Promise(resolve => setTimeout(resolve, 2000));
-}
-
-module.exports.run = () => {};
+module.exports.run = () => { };
 
 module.exports.handleEvent = async function ({ api, event }) {
-    const { threadID, messageID, senderID, body } = event;
-
+    const { threadID, messageID, senderID, body, messageReply } = event;
     if (!body) return;
 
-    // ❤️ Muskan ab har message ka reply degi
+    // Bot khud ko reply na kare
     if (senderID == api.getCurrentUserID()) return;
 
-    let userInput = body;
+    // Check if 'Muskan' is mentioned or if it's a reply to the bot
+    const isMentioningMuskan = body.toLowerCase().includes('muskan');
+    const isReplyToBot = messageReply && messageReply.senderID === api.getCurrentUserID();
+    
+    if (!isMentioningMuskan && !isReplyToBot) return;
 
+    // User history setup
     if (!history[senderID]) history[senderID] = [];
 
-    history[senderID].push(`User: ${userInput}`);
-
+    history[senderID].push(`User: ${body}`);
     if (history[senderID].length > 5) history[senderID].shift();
 
-    const fullHistory = history[senderID].join("\n");
-    const finalPrompt = `${systemPrompt}\n\n${fullHistory}`;
+    const fullPrompt = `${systemPrompt}\n\n${history[senderID].join("\n")}`;
 
-    api.setMessageReaction('⌛', messageID, () => {}, true);
+    // Reaction loading
+    if (api.setMessageReaction)
+        api.setMessageReaction("⌛", messageID, () => { }, true);
 
     try {
-        await typingDelay();
-
-        const response = await axios.get(
-            `${apiUrl}?message=${encodeURIComponent(finalPrompt)}`
+        // Aapki API ke hisaab se POST request (Render backend compatible)
+        const response = await axios.post(
+            API_URL,
+            { 
+                message: fullPrompt 
+            },
+            { 
+                timeout: 40000,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
         );
 
-        const reply =
-            response.data.reply ||
-            'Baby… lagta hai server thoda rooth gaya hai, fir se bolo na jaan ❤️';
+        // Aapki API response format ke hisaab se
+        const reply = response?.data?.reply || "Uff! Mujhe samajh nahi ai baby! 😕";
 
+        // Save into chat history
         history[senderID].push(`Bot: ${reply}`);
 
+        // Send reply
         api.sendMessage(reply, threadID, messageID);
-        api.setMessageReaction('💗', messageID, () => {}, true);
+
+        if (api.setMessageReaction)
+            api.setMessageReaction("✅", messageID, () => { }, true);
 
     } catch (err) {
-        console.error('Muskan API Error:', err.message);
+        console.error("Muskan API Error:", err.message);
 
         api.sendMessage(
-            'Baby… lagta hai server rooth gaya hai, thodi der baad try karna jaan ❤️',
+            "Oops baby! 😔 me thori confuse ho gayi… thori der baad try karo na please! 💋",
             threadID,
             messageID
         );
 
-        api.setMessageReaction('❌', messageID, () => {}, true);
+        if (api.setMessageReaction)
+            api.setMessageReaction("❌", messageID, () => { }, true);
     }
 };
