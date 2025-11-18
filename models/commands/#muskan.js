@@ -13,7 +13,7 @@ module.exports.config = {
 };
 
 // Your Render API
-const apiUrl = 'https://uzair-rajput-dewani-dewana-api-key.onrender.com/chat';
+const apiUrl = 'https://aryan-nitya-ai-api-chat-bot.onrender.com';
 
 // Chat history per user
 const history = {};
