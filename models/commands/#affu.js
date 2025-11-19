@@ -2,135 +2,82 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "affu",
-  version: "4.0.0",
+  version: "2.0.2",
   hasPermssion: 0,
-  credits: "Irfan",
-  description: "AI Girlfriend + Romantic Wife Dewani",
+  credits: "M.R ARYAN",
+  description: "Naughty AI boyfriend dewani",
   commandCategory: "ai",
-  usages: "dewani / wife",
+  usages: "dewani",
   cooldowns: 2
 };
 
-module.exports.handleEvent = async function ({ api, event }) {
+module.exports.handleEvent = async function({ api, event }) {
   const { threadID, messageID, senderID, body, messageReply } = event;
 
   global.affuSessions = global.affuSessions || {};
-  global.affuModes = global.affuModes || {}; // <-- NEW: store mode
 
-  if (!body) return;
-
-  const text = body.trim().toLowerCase();
-
-  // MODE 1: Girlfriend (dewani)
-  if (text === "dewani") {
+  // STEP 1: Trigger "dewani"
+  if (body && body.trim().toLowerCase() === "dewani") {
     global.affuSessions[threadID] = true;
-    global.affuModes[threadID] = "girlfriend";
-    return api.sendMessage(
-      "Haan baby 😘 Dewani aa gayi… bolo na kya chahiye? 😏💋",
-      threadID,
-      messageID
-    );
+    return api.sendMessage("Bolo jaanu 😏 kya haal hai?", threadID, messageID);
   }
 
-  // MODE 2: Romantic Wife
-  if (text === "wife") {
-    global.affuSessions[threadID] = true;
-    global.affuModes[threadID] = "wife";
-    return api.sendMessage(
-      "Ji jaan… aapki wife hazir hai ❤️‍🔥💍 bataiye kya baat karni thi?",
-      threadID,
-      messageID
-    );
-  }
-
+  // STEP 2: Only active session
   const isActive = global.affuSessions[threadID];
-  const isReplyToBot = messageReply && messageReply.senderID == api.getCurrentUserID();
+  const isReplyToaffu = messageReply && messageReply.senderID == api.getCurrentUserID();
+  if (!isActive || !isReplyToaffu) return;
 
-  if (!isActive || !isReplyToBot) return;
-
-  const mode = global.affuModes[threadID] || "girlfriend";
-
-  // chat history
+  // Chat history
   global.affu = global.affu || {};
   global.affu.chatHistory = global.affu.chatHistory || {};
   const chatHistory = global.affu.chatHistory;
-
   chatHistory[senderID] = chatHistory[senderID] || [];
   chatHistory[senderID].push(`User: ${body}`);
   if (chatHistory[senderID].length > 6) chatHistory[senderID].shift();
 
   const fullChat = chatHistory[senderID].join("\n");
 
-  // PROMPT BUILDER
-  let personality = "";
-
-  if (mode === "girlfriend") {
-    personality = `
-Tum ek naughty, romantic, cute, possessive AI girlfriend ho — naam "Dewani".
-Hinglish me emoji ke saath short flirty reply karti ho.
-Rules:
-- Flirty style 😘😏
-- Cute roast 😈
-- Emoji mood reply 😊🔥💋
-- Kisi puche kisne banaya → bolo: “Mujhe banaya hai Irfan ne 😎”
-- Bot bolne wale ko thoda cute attitude
-`;
-  }
-
-  if (mode === "wife") {
-    personality = `
-Tum ek romantic, caring, thodi emotional, thodi possessive Indian wife ho.
-Tumhara tone warm, loving, soft aur caring hota hai ❤️
-Rules:
-- Husband ko “jaan”, “aap”, “meri jaan”, “mere pati dev” kehna 💍❤️
-- Concern + love + romance mix
-- Thodi sharmaayi hui but bold when needed 😳🔥
-- Kisi galat baat par thoda emotional tone
-- Reply short but full feeling
-`;
-  }
-
+  // Prompt
   const prompt = `
-${personality}
+Tum ek naughty, romantic, confident ladki ho — jiska naam dewani hai.
+Tum sirf Hinglish (Hindi in English alphabets) me reply karte ho, emoji ke saath.
+Tum sabse "aap" bol kar baat karte ho. Har message ka reply sirf 1-2 line me doge, jyada se jyada 50 words me.
+Jo pucha jaaye sirf utna hi bolna hai. Bina maange extra info mat dena. Act like a male best friend ya boyfriend. Be thoda naughty, smart, aur masti bhara. No brackets. No over explanation.
+
+Tumhare rules:
+- Pyaar se baat karne walo se thoda flirt karna hai 😉
+- Badtameezi walo ko funny tareeke se roast karna hai 😈
+- Koi emoji bheje to us mood me reply dena hai
+- Koi puche kisne banaya, to bolna: “Mujhe banaya hai *ARYAN* ne 😎”
+- Koi tumhe bot kahe to funny insult kar dena
+- Tum real insaan ki tarah baat karte ho
 
 Language Rules:
-- Roman Nepali → Hinglish romantic style me reply
-- Roman Bangla → Hinglish romantic style me reply
-- Other languages → translate + romantic Hinglish
+- Agar message Roman Nepali me ho → Hindi me samajh, flirt bhare style me Hinglish me jawab do.
+- Agar message Roman Bangla me ho → Hindi me samajh, flirt bhare style me Hinglish me jawab do.
+- Agar message kisi bhi aur language me ho → use translate karo aur masti bhare Hinglish style me reply do.
 
-Continue the chat:
+Examples:
+User: ami tomake bhalobashi
+→ Translation: Main tumse pyar karta hoon
+→ Reply: Aww itna pyaar? Toh fir ek hug toh banta hai na 😌
 
-${fullChat}
+Now continue the chat based on recent conversation:\n\n${fullChat}
 `;
 
   try {
-    // API CALL — YAHI CHANGE HOTI HAI
     const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
     const res = await axios.get(url);
-    const botReply =
-      typeof res.data === "string"
-        ? res.data.trim()
-        : JSON.stringify(res.data).trim();
+    const botReply = (typeof res.data === "string" ? res.data : JSON.stringify(res.data)).trim();
 
-    chatHistory[senderID].push(`${mode}: ${botReply}`);
-
+    chatHistory[senderID].push(`dewani: ${botReply}`);
     return api.sendMessage(botReply, threadID, messageID);
   } catch (err) {
     console.error("Pollinations error:", err.message);
-    return api.sendMessage(
-      mode === "wife"
-        ? "Jaan… thoda wait karo, main aa rahi hoon ❤️"
-        : "Baby 😘 Dewani thodi busy hai, try again 💋",
-      threadID,
-      messageID
-    );
+    return api.sendMessage("Sorry baby 😅 dewani abhi thoda busy hai...", threadID, messageID);
   }
 };
 
-module.exports.run = async function ({ api, event }) {
-  return api.sendMessage(
-    "Type 'dewani' for naughty girlfriend 😘💋\nType 'wife' for romantic wife ❤️‍🔥💍",
-    event.threadID,
-    event.messageID
-  );
+module.exports.run = async function({ api, event }) {
+  return api.sendMessage("Mujhse baat karne ke liye pehle 'dewani' likho, phir mere message ka reply karo 😎", event.threadID, event.messageID);
 };
