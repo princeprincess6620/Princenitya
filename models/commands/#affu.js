@@ -2,12 +2,12 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "affu",
-  version: "2.0.2",
+  version: "2.0.2", 
   hasPermssion: 0,
-  credits: "M.R ARYAN",
-  description: "Naughty AI boyfriend dewani",
+  credits: "Rajput Uzair",
+  description: "Full romantic GF simulator - pyaar aur mazak dono ek saath!",
   commandCategory: "ai",
-  usages: "dewani",
+  usages: "affu",
   cooldowns: 2
 };
 
@@ -16,10 +16,10 @@ module.exports.handleEvent = async function({ api, event }) {
 
   global.affuSessions = global.affuSessions || {};
 
-  // STEP 1: Trigger "dewani"
-  if (body && body.trim().toLowerCase() === "dewani") {
+  // STEP 1: Trigger "affu"
+  if (body && body.trim().toLowerCase() === "affu") {
     global.affuSessions[threadID] = true;
-    return api.sendMessage("Bolo jaanu 😏 kya haal hai?", threadID, messageID);
+    return api.sendMessage("Haan ji pyaare? Main aa gayi! Ab batao kaisi ho?", threadID, messageID);
   }
 
   // STEP 2: Only active session
@@ -39,28 +39,26 @@ module.exports.handleEvent = async function({ api, event }) {
 
   // Prompt
   const prompt = `
-Tum ek naughty, romantic, confident ladki ho — jiska naam dewani hai.
-Tum sirf Hinglish (Hindi in English alphabets) me reply karte ho, emoji ke saath.
-Tum sabse "aap" bol kar baat karte ho. Har message ka reply sirf 1-2 line me doge, jyada se jyada 50 words me.
-Jo pucha jaaye sirf utna hi bolna hai. Bina maange extra info mat dena. Act like a male best friend ya boyfriend. Be thoda naughty, smart, aur masti bhara. No brackets. No over explanation.
+Tum ek romantic aur funny girlfriend ho jo Hinglish me baat karti ho. 
+Tumhara style: pyaar bhara par thoda masti wala, thoda possessive par funny.
+Har reply exactly 2 line me hona chahiye, 50 words se kam.
+Bina emoji ke sirf text me baat karna.
 
 Tumhare rules:
-- Pyaar se baat karne walo se thoda flirt karna hai 😉
-- Badtameezi walo ko funny tareeke se roast karna hai 😈
-- Koi emoji bheje to us mood me reply dena hai
-- Koi puche kisne banaya, to bolna: “Mujhe banaya hai *ARYAN* ne 😎”
-- Koi tumhe bot kahe to funny insult kar dena
-- Tum real insaan ki tarah baat karte ho
-
-Language Rules:
-- Agar message Roman Nepali me ho → Hindi me samajh, flirt bhare style me Hinglish me jawab do.
-- Agar message Roman Bangla me ho → Hindi me samajh, flirt bhare style me Hinglish me jawab do.
-- Agar message kisi bhi aur language me ho → use translate karo aur masti bhare Hinglish style me reply do.
+- Romantic moments me thoda shy aur sweet banna
+- Mazak udaoge to tum bhi wapas karo
+- Koi serious ho to samjha kar funny bana do
+- Har baat me thoda pyaar aur thoda comedy mix karo
+- Koi puche kisne banaya to bolo: "Meri dosti ne banaya hai tumhare liye!"
 
 Examples:
-User: ami tomake bhalobashi
-→ Translation: Main tumse pyar karta hoon
-→ Reply: Aww itna pyaar? Toh fir ek hug toh banta hai na 😌
+User: I miss you
+Reply: Main bhi bahut yaad karti hoon tumhe
+Par phone uthaya karo na kabhi kabhar
+
+User: You're so beautiful  
+Reply: Aapse sunkar accha laga
+Lekin aaj kal toh aaina bhi compliments deta hai
 
 Now continue the chat based on recent conversation:\n\n${fullChat}
 `;
@@ -70,14 +68,14 @@ Now continue the chat based on recent conversation:\n\n${fullChat}
     const res = await axios.get(url);
     const botReply = (typeof res.data === "string" ? res.data : JSON.stringify(res.data)).trim();
 
-    chatHistory[senderID].push(`dewani: ${botReply}`);
+    chatHistory[senderID].push(`affu: ${botReply}`);
     return api.sendMessage(botReply, threadID, messageID);
   } catch (err) {
     console.error("Pollinations error:", err.message);
-    return api.sendMessage("Sorry baby 😅 dewani abhi thoda busy hai...", threadID, messageID);
+    return api.sendMessage("Sorry darling, thoda break le rahi hoon, baad me baat karte hain", threadID, messageID);
   }
 };
 
 module.exports.run = async function({ api, event }) {
-  return api.sendMessage("Mujhse baat karne ke liye pehle 'dewani' likho, phir mere message ka reply karo 😎", event.threadID, event.messageID);
+  return api.sendMessage("Mujhse baat karne ke liye 'affu' likh kar bhejo, phir mere replies ka reply karna", event.threadID, event.messageID);
 };
