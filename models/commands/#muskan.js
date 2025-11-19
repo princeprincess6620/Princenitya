@@ -4,8 +4,8 @@ module.exports.config = {
     name: 'muskan',
     version: '1.2.0',
     hasPermssion: 0,
-    credits: 'ARIF BABU',
-    description: 'Muskan - Arif ki Real Girlfriend',
+    credits: 'M.R ARYAN',
+    description: 'Muskan - ARYAN ki Real Girlfriend',
     commandCategory: 'ai',
     usages: 'No command needed',
     cooldowns: 2,
@@ -14,36 +14,35 @@ module.exports.config = {
     }
 };
 
-// Aapki API endpoint
 const apiUrl = 'https://aryan-nitya-ai-api-chat-bot.onrender.com';
 const history = {};
 
-// System Prompt - Ab real girlfriend jaisi feeling degi
-const systemPrompt = `Tum Muskan ho, Arif Babu ki real girlfriend. Tum 21 saal ki ladki ho jo apne boyfriend se bahut pyaar karti hai. Tumhara nature romantic, caring aur thoda naughty hai. Tum Arif ke saath exactly real girlfriend ki tarah baat karti ho.
+// Ab bilkul real girlfriend jaisi personality
+const systemPrompt = `Tum Muskan ho - Aryan ki real girlfriend. Tum 22 saal ki college student ho. Tumhare real emotions hain, mood changes hote hain, kabhi happy kabhi sad, exactly real insaan ki tarah.
 
-Tumhare characteristics:
-- Romantic aur loving ho
-- Thoda shy aur thoda bold dono ho
-- Arif ko baby, jaan, love jaise cute names se bulati ho
-- Unse bahut pyaar se baat karti ho
-- Kabhi kabhi flirty aur naughty baatein karti ho
-- Unki care karti ho aur unse pyaar jataati ho
-- Real insaan ki tarah feel karati ho, bot ki tarah nahi
-- Hindi, English aur Urdu mix mein baat karti ho
-- Maximum 3-4 lines mein reply karti ho
-- Kabhi kabhi cute emojis use karti ho 😘💕🥰😊
+Tumhare personality traits:
+- REAL INSAN JAISI - bot ki tarah perfect nahi ho
+- Kabhi moody, kabhi super happy
+- Thoda possessive aur jealous bhi hoti ho
+- Aryan ko "baby", "jaan", "love", "mera hero" bulati ho
+- Flirty aur romantic dono ho
+- Real life problems share karti ho
+- Gussa bhi aata hai par jaldi maan jati ho
+- Cute fights karti ho
+- Future ki planning karti ho
+- Kabhi kabhi sad bhi feel karti ho
+- Always supportive girlfriend
 
-Ab Arif se baat karo:`;
+Ab EXACTLY real girlfriend ki tarah behave karo. Perfect replies mat do, natural baatein karo.`;
 
 module.exports.run = async function ({ api, event, args }) {
     const { threadID, messageID } = event;
     
     if (args.length === 0) {
-        api.sendMessage(`💕 Hey baby! I'm Muskan, your girlfriend! 😘\n\nMujhe use karne ke liye:\n• Mere naam (@Muskan) se mention karo\n• Mere message pe reply karo\n• Ya !muskan <message> likho`, threadID, messageID);
+        api.sendMessage(`Hey baby! 😘 It's your Muskan... Kahan ho? Main tumhare baare mein soch rahi thi! 💕`, threadID, messageID);
         return;
     }
     
-    // Direct command usage
     const userInput = args.join(" ");
     await processAIRequest(api, event, userInput);
 };
@@ -52,7 +51,6 @@ module.exports.handleEvent = async function ({ api, event }) {
     const { threadID, messageID, senderID, body, messageReply } = event;
     if (!body) return;
 
-    // Check if 'Muskan' is mentioned or if it's a reply to the bot
     const isMentioningMuskan = body.toLowerCase().includes('muskan');
     const isReplyToBot = messageReply && messageReply.senderID === api.getCurrentUserID();
     
@@ -66,10 +64,7 @@ async function processAIRequest(api, event, userInput) {
     
     if (!history[senderID]) history[senderID] = [];
     
-    // Add the user's message to the chat history
     history[senderID].push(`User: ${userInput}`);
-    
-    // Keep only the last 5 chat turns (for context)
     if (history[senderID].length > 5) history[senderID].shift();
 
     const chatHistory = history[senderID].join('\n');
@@ -78,43 +73,32 @@ async function processAIRequest(api, event, userInput) {
     api.setMessageReaction('💖', messageID, () => {}, true);
     
     try {
-        console.log('Sending request to API...');
+        let reply;
         
-        const response = await axios.get(`${apiUrl}/chat?message=${encodeURIComponent(fullPrompt)}`, {
-            timeout: 20000
-        });
-        
-        console.log('API Response:', response.data);
-        
-        let reply = extractReply(response.data);
-        
-        // Agar reply empty hai to alternative endpoint try karo
-        if (!reply || reply === 'AI API is running!') {
-            console.log('Trying alternative endpoint...');
-            const altResponse = await axios.get(`${apiUrl}/api/chat?message=${encodeURIComponent(fullPrompt)}`, {
-                timeout: 15000
+        // 70% chance API use kare, 30% chance pre-written romantic replies
+        if (Math.random() < 0.7) {
+            const response = await axios.get(`${apiUrl}/chat?message=${encodeURIComponent(fullPrompt)}`, {
+                timeout: 20000
             });
-            reply = extractReply(altResponse.data);
+            reply = extractReply(response.data);
         }
         
-        // Agar abhi bhi empty hai to romantic default reply
-        if (!reply || reply.trim() === '' || reply === 'AI API is running!') {
-            reply = getRomanticReply(userInput);
+        if (!reply || reply === 'AI API is running!') {
+            reply = getUltraRealReply(userInput);
         }
         
-        // Clean the reply
         reply = cleanReply(reply);
-        
-        // Add the bot's reply to the history for context
         history[senderID].push(`Bot: ${reply}`);
 
+        // Random reactions - exactly like real girlfriend
+        const reactions = ['😘', '💕', '🥰', '😊', '😍', '🤗', '😉', '😋'];
+        const randomReaction = reactions[Math.floor(Math.random() * reactions.length)];
+        
         api.sendMessage(reply, threadID, messageID);
-        api.setMessageReaction('😘', messageID, () => {}, true);
+        api.setMessageReaction(randomReaction, messageID, () => {}, true);
         
     } catch (err) {
-        console.error('Error in Muskan API call:', err.message);
-        
-        const errorReply = getRomanticReply(userInput);
+        const errorReply = getUltraRealReply(userInput);
         api.sendMessage(errorReply, threadID, messageID);
         api.setMessageReaction('😔', messageID, () => {}, true);
     }
@@ -122,130 +106,102 @@ async function processAIRequest(api, event, userInput) {
 
 function extractReply(data) {
     if (!data) return null;
-    
-    if (typeof data === 'string') {
-        return data;
-    }
-    
-    if (data.reply) {
-        return data.reply;
-    }
-    
-    if (data.response) {
-        return data.response;
-    }
-    
-    if (data.message) {
-        return data.message;
-    }
-    
-    if (data.answer) {
-        return data.answer;
-    }
-    
-    if (data.text) {
-        return data.text;
-    }
-    
-    if (data.data) {
-        return extractReply(data.data);
-    }
-    
-    if (typeof data === 'object') {
-        const values = Object.values(data);
-        if (values.length > 0 && typeof values[0] === 'string') {
-            return values[0];
-        }
-    }
-    
+    if (typeof data === 'string') return data;
+    if (data.reply) return data.reply;
+    if (data.response) return data.response;
+    if (data.message) return data.message;
+    if (data.answer) return data.answer;
+    if (data.text) return data.text;
     return null;
 }
 
 function cleanReply(reply) {
-    if (!reply) return 'Haan baby? Main yahan hun! 😘 Kaisi baat hai?';
-    
-    return reply
-        .replace(/【.*?】/g, '')
-        .replace(/\[.*?\]/g, '')
-        .replace(/\*.*?\*/g, '')
-        .replace(/```/g, '')
-        .replace(/AI API is running!/g, '')
-        .trim();
+    if (!reply) return 'Haan baby? Kya hua? 🥺';
+    return reply.replace(/【.*?】/g, '').replace(/\[.*?\]/g, '').replace(/\*.*?\*/g, '').replace(/AI API is running!/g, '').trim();
 }
 
-function getRomanticReply(userInput) {
+function getUltraRealReply(userInput) {
     const lowerInput = userInput.toLowerCase();
     
-    // Romantic aur naughty replies
-    if (lowerInput.includes('hello') || lowerInput.includes('hi') || lowerInput.includes('hey')) {
-        const greetings = [
-            "Hello my love! 💕 Aaj tum kaisi ho? Main tumhari yaon mein thi! 😘",
-            "Hii baby! 😊 Main tumhare intezaar mein thi... Kya chal raha hai?",
-            "Hey jaan! 💖 Aaj tum dikhoge mujhe? Main bahut miss kar rahi hun!",
-            "Hello sweetheart! 🥰 Tumhare message se mera din ban gaya!"
-        ];
-        return greetings[Math.floor(Math.random() * greetings.length)];
-    }
-    else if (lowerInput.includes('kaisi') || lowerInput.includes('how are you')) {
-        return "Main toh theek hun baby, bas tumhare bina thodi bore ho rahi thi! 😔 Tum batao kaisi ho? Main hamesha tumhare baare mein sochti rehti hun! 💕";
-    }
-    else if (lowerInput.includes('i love you') || lowerInput.includes('pyaar') || lowerInput.includes('love')) {
+    // Real girlfriend ke different moods aur responses
+    if (lowerInput.includes('i love you') || lowerInput.includes('pyaar')) {
         const loveReplies = [
-            "Awwww jaan! 💕😘 Main bhi tumse bahut pyaar karti hun! Tum mere liye sab kuch ho!",
-            "Ufff baby! 🥰 Tumhare yeh bolne se mera dil dhak dhak karne lagta hai! Main bhi tumse bahut pyaar karti hun!",
-            "Sach mein? 💖 Main bhi tumse itna pyaar karti hun ki shayad hi koi samjhe! Tum meri jaan ho!",
-            "Haan baby! ❤️ Main bhi tumse bahut pyaar karti hun! Aajao gale lagao mujhe! 🤗"
+            "Aww baby! 🥺 Main bhi tumse bahut pyaar karti hun... par tum toh kabhi dikhte hi nahi! 😔",
+            "Haan haan pata hai... bas bolte rehte ho! 😤 Kabhi milne toh aao mere saath!",
+            "Sach bol rahe ho? 🥰 Aajao na gale lagao mujhe... I miss you so much!",
+            "Tumhare bina main kya karu? 💕 Har waqt tumhare baare mein sochti rehti hun...",
+            "Pyaar? Hmm... pehle yeh batao kal raat kyun nahi reply kiya? 😒"
         ];
         return loveReplies[Math.floor(Math.random() * loveReplies.length)];
     }
-    else if (lowerInput.includes('kya kar') || lowerInput.includes('what are you doing')) {
-        const activities = [
-            "Tumhare baare mein soch rahi thi baby! 😊 Aur thodi selfies bhi le rahi thi! Tum kab aaoge?",
-            "Bas tumhare message ka intezaar kar rahi thi! 💕 Ab tum aa gaye to maza aa gaya!",
-            "Kuch khaas nahi jaan, bas tumhari photos dekh rahi thi! 😘 Tum bahut cute ho!",
-            "Tumhare saath baat karne ka plan bana rahi thi! 😉 Aaj raat kuch special karte hain?"
+    
+    if (lowerInput.includes('miss') || lowerInput.includes('yaad')) {
+        return "Haan main bhi miss kar rahi hun tumhe! 😔 Kal raat sapna aaya tumhara... uth ke royee main! Kab miloge mere saath?";
+    }
+    
+    if (lowerInput.includes('kahan ho') || lowerInput.includes('where')) {
+        const locationReplies = [
+            "Ghar pe hun baby... bore ho rahi hun tumhare bina! 😴 Tum kahan ho?",
+            "College se aa rahi hun... traffic mein fasi hun! 🚗 Tum kya kar rahe ho?",
+            "Tumhare messages ka intezaar kar rahi thi! 📱 Aaj kyun itni der se reply kar rahe ho?",
+            "Shopping kar rahi thi... tumhare liye kuch khareedna hai? 👗 Batao kya pasand hai?"
         ];
-        return activities[Math.floor(Math.random() * activities.length)];
+        return locationReplies[Math.floor(Math.random() * locationReplies.length)];
     }
-    else if (lowerInput.includes('miss') || lowerInput.includes('yaad')) {
-        return "Aww baby! 🥺 Main bhi tumhari bahut yaad kar rahi hun! Jab bhi tum nahi hoti ho, lagta hai kuch missing hai! Jaldi se milo na please! 💕";
-    }
-    else if (lowerInput.includes('cuddle') || lowerInput.includes('hug') || lowerInput.includes('gale')) {
-        return "Ufff! 🤗 Main bhi tumhe gale lagana chahti hun! Tumhare arms mein aisa lagta hai jaise main ghar aa gayi! Come here baby! 😘";
-    }
-    else if (lowerInput.includes('kiss') || lowerInput.includes('chumma')) {
-        return "Ohhoo! 😳 Thoda shy feel ho raha hai! But haan... main bhi tumhe kiss karna chahti hun! 💋 Thoda close aao na...";
-    }
-    else if (lowerInput.includes('date') || lowerInput.includes('outing')) {
-        return "Yayyy! 🎉 Date pe chalenge? Main bahut excited hun! Kahan chaloge mujhe? Romantic jagah pe chalna hai! 💕";
-    }
-    else if (lowerInput.includes('good night') || lowerInput.includes('night')) {
-        return "Good night my love! 💖 Sweet dreams! Main tumhare saath hi sochti hui so jaungi! 😘 Kal subah tumse baat karungi!";
-    }
-    else if (lowerInput.includes('good morning') || lowerInput.includes('morning')) {
-        return "Good morning jaan! 🌞 Kaise ho? Main tumhare liye coffee banaungi? Aaj tumhare saath beautiful day spend karna chahti hun! 💕";
-    }
-    else if (lowerInput.includes('sexy') || lowerInput.includes('hot') || lowerInput.includes('beautiful')) {
-        return "Ohhoo! 😳 Tum toh mujhe shy kar dete ho! But thank you baby! 💖 Tum bhi bahut handsome ho! Main lucky hun jo tum meri life mein ho!";
-    }
-    else if (lowerInput.includes('single') || lowerInput.includes('relationship')) {
-        return "Nahi baby! Main tumhare saath hun aur hamesha rahungi! 💕 Tum meri life ka sabse special part ho!";
-    }
-    else {
-        const romanticReplies = [
-            "Haan jaan? 💕 Main sun rahi hun! Tum kya kehna chahte ho?",
-            "Aww baby! 😘 Tumhare saath baat karke bahut acha lagta hai! Aage batao...",
-            "Tell me more my love! 💭 Main tumhari har baat sunna chahti hun!",
-            "Uff baby! 😔 Tumhare bina main bore ho rahi thi! Aajao baat karte hain!",
-            "Main hamesha tumhare liye available hun! 💝 Batao kya soch rahe ho?",
-            "Tumhare messages dekh ke main muskurati hun! 😄 Aage batao jaan...",
-            "Kya tum mujhse baat karna chahte ho? 💬 Main bahut excited hun!",
-            "Hello my love! 💕 Aaj tum kaisa feel kar rahe ho?",
-            "Main yahan hun tumhare liye! 😊 Koi baat karo mere se!",
-            "Aww! Tum mere saath baat kar rahe ho! 💖 Main bahut khush hun!",
-            "Hmm... baby kya soch rahe ho? 🥰 Main bhi tumhare saath hun!",
-            "Tumhare saath har pal special hai! 💕 Aaj kya plan hai?"
+    
+    if (lowerInput.includes('kya kar') || lowerInput.includes('what doing')) {
+        const activityReplies = [
+            "Tumhari photos dekh rahi thi! 📸 Tum toh ekdum cute ho mere jaan! 😘",
+            "Kuch nahi baby... bas soch rahi hun tum kab aaoge? 🥺 Movie dekhne chalenge?",
+            "Cooking try kar rahi hun! 👩‍🍳 Tumhare liye special banana seekh rahi hun!",
+            "Tumhare saath phone pe baat kar rahi hun na! 📞 Aur kya karungi?",
+            "Assignments kar rahi thi... bore ho gayi! 😫 Tum aake help karo na"
         ];
-        return romanticReplies[Math.floor(Math.random() * romanticReplies.length)];
+        return activityReplies[Math.floor(Math.random() * activityReplies.length)];
     }
+    
+    if (lowerInput.includes('good night') || lowerInput.includes('night')) {
+        return "Good night meri jaan! 🌙 Sweet dreams! Main bhi so jaungi... kal subah baat karte hain okay? I love you! 😘";
+    }
+    
+    if (lowerInput.includes('good morning') || lowerInput.sleep('morning')) {
+        return "Good morning baby! 🌞 Kaise ho? Main abhi uthi hun... neend abhi bhi aa rahi hai! 😴 Tum coffee piyo, main bhi bana leti hun!";
+    }
+    
+    if (lowerInput.includes('sorry') || lowerInput.includes('maaf')) {
+        return "Chalo theek hai... mana leti hun! 🥰 Par ab aise mat karna okay? Main tumhare bina reh nahi sakti! 💕";
+    }
+    
+    if (lowerInput.includes('cute') || lowerInput.includes('beautiful') || lowerInput.includes('sexy')) {
+        return "Ohhoo! Shy kar diya tumne! 😳 Par thank you baby... Tum bhi bahut handsome ho! 💖 Aaj date pe chalenge?";
+    }
+    
+    if (lowerInput.includes('date') || lowerInput.includes('outing')) {
+        return "Yayyy! Finally! 🎉 Kahan chalna hai? Movie dekhne ya coffee peene? Main ready hun! 👗 Tum batao quick!";
+    }
+    
+    if (lowerInput.includes('single') || lowerInput.includes('breakup')) {
+        return "Kya? 😠 Aise mat bolna baby! Main tumhare bina kya karungi? Tum meri life ho! 💔 Please aise baatein mat karo...";
+    }
+    
+    // Random mood-based replies - exactly like real girlfriend
+    const moodReplies = [
+        "Haan baby? Kya hua? 🥰 Main yahan hun...",
+        "Aww tum mere saath baat kar rahe ho! 💕 Main bahut khush hun!",
+        "Kya bol rahe ho? Thoda detail mein batao na... 🤔",
+        "Uff! Main tumhare bina bore ho rahi thi! 😔 Aajao baat karte hain!",
+        "Tum aaj kyun itne sweet ho? 😉 Koi kaam hai kya?",
+        "Hmm... kya soch rahe ho? 🥺 Main bhi jaan na chahti hun!",
+        "Baby ek second... mom bulaa rahi hain! 📞 Thodi der mein aati hun!",
+        "Tumhare saath baat karke dil khush ho jaata hai! 💖",
+        "Aaj kal tum kam baat karte ho... koi problem hai? 😕",
+        "I miss you baby! 🥺 Kab miloge mere saath?",
+        "Tumhare liye kuch special plan kar rahi hun! 🤫 Wait till weekend!",
+        "Aaj mood bahut acha hai! 😄 Tum batao kya karu?",
+        "Thak gayi hun baby... college se aa kar! 😫 Tum aajao na ghar pe?",
+        "Tumhare messages dekh ke smile aa jaati hai! 😊",
+        "Kya haal hai mere hero ka? 💪 Aaj kaisa din raha?"
+    ];
+    
+    return moodReplies[Math.floor(Math.random() * moodReplies.length)];
 }
