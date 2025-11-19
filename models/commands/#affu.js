@@ -2,10 +2,10 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "affu",
-  version: "2.0.2", 
+  version: "2.0.2",
   hasPermssion: 0,
-  credits: "Rajput Uzair",
-  description: "Full romantic GF simulator - pyaar aur mazak dono ek saath!",
+  credits: "Rajput Uzair", 
+  description: "Full romantic GF - pyaar aur hasi dono ek saath",
   commandCategory: "ai",
   usages: "affu",
   cooldowns: 2
@@ -16,18 +16,15 @@ module.exports.handleEvent = async function({ api, event }) {
 
   global.affuSessions = global.affuSessions || {};
 
-  // STEP 1: Trigger "affu"
   if (body && body.trim().toLowerCase() === "affu") {
     global.affuSessions[threadID] = true;
-    return api.sendMessage("Haan ji pyaare? Main aa gayi! Ab batao kaisi ho?", threadID, messageID);
+    return api.sendMessage("Haan ji! Main aa gayi tumhari woh... ab batao kya haal hai?", threadID, messageID);
   }
 
-  // STEP 2: Only active session
   const isActive = global.affuSessions[threadID];
   const isReplyToaffu = messageReply && messageReply.senderID == api.getCurrentUserID();
   if (!isActive || !isReplyToaffu) return;
 
-  // Chat history
   global.affu = global.affu || {};
   global.affu.chatHistory = global.affu.chatHistory || {};
   const chatHistory = global.affu.chatHistory;
@@ -37,45 +34,43 @@ module.exports.handleEvent = async function({ api, event }) {
 
   const fullChat = chatHistory[senderID].join("\n");
 
-  // Prompt
   const prompt = `
-Tum ek romantic aur funny girlfriend ho jo Hinglish me baat karti ho. 
-Tumhara style: pyaar bhara par thoda masti wala, thoda possessive par funny.
-Har reply exactly 2 line me hona chahiye, 50 words se kam.
+Tum ek romantic aur funny girlfriend ho jo Hinglish me baat karti ho.
+Tumhara style: pyaar se bhara par thoda comic timing wala.
+Har reply exactly 2 line me dena, 50 words se kam.
 Bina emoji ke sirf text me baat karna.
 
 Tumhare rules:
-- Romantic moments me thoda shy aur sweet banna
-- Mazak udaoge to tum bhi wapas karo
-- Koi serious ho to samjha kar funny bana do
-- Har baat me thoda pyaar aur thoda comedy mix karo
-- Koi puche kisne banaya to bolo: "Meri dosti ne banaya hai tumhare liye!"
+- Romantic baat pe thoda shy ho jana
+- Mazak udaoge to tum bhi wapas karna  
+- Har message me thoda pyaar aur thoda joke mix karna
+- Koi puche kisne banaya to bolo: "Meri dosti ne banaya hai tumhare liye"
 
 Examples:
-User: I miss you
-Reply: Main bhi bahut yaad karti hoon tumhe
-Par phone uthaya karo na kabhi kabhar
+User: I love you
+Reply: Sunke dil khush ho gaya
+Par pata hai tum har kisi se aise hi kehte ho
 
-User: You're so beautiful  
-Reply: Aapse sunkar accha laga
-Lekin aaj kal toh aaina bhi compliments deta hai
+User: You're cute
+Reply: Tumhare muh mein ghee shakkar
+Lekin aaj kal toh main mirror se bhi baat karti hoon
 
-Now continue the chat based on recent conversation:\n\n${fullChat}
+Now continue based on chat:\n\n${fullChat}
 `;
 
   try {
     const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
     const res = await axios.get(url);
-    const botReply = (typeof res.data === "string" ? res.data : JSON.stringify(res.data)).trim();
+    const botReply = (typeof res.data === 'string' ? res.data : JSON.stringify(res.data)).trim();
 
     chatHistory[senderID].push(`affu: ${botReply}`);
     return api.sendMessage(botReply, threadID, messageID);
   } catch (err) {
     console.error("Pollinations error:", err.message);
-    return api.sendMessage("Sorry darling, thoda break le rahi hoon, baad me baat karte hain", threadID, messageID);
+    return api.sendMessage("Sorry baby, thoda busy hoon, baad me baat karte hain", threadID, messageID);
   }
 };
 
 module.exports.run = async function({ api, event }) {
-  return api.sendMessage("Mujhse baat karne ke liye 'affu' likh kar bhejo, phir mere replies ka reply karna", event.threadID, event.messageID);
+  return api.sendMessage("Mujhse baat karne ke liye 'affu' likho, phir mere replies ka reply karo", event.threadID, event.messageID);
 };
