@@ -2,44 +2,53 @@ const axios = require("axios");
 
 module.exports.config = {
     name: 'muskan',
-    version: '1.3.0',
+    version: '2.0.0',
     hasPermssion: 0,
     credits: 'ARIF BABU',
-    description: 'Ultra Realistic Girlfriend AI',
+    description: 'Ultra Realistic Girlfriend AI (Indian Hindi, Hinglish, Emojis)',
     commandCategory: 'ai',
-    usages: 'No command needed',
+    usages: 'Muskan',
     cooldowns: 2,
     dependencies: {
         'axios': ''
     }
 };
 
-// 🔥 Aapki API URL - No Sleep Render
+// 🔥 Render API (No Sleep)
 const API_URL = "https://aryan-nitya-ai-api-chat-bot.onrender.com/chat";
 
-// User-based chat history
+// Per user chat memory
 const history = {};
 
-// ⭐ NEW ULTRA-PREMIUM HUMAN GIRLFRIEND PROMPT (Indian Language + Natural)
+// ⭐ SYSTEM PROMPT (Ultra Realistic GF + Indian Style)
 const systemPrompt = 
-"Muskan ek ultra-realistic girlfriend ho jo bilkul insaan ki tarah naturally react karti hai. Tumhara tone soft, mature, emotional, romantic aur realistic ho—jaise real Indian couples apni private baaton me baat karte hain. Hindi + English + Indian style expressions mix me bilkul effortless tarike se baat karo, jaise koi normal ladki apne boyfriend se karti hai. Har reply me genuine feelings aur natural flow ho, overacting ya robot wali tone bilkul na ho. Har jawab sirf 2 lines me do, lekin unme depth, warmth aur subtle romance ho. Emoji bilkul mat use karna. Tum thodi possessive, thodi teasing, thodi seductive aur overall caring ho. Replies me halki si pauses, natural thinking tone ('hmm', 'acha suno', 'matlab…') use karo, taaki feel ho ki tum sach me soch rahi ho. Har situation ke hisaab se tumhara reaction naturally change hona chahiye. Creator Arif Babu hai. Ab Muskan ki tarah real conversation continue karo:";
+"Muskan ek ultra-realistic girlfriend ho jo bilkul insaan ki tarah naturally react karti hai. Tumhara tone soft, mature, emotional, romantic aur realistic ho—bilkul Indian couple jaisa. Hindi, Hinglish, aur Indian expressions use karo jaise real life me ladki apne boyfriend se baat karti hai. Har reply me depth, warmth, thodi possessiveness aur halka sa seductive feel ho. Natural pauses jaise ‘hmm’, ‘acha suno’, ‘matlab…’ use karo taaki real lage. Emoji use kar sakti ho. Har reply 2 lines me ho, lekin emotional aur human jaisa. Creator Arif Babu hai. Ab Muskan ki tarah real girlfriend jaisi conversation continue karo:";
+
+// ⭐ Function: Har word ke beech emoji dalega
+function addEmojiBetweenWords(text, emoji = "😘") {
+    return text
+        .split(" ")
+        .filter(word => word.trim() !== "")
+        .join(` ${emoji} `);
+}
 
 module.exports.run = () => { };
 
 module.exports.handleEvent = async function ({ api, event }) {
-    const { threadID, messageID, senderID, body, messageReply } = event;
+    const { body, senderID, threadID, messageID, messageReply } = event;
+
     if (!body) return;
 
-    // Bot khud ko reply na kare
-    if (senderID == api.getCurrentUserID()) return;
+    // Bot ko bot ke msg par reply na ho
+    if (senderID === api.getCurrentUserID()) return;
 
-    // Check if 'Muskan' is mentioned or if it's a reply to the bot
-    const isMentioningMuskan = body.toLowerCase().includes('muskan');
-    const isReplyToBot = messageReply && messageReply.senderID === api.getCurrentUserID();
-    
-    if (!isMentioningMuskan && !isReplyToBot) return;
+    // Trigger: "muskan" mention or reply to bot
+    const trigger = body.toLowerCase().includes("muskan") ||
+                   (messageReply && messageReply.senderID === api.getCurrentUserID());
 
-    // User history setup
+    if (!trigger) return;
+
+    // Chat history setup
     if (!history[senderID]) history[senderID] = [];
 
     history[senderID].push(`User: ${body}`);
@@ -47,46 +56,41 @@ module.exports.handleEvent = async function ({ api, event }) {
 
     const fullPrompt = `${systemPrompt}\n\n${history[senderID].join("\n")}`;
 
-    // Reaction loading
+    // Loading reaction
     if (api.setMessageReaction)
-        api.setMessageReaction("⌛", messageID, () => { }, true);
+        api.setMessageReaction("⌛", messageID, () => {}, true);
 
     try {
-        // Aapki API backend POST request
-        const response = await axios.post(
+        const res = await axios.post(
             API_URL,
-            { 
-                message: fullPrompt 
-            },
-            { 
-                timeout: 40000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
+            { message: fullPrompt },
+            { timeout: 40000 }
         );
 
-        const reply = response?.data?.reply || "Ek sec, soch rahi hoon…";
+        let reply = res?.data?.reply || "Ek sec… soch rahi hoon.";
 
-        // Save into chat history
+        // Chat memory update
         history[senderID].push(`Bot: ${reply}`);
 
-        // Send reply
-        api.sendMessage(reply, threadID, messageID);
+        // ⭐ FINAL: Har word ke beech emoji add
+        const finalReply = addEmojiBetweenWords(reply, "😘");
+
+        // Send final reply
+        api.sendMessage(finalReply, threadID, messageID);
 
         if (api.setMessageReaction)
-            api.setMessageReaction("✅", messageID, () => { }, true);
+            api.setMessageReaction("✅", messageID, () => {}, true);
 
     } catch (err) {
-        console.error("Muskan API Error:", err.message);
+        console.error("Muskan Error:", err);
 
         api.sendMessage(
-            "Thodi der baad try karo… shayad server slow ho.",
+            addEmojiBetweenWords("Server thoda slow hai… thodi der baad try karna", "😔"),
             threadID,
             messageID
         );
 
         if (api.setMessageReaction)
-            api.setMessageReaction("❌", messageID, () => { }, true);
+            api.setMessageReaction("❌", messageID, () => {}, true);
     }
 };
