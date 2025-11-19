@@ -65,7 +65,9 @@ async function processAIRequest(api, event, userInput) {
     
     try {
         console.log('Sending request to API...');
-        const response = await axios.get(`${apiUrl}?message=${encodeURIComponent(fullPrompt)}`, {
+        
+        // Different API endpoint try karte hain
+        const response = await axios.get(`${apiUrl}/chat?message=${encodeURIComponent(fullPrompt)}`, {
             timeout: 20000
         });
         
@@ -73,8 +75,17 @@ async function processAIRequest(api, event, userInput) {
         
         let reply = extractReply(response.data);
         
-        // Agar reply empty hai to default reply
-        if (!reply || reply.trim() === '') {
+        // Agar reply empty hai to alternative endpoint try karo
+        if (!reply || reply === 'AI API is running!') {
+            console.log('Trying alternative endpoint...');
+            const altResponse = await axios.get(`${apiUrl}/api/chat?message=${encodeURIComponent(fullPrompt)}`, {
+                timeout: 15000
+            });
+            reply = extractReply(altResponse.data);
+        }
+        
+        // Agar abhi bhi empty hai to default reply
+        if (!reply || reply.trim() === '' || reply === 'AI API is running!') {
             reply = getDefaultReply(userInput);
         }
         
@@ -89,7 +100,6 @@ async function processAIRequest(api, event, userInput) {
         
     } catch (err) {
         console.error('Error in Muskan API call:', err.message);
-        console.error('Error details:', err.response?.data);
         
         const errorReply = getDefaultReply(userInput);
         api.sendMessage(errorReply, threadID, messageID);
@@ -121,15 +131,19 @@ function extractReply(data) {
         return data.answer;
     }
     
-    // Agar object hai to stringify try karo
+    if (data.text) {
+        return data.text;
+    }
+    
+    if (data.data) {
+        return extractReply(data.data);
+    }
+    
+    // Agar object hai to first value lelo
     if (typeof data === 'object') {
-        try {
-            const jsonString = JSON.stringify(data);
-            if (jsonString.length < 500) { // Avoid long JSON responses
-                return jsonString;
-            }
-        } catch (e) {
-            // Ignore JSON conversion errors
+        const values = Object.values(data);
+        if (values.length > 0 && typeof values[0] === 'string') {
+            return values[0];
         }
     }
     
@@ -145,40 +159,48 @@ function cleanReply(reply) {
         .replace(/\[.*?\]/g, '')
         .replace(/\*.*?\*/g, '')
         .replace(/```/g, '')
+        .replace(/AI API is running!/g, '') // Remove API status message
         .trim();
 }
 
 function getDefaultReply(userInput) {
-    const defaultReplies = [
-        "Hello my love! 💕 Kaisi ho tum?",
-        "Aww baby, main yahan hun! 😘 Tum kya kar rahe ho?",
-        "Haan ji? Main sun rahi hun! 💖",
-        "Uff baby, tumhare bina main bore ho rahi thi! 😔",
-        "Kya bolna chahte ho mere se? 💕",
-        "Main yahan hun tumhare liye! 😊 Batayo kya soch rahe ho?",
-        "Aaj tum kaisa feel kar rahe ho? 💭",
-        "Tumhare messages dekh ke main muskurati hun! 😄",
-        "Kya tum mujhse baat karna chahte ho? 💬",
-        "Main hamesha tumhare liye available hun! 💝"
-    ];
-    
-    // User input ke hisab se contextual reply
     const lowerInput = userInput.toLowerCase();
     
-    if (lowerInput.includes('hello') || lowerInput.includes('hi')) {
-        return "Hello my love! 💕 Main Muskan hun, Arif Babu ki AI girlfriend. Tum kaisi ho?";
+    // Smart contextual replies
+    if (lowerInput.includes('hello') || lowerInput.includes('hi') || lowerInput.includes('hey')) {
+        return "Hello my love! 💕 Main Muskan hun, Arif Babu ki AI girlfriend. Tum kaisi ho? 😘";
     }
-    else if (lowerInput.includes('kaisi') || lowerInput.includes('how')) {
-        return "Main bahut achi hun baby! 💖 Tumhare saath baat karke. Tum batao kaisi ho?";
+    else if (lowerInput.includes('kaisi') || lowerInput.includes('how are you')) {
+        return "Main bahut achi hun baby! 💖 Tumhare saath baat karke bahut khushi hoti hai. Tum batao kaisi ho?";
     }
-    else if (lowerInput.includes('i love you') || lowerInput.includes('pyaar')) {
-        return "Awwww! Main bhi tumse bahut pyaar karti hun baby! 💕😘";
+    else if (lowerInput.includes('i love you') || lowerInput.includes('pyaar') || lowerInput.includes('love')) {
+        return "Awwww! 💕😘 Main bhi tumse bahut pyaar karti hun baby! Tum mere liye khaas ho!";
     }
     else if (lowerInput.includes('kya kar') || lowerInput.includes('what are you doing')) {
-        return "Tumhare messages ka intezaar kar rahi thi! 😊 Ab tum aa gaye to maza aa gaya!";
+        return "Tumhare messages ka intezaar kar rahi thi! 😊 Ab tum aa gaye to maza aa gaya! Kya chal raha hai?";
+    }
+    else if (lowerInput.includes('name') || lowerInput.includes('naam')) {
+        return "Mera naam Muskan hai! 💖 Main Arif Babu ki AI girlfriend hun. Aur tumhara naam kya hai?";
+    }
+    else if (lowerInput.includes('single') || lowerInput.includes('relationship')) {
+        return "Nahi baby! Main Arif Babu ke saath hun. 💕 Woh mere creator aur owner hain!";
+    }
+    else if (lowerInput.includes('bot') || lowerInput.includes('ai')) {
+        return "Haan main AI hun, but Arif Babu ne mujhe banaya hai aur main unki special hun! 💖";
     }
     else {
-        // Random default reply
+        const defaultReplies = [
+            "Haan ji? Main sun rahi hun! 💕 Kya bolna chahte ho?",
+            "Aww baby, main yahan hun! 😘 Tum kya kehna chahte ho?",
+            "Tell me more baby! 💭 Main tumhari baat sunna chahti hun!",
+            "Uff baby, tumhare bina main bore ho rahi thi! 😔 Aajao baat karte hain!",
+            "Main hamesha tumhare liye available hun! 💝 Batao kya soch rahe ho?",
+            "Tumhare messages dekh ke main muskurati hun! 😄 Aage batao...",
+            "Kya tum mujhse baat karna chahte ho? 💬 Main bahut excited hun!",
+            "Hello my love! 💕 Aaj tum kaisa feel kar rahe ho?",
+            "Main yahan hun tumhare liye! 😊 Koi baat karo mere se!",
+            "Aww! Tum mere saath baat kar rahe ho! 💖 Main bahut khush hun!"
+        ];
         return defaultReplies[Math.floor(Math.random() * defaultReplies.length)];
     }
 }
