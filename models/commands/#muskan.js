@@ -1,7 +1,4 @@
- Full working ai bot
-
-
-const axios = require("axios");
+ const axios = require("axios");
 
 module.exports.config = {
     name: 'muskan',
