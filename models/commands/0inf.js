@@ -1,60 +1,89 @@
 module.exports.config = {
-	name: "info",
-	version: "1.0.1", 
-	hasPermssion: 0,
-	credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
-	description: "Admin and Bot info.",
-	commandCategory: "...",
-	cooldowns: 1,
-	dependencies: 
-	{
-    "request":"",
-    "fs-extra":"",
-    "axios":""
-  }
+    name: "info",
+    version: "4.1.0",
+    hasPermssion: 0,
+    credits: "Priyansh Rajput + ChatGPT Ultra",
+    description: "Indian Theme — Admin & Bot Info",
+    commandCategory: "system",
+    cooldowns: 1,
+    dependencies: {
+        "axios": "",
+        "fs-extra": "",
+        "request": ""
+    }
 };
-module.exports.run = async function({ api,event,args,client,Users,Threads,__GLOBAL,Currencies }) {
-const axios = global.nodemodule["axios"];
-const request = global.nodemodule["request"];
-const fs = global.nodemodule["fs-extra"];
-const time = process.uptime(),
-		hours = Math.floor(time / (60 * 60)),
-		minutes = Math.floor((time % (60 * 60)) / 60),
-		seconds = Math.floor(time % 60);
-const moment = require("moment-timezone");
-var juswa = moment.tz("Asia/Dhaka").format("『D/MM/YYYY』 【HH:mm:ss】");
-var link =                                     
-["https://i.imgur.com/hMTwntL.jpeg"];
-var callback = () => api.sendMessage({body:` ╾━╤デ╦︻(▀̿Ĺ̯▀̿ ̿)🇮🇳 𝐀𝐃𝐌𝐈𝐍 𝐀𝐍𝐃 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎𝐑𝐌𝐀𝐓𝐈𝐎𝐍 🇮🇳 
-(⌐▀͡ ̯ʖ▀)︻̷┻̿═━一-
 
-☄️Bot Name︎︎︎☄️  ${global.config.BOTNAME}
+module.exports.run = async function({ api, event }) {
+    const axios = global.nodemodule["axios"];
+    const request = global.nodemodule["request"];
+    const fs = global.nodemodule["fs-extra"];
+    const moment = require("moment-timezone");
 
-🔥Bot Admin🔥☞︎︎︎☜︎︎︎✰ LEGEND ARYAN 🥀
+    // Uptime
+    const time = process.uptime();
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = Math.floor(time % 60);
 
-🙈bot andmin owner https://www.facebook.com/thelegendary.473934 💞🕊️
-😇
-✧══════•❁❀❁•══════✧
+    // India Time
+    const now = moment.tz("Asia/Kolkata").format("DD MMMM YYYY | hh:mm A");
 
-🌸Bot Prefix🌸☞︎︎︎☜︎︎︎✰ ${global.config.PREFIX}
+    // **Indian (Non-Diwali) Images Only**
+    const indianImages = [
+        "https://i.imgur.com/hMTwntL.jpeg",
+        "https://i.imgur.com/q7tCkW3.jpeg",
+        "https://i.ibb.co/1T6vJxJ/ai-girl-1.jpg",
+        "https://i.ibb.co/CHFj7G4/holi-colors.jpg",        // Holi colors (non-diwali)
+        "https://i.ibb.co/TbTd48z/indian-festival.jpg"     // Generic Indian theme
+    ];
 
-♥️Bot Owner♥️ ☞︎︎︎☜︎︎︎✰ LEGEND ARYAN
+    const imgURL = indianImages[Math.floor(Math.random() * indianImages.length)];
+    const imgPath = __dirname + "/cache/indian_info.jpg";
 
-🥳UPTIME🥳
+    try {
+        const download = request(encodeURI(imgURL)).pipe(fs.createWriteStream(imgPath));
 
-🌪️Today is🌪️ ☞︎︎︎☜︎︎︎✰ ${juswa} 
+        download.on("close", () => {
+            api.sendMessage(
+                {
+                    body:
+`🇮🇳✨ 𝐈𝐍𝐃𝐈𝐀𝐍 𝐓𝐇𝐄𝐌𝐄 𝐈𝐍𝐅𝐎 𝐏𝐀𝐍𝐄𝐋 ✨🇮🇳
+══════════════════════════════
 
-⚡Bot is running⚡ ${hours}:${minutes}:${seconds}.
+🎉 **Bot Name:** ${global.config.BOTNAME}
+👑 **Bot Owner:** LEGEND ARYAN
+🔰 **Prefix:** ${global.config.PREFIX}
 
-✅Thanks for using ${global.config.BOTNAME} Bot🖤
+📆 **Today:** ${now}
+⏳ **Uptime:** ${hours}h ${minutes}m ${seconds}s
 
+══════════════════════════════
 
-🦢🍒•••ꞪɛᏒɛ ɪʂ ɮ❍┼ ❍ωɳɜɽ ɳaʍɜ•••🌷💞
-┏━🕊️━━°❀•°:🎀🧸💙🧸🎀:°•❀°━━💞━┓
-🌸✦✧✧✧✧✰🍒ARYAN🌿✰✧✧✧✧✦🌸
-┗━🕊️━━°❀•°:🎀🧸💙🧸🎀:°•❀°━━💞━┛
+🌺 **Indian Vibes Message:**  
+"खुश रहो, मुस्कुराते रहो,  
+और हर दिन कुछ नया सीखते रहो!" 🌼
 
+🇮🇳 रंग, संस्कृति और दोस्ती —  
+**यही है भारतीय पहचान.** 💛💚❤️
 
-`,attachment: fs.createReadStream(__dirname + "/cache/juswa.jpeg")}, event.threadID, () => fs.unlinkSync(__dirname + "/cache/juswa.jpeg")); 
-      return request(encodeURI(link[Math.floor(Math.random() * link.length)])).pipe(fs.createWriteStream(__dirname+"/cache/juswa.jpeg")).on("close",() => callback());
-   };
+══════════════════════════════
+
+📌 **Owner Facebook:**  
+👉 https://www.facebook.com/thelegendary.473934
+
+🙏 **Thank You for using ${global.config.BOTNAME}!** 🙏
+
+══════════════════════════════
+`,
+                    attachment: fs.createReadStream(imgPath)
+                },
+                event.threadID,
+                () => fs.unlinkSync(imgPath)
+            );
+        });
+
+    } catch (e) {
+        api.sendMessage("❌ Info Panel load nahi ho paya!", event.threadID);
+        console.log(e);
+    }
+};
