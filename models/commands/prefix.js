@@ -1,38 +1,63 @@
+/**
+ * 🔱 ULTRA PREMIUM PREFIX DETECTOR 🔱
+ * ⚡ Fast • Clean • Aesthetic • Mirai Optimized
+ */
+
 module.exports.config = {
   name: "prefix",
-  version: "1.0.0",
+  version: "5.5.0",
   hasPermssion: 0,
-  credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
-  description: "given prefix detail",
-  commandCategory: "Dành cho Admin",
+  credits: "👑 Priyansh Rajput",
+  description: "Show bot prefix when someone asks",
+  commandCategory: "System",
   usages: "",
-  cooldowns: 5,
+  cooldowns: 3,
 };
 
 module.exports.handleEvent = async ({ event, api, Threads }) => {
-  var { threadID, messageID, body, senderID } = event;
-  //if (senderID == global.data.botID) return;
-  if ((this.config.credits) != "\ud835\udc0f\ud835\udc2b\ud835\udc22\ud835\udc32\ud835\udc1a\ud835\udc27\ud835\udc2c\ud835\udc21\x20\ud835\udc11\ud835\udc1a\ud835\udc23\ud835\udc29\ud835\udc2e\ud835\udc2d") { return api.sendMessage(`\x41\x67\x61\x69\x6e\x20\x63\x68\x61\x6e\x67\x65\x20\x63\x72\x65\x64\x69\x74\x20\x74\x6f\x20\ud835\udc0f\ud835\udc2b\ud835\udc22\ud835\udc32\ud835\udc1a\ud835\udc27\ud835\udc2c\ud835\udc21\x20\ud835\udc11\ud835\udc1a\ud835\udc23\ud835\udc29\ud835\udc2e\ud835\udc2d`, threadID, messageID)}
-  function out(data) {
-    api.sendMessage(data, threadID, messageID)
-  }
-  var dataThread = (await Threads.getData(threadID));
-  var data = dataThread.data; 
-  const threadSetting = global.data.threadData.get(parseInt(threadID)) || {};
-  var arr = ["mpre","mprefix","prefix", "dấu lệnh", "prefix của bot là gì","daulenh", "duong", "what prefix", "freefix", "what is the prefix", "bot dead", "bots dead", "where prefix", "what is bot", "what prefix bot", "*" ,"how use bot", "@","bot not working","+","where prefix","prefx","prfix","prifx","perfix",".","/"];
-  arr.forEach(i => {
-    let str = i[0].toUpperCase() + i.slice(1);
-    if (body === i.toUpperCase() | body === i | str === body) {
-const prefix = threadSetting.PREFIX || global.config.PREFIX;
-      if (data.PREFIX == null) {
-        return out(`𝐓𝐇𝐈𝐒 𝐈𝐒 𝐌𝐘 𝐏𝐑𝐄𝐅𝐈𝐗 ⇉ [ ${prefix} ]\n●============================================================●💐𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓💐😇👈\n=𝐎𝐖𝐍𝐄𝐑 ➻    🌹 𝐀𝐑𝐘𝐀𝐍 🌹\n𝐌𝐄𝐑𝐄 𝐁𝐎𝐒𝐒 𝐀𝐑𝐘𝐀𝐍 𝐊𝐈 𝐅𝐀𝐂𝐄𝐁𝐎𝐎𝐊 𝐈𝐃 𝐋𝐈𝐍𝐊 😊👈 𝐁𝐎𝐒𝐒 𝐈𝐃 𝐋𝐈𝐍𝐊:- ☞https://www.facebook.com/profile.php?id=100092750349098\n●============================================================●👋💐𝐊𝐎𝐈 𝐁𝐇𝐈 𝐏𝐑𝐎𝐁𝐋𝐄𝐌 𝐇𝐎 𝐓𝐎 𝐀𝐏 𝐌𝐄𝐑𝐄 𝐁𝐎𝐒𝐒 𝐀𝐑𝐘𝐀𝐍 𝐊 𝐏𝐀𝐒𝐒 𝐌𝐒𝐆 𝐊𝐀𝐑 𝐒𝐊𝐓𝐄 𝐇𝐀💐`)
-      }
-      else return out('️️️️️️️️️️️️️️️️️️️️️️️️️️️𝐓𝐇𝐈𝐒 𝐈𝐒 𝐌𝐘 𝐏𝐑𝐄𝐅𝐈𝐗 ⇉ [ ${prefix} ]  \n============================================================●𝐖𝐄𝐋𝐂𝐎𝐌𝐄 𝐓𝐎 𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓😇👈\n=𝐎𝐖𝐍𝐄𝐑 ➻    🌹 𝐀𝐑𝐘𝐀𝐍\n𝐌𝐄𝐑𝐄 𝐁𝐎𝐒𝐒 𝐀𝐑𝐘𝐀𝐍 𝐊𝐈 𝐅𝐀𝐂𝐄𝐁𝐎𝐎𝐊 𝐈𝐃😊👈 𝐀𝐑𝐘𝐀𝐍:- ☞https://www.facebook.com/profile.php?id=100092750349098\n●============================================================●👋💐𝐊𝐎𝐈 𝐁𝐇𝐈 𝐏𝐑𝐎𝐁𝐋𝐄𝐌 𝐇𝐎 𝐓𝐎 𝐀𝐏 𝐌𝐄𝐑𝐄 𝐁𝐎𝐒𝐒 𝐀𝐑𝐘𝐀𝐍 𝐊 𝐏𝐀𝐒𝐒 𝐌𝐒𝐆 𝐊𝐀𝐑 𝐒𝐊𝐓𝐄 𝐇𝐀𝐈💐' + data.PREFIX)
-    }
+  const { threadID, messageID, body } = event;
+  if (!body) return;
 
-  });
+  // 🔐 CREDIT PROTECTION (unicode)
+  const realCredit = "👑 Priyansh Rajput";
+  if (this.config.credits !== realCredit) {
+    return api.sendMessage(
+      "❌ Credit Modify Mat Karo!\n✔ Original Credit: 👑 Priyansh Rajput",
+      threadID,
+      messageID
+    );
+  }
+
+  // 🌟 Keywords that trigger prefix response
+  const triggers = [
+    "prefix", "mprefix", "mpre", "bot prefix", "perfix", "prefx", "preefix",
+    "what prefix", "bot ka prefix", "bot not working", "dau lenh",
+    "*", "/", ".", "?"
+  ];
+
+  if (!triggers.includes(body.toLowerCase())) return;
+
+  const threadData = await Threads.getData(threadID);
+  const threadSetting = global.data.threadData.get(parseInt(threadID)) || {};
+  const prefix = threadSetting.PREFIX || global.config.PREFIX;
+
+  // 🌈 ULTRA UNIQUE MESSAGE OUTPUT
+  const msg =
+`╔══ 🔱 𝐁𝐎𝐓 𝐏𝐑𝐄𝐅𝐈𝐗 🔱 ══╗  
+   ➥  ${ ➥. }
+╚════════════════════╝
+
+🌸 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐓𝐨 𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓 🌸
+
+👑 𝐁𝐎𝐓 𝐎𝐖𝐍𝐄𝐑:  𝐀𝐑𝐘𝐀𝐍  
+📌 𝐎𝐰𝐧𝐞𝐫 𝐅𝐁 𝐋𝐢𝐧𝐤:
+https://www.facebook.com/profile.php?id=100092750349098
+
+💬 𝐊𝐨𝐢 𝐏𝐫𝐨𝐛𝐥𝐞𝐦? → Boss Aryan Ko Msg Kare 😊
+`;
+
+  api.sendMessage(msg, threadID, messageID);
 };
 
-module.exports.run = async({ event, api }) => {
-    return api.sendMessage("error", event.threadID)
-}
+module.exports.run = ({ event, api }) =>
+  api.sendMessage("⚠ Prefix command is for event only.", event.threadID);
