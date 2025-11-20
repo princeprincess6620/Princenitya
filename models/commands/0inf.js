@@ -1,89 +1,96 @@
 module.exports.config = {
-    name: "info",
-    version: "4.1.0",
-    hasPermssion: 0,
-    credits: "Priyansh Rajput + ChatGPT Ultra",
-    description: "Indian Theme — Admin & Bot Info",
-    commandCategory: "system",
-    cooldowns: 1,
-    dependencies: {
-        "axios": "",
-        "fs-extra": "",
-        "request": ""
-    }
+  name: "info",
+  version: "10.0",
+  hasPermssion: 0,
+  credits: "ChatGPT Ultra — Cyber Oni Edition",
+  description: "Cyber Oni Ultra Compact Info Panel",
+  commandCategory: "system",
+  cooldowns: 1,
+  dependencies: { "request":"", "fs-extra":"", "moment-timezone":"" }
 };
 
 module.exports.run = async function({ api, event }) {
-    const axios = global.nodemodule["axios"];
-    const request = global.nodemodule["request"];
-    const fs = global.nodemodule["fs-extra"];
-    const moment = require("moment-timezone");
 
-    // Uptime
-    const time = process.uptime();
-    const hours = Math.floor(time / 3600);
-    const minutes = Math.floor((time % 3600) / 60);
-    const seconds = Math.floor(time % 60);
+  const rq = global.nodemodule["request"];
+  const fs = global.nodemodule["fs-extra"];
+  const moment = require("moment-timezone");
 
-    // India Time
-    const now = moment.tz("Asia/Kolkata").format("DD MMMM YYYY | hh:mm A");
+  // ⚡ UPTIME
+  const t = process.uptime(), h = (t/3600)|0, m = (t%3600/60)|0, s = (t%60)|0;
 
-    // **Indian (Non-Diwali) Images Only**
-    const indianImages = [
-        "https://i.imgur.com/hMTwntL.jpeg",
-        "https://i.imgur.com/q7tCkW3.jpeg",
-        "https://i.ibb.co/1T6vJxJ/ai-girl-1.jpg",
-        "https://i.ibb.co/CHFj7G4/holi-colors.jpg",        // Holi colors (non-diwali)
-        "https://i.ibb.co/TbTd48z/indian-festival.jpg"     // Generic Indian theme
-    ];
+  // 🌍 TIME ZONES
+  const inT = moment.tz("Asia/Kolkata").format("DD MMM | hh:mm A");
+  const jpT = moment.tz("Asia/Tokyo").format("DD MMM | hh:mm A");
 
-    const imgURL = indianImages[Math.floor(Math.random() * indianImages.length)];
-    const imgPath = __dirname + "/cache/indian_info.jpg";
+  // 📌 THREAD DATA
+  const info = await api.getThreadInfo(event.threadID);
 
-    try {
-        const download = request(encodeURI(imgURL)).pipe(fs.createWriteStream(imgPath));
+  const total = info.participantIDs.length;
+  const male = info.userInfo.filter(u=>u.gender=="MALE").length;
+  const female = info.userInfo.filter(u=>u.gender=="FEMALE").length;
 
-        download.on("close", () => {
-            api.sendMessage(
-                {
-                    body:
-`🇮🇳✨ 𝐈𝐍𝐃𝐈𝐀𝐍 𝐓𝐇𝐄𝐌𝐄 𝐈𝐍𝐅𝐎 𝐏𝐀𝐍𝐄𝐋 ✨🇮🇳
-══════════════════════════════
+  const msgs = info.messageCount || "N/A";
 
-🎉 **Bot Name:** ${global.config.BOTNAME}
-👑 **Bot Owner:** LEGEND ARYAN
-🔰 **Prefix:** ${global.config.PREFIX}
+  const admins = info.adminIDs
+    .map(a => info.userInfo.find(u => u.id==a.id))
+    .filter(Boolean)
+    .map(u=>`• ${u.name}`).join("\n") || "N/A";
 
-📆 **Today:** ${now}
-⏳ **Uptime:** ${hours}h ${minutes}m ${seconds}s
+  const seen = info.seenBy?.slice(0,8).map(v=>`• ${v.name}`).join("\n") || "N/A";
 
-══════════════════════════════
+  const active = info.messageSenderStats?.slice(0,8)
+    .map(u=>`• ${u.name} — ${u.count}`).join("\n") || "N/A";
 
-🌺 **Indian Vibes Message:**  
-"खुश रहो, मुस्कुराते रहो,  
-और हर दिन कुछ नया सीखते रहो!" 🌼
+  // 🔥 Ultra Minimalist Cyber Oni Images
+  const imgs = [
+    "https://i.imgur.com/qM6gjCL.jpeg",
+    "https://i.imgur.com/de4dJk8.jpeg",
+    "https://i.imgur.com/sRsBpZT.jpeg",
+    "https://i.ibb.co/S7JtZph/cyber-oni-1.jpg",
+    "https://i.ibb.co/JQvJ2kX/cyber-oni-2.jpg"
+  ];
 
-🇮🇳 रंग, संस्कृति और दोस्ती —  
-**यही है भारतीय पहचान.** 💛💚❤️
+  const img = imgs[Math.random()*imgs.length|0];
+  const path = __dirname + "/cache/oni.jpg";
 
-══════════════════════════════
+  rq(img).pipe(fs.createWriteStream(path)).on("close", () => {
 
-📌 **Owner Facebook:**  
-👉 https://www.facebook.com/thelegendary.473934
+    api.sendMessage({
+      body:
+`⚡👹 **ＣＹＢＥＲ  ＯＮＩ — ＣＯＲＥ ＰＡＮＥＬ** 👹⚡
+━━━━━━━━━━━━━━
 
-🙏 **Thank You for using ${global.config.BOTNAME}!** 🙏
+💠 Bot: ${global.config.BOTNAME}
+👑 Owner: LEGEND ARYAN
+✨ Prefix: ${global.config.PREFIX}
 
-══════════════════════════════
-`,
-                    attachment: fs.createReadStream(imgPath)
-                },
-                event.threadID,
-                () => fs.unlinkSync(imgPath)
-            );
-        });
+🕰 India: ${inT}
+🗼 Tokyo: ${jpT}
+⚡ Uptime: ${h}h ${m}m ${s}s
 
-    } catch (e) {
-        api.sendMessage("❌ Info Panel load nahi ho paya!", event.threadID);
-        console.log(e);
-    }
+━━━━━━━━━━━━━━
+👥 **Group Stats**
+• Total: ${total}
+• Boys: ${male} | Girls: ${female}
+• Messages: ${msgs}
+
+━━━━━━━━━━━━━━
+🛡 **Admins**
+${admins}
+
+━━━━━━━━━━━━━━
+👀 **Recent Viewers**
+${seen}
+
+━━━━━━━━━━━━━━
+🔥 **Active Users**
+${active}
+
+━━━━━━━━━━━━━━
+💬 *"In Neon silence… the Oni watches everything."*
+━━━━━━━━━━━━━━`,
+      attachment: fs.createReadStream(path)
+    }, event.threadID, () => fs.unlinkSync(path));
+
+  });
 };
