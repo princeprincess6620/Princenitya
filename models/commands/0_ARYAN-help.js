@@ -1,11 +1,11 @@
 module.exports.config = {
   name: "help",
-  version: "3.0.0", 
+  version: "4.0.0", 
   hasPermssion: 0,
-  credits: "Leiam Nash | ⚡ULTRA PREMIUM⚡",
-  description: "⚡ ULTRA PREMIUM COMMAND SYSTEM ⚡",
+  credits: "Leiam Nash | 🚀 NEXT LEVEL PREMIUM",
+  description: "🚀 NEXT LEVEL PREMIUM COMMAND SYSTEM",
   commandCategory: "system",
-  usages: "[cmd] | [page] | all | categories",
+  usages: "[cmd] | [page] | all | categories | search",
   cooldowns: 1,
   envConfig: {
     autoUnsend: false,
@@ -15,9 +15,9 @@ module.exports.config = {
 
 module.exports.languages = {
   "en": {
-    "moduleInfo": `╔═══════════════✦═══════════════╗
-                 🎯 COMMAND INFO
-╚═══════════════✦═══════════════╝
+    "moduleInfo": `┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+       🎯 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐈𝐍𝐅𝐎
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
 📛 𝗡𝗮𝗺𝗲: %1
 📖 𝗗𝗲𝘀𝗰𝗿𝗶𝗽𝘁𝗶𝗼𝗻: %2
@@ -27,29 +27,39 @@ module.exports.languages = {
 🔐 𝗣𝗲𝗿𝗺𝗶𝘀𝘀𝗶𝗼𝗻: %6
 👨‍💻 𝗔𝘂𝘁𝗵𝗼𝗿: %7
 
-╔═══════════════✦═══════════════╗
-                 𝗘𝗡𝗗
-╚═══════════════✦═══════════════╝`,
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+          𝐄𝐍𝐃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━┛`,
     
-    "helpList": `✨ 𝗨𝗟𝗧𝗥𝗔 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗕𝗢𝗧 𝗦𝗬𝗦𝗧𝗘𝗠 ✨
+    "helpList": `✨ 𝐍𝐄𝐗𝐓 𝐋𝐄𝐕𝐄𝐋 𝐏𝐑𝐄𝐌𝐈𝐔𝐌 𝐒𝐘𝐒𝐓𝐄𝐌 ✨
 
-📊 𝗧𝗼𝘁𝗮𝗹 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: %1
-💡 𝗨𝘀𝗮𝗴𝗲: "%2help <command>"
-🎯 𝗙𝗲𝗮𝘁𝘂𝗿𝗲𝘀:
+📊 Total Commands: %1
+💡 Usage: "%2help <command>"
+🎯 Features:
    • "help all" - Complete command list
    • "help categories" - Browse by category
+   • "help search <keyword>" - Search commands
    • "help <page>" - Paginated view`,
 
-    "user": "👤 𝗨𝘀𝗲𝗿",
-    "adminGroup": "🛡️ 𝗔𝗱𝗺𝗶𝗻 𝗚𝗿𝗼𝘂𝗽", 
-    "adminBot": "👑 𝗕𝗼𝘁 𝗔𝗱𝗺𝗶𝗻",
+    "user": "👤 User",
+    "adminGroup": "🛡️ Admin Group", 
+    "adminBot": "👑 Bot Admin",
     
-    "categoryList": `📂 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬 𝗦𝗬𝗦𝗧𝗘𝗠
+    "categoryList": `📂 𝐂𝐀𝐓𝐄𝐆𝐎𝐑𝐘 𝐒𝐘𝐒𝐓𝐄𝐌
 
 %s
 
-💡 𝗨𝘀𝗮𝗴𝗲: "help category <name>"
-📊 𝗧𝗼𝘁𝗮𝗹 𝗖𝗮𝘁𝗲𝗴𝗼𝗿𝗶𝗲𝘀: %d`
+💡 Usage: "help category <name>"
+🔍 Search: "help search <keyword>"
+📊 Total Categories: %d`,
+    
+    "searchResults": `🔍 𝐒𝐄𝐀𝐑𝐂𝐇 𝐑𝐄𝐒𝐔𝐋𝐓𝐒
+
+Search: "%s"
+Found: %d command(s)
+
+%s
+💡 Use "help <command>" for details`
   }
 };
 
@@ -77,19 +87,48 @@ module.exports.run = function({ api, event, args, getText }) {
   const { autoUnsend, delayUnsend } = global.configModule[this.config.name];
   const prefix = (threadSetting.hasOwnProperty("PREFIX")) ? threadSetting.PREFIX : global.config.PREFIX;
 
-  // 🌟 ULTRA PREMIUM BACKGROUNDS
-  const ultraBackgrounds = [
-    "https://i.imgur.com/8N9xY7B.jpeg",
-    "https://i.imgur.com/3QZz7qg.jpeg",
-    "https://i.imgur.com/5M6T2kX.jpeg",
-    "https://i.imgur.com/2Kj8W7q.jpeg",
-    "https://i.imgur.com/9G8Z6YQ.jpeg",
-    "https://i.imgur.com/X8v9L2f.jpeg",
-    "https://i.imgur.com/L4p9R2s.jpeg",
-    "https://i.imgur.com/N9p8Z2q.jpeg"
+  // 🚀 NEXT LEVEL PREMIUM BACKGROUNDS
+  const premiumBackgrounds = [
+    "https://i.ibb.co/FL2bz1wt/b43c5f7b1645b84c173d42d6352c5bea.jpg",
+    "https://i.ibb.co/jZx2QsnJ/aa0d339a144cbff54c811b2dadc45aa8.jpg", 
+    "https://i.ibb.co/JjCwgwnB/105c5a85175ee00d51792cffeea39e51.jpg",
+    "https://i.ibb.co/1t9stwFJ/e68cbcc8c0a181faa93ccdaab26221c8.jpg",
+    "https://i.ibb.co/DfCkrstq/e3b4cc70d0357500215d7ec2e7997b78.jpg"
   ];
 
-  // 🎯 CATEGORY SYSTEM
+  // 🔍 SEARCH FUNCTIONALITY
+  if (args[0] === "search" && args[1]) {
+    const searchTerm = args.slice(1).join(" ").toLowerCase();
+    const results = [];
+    
+    for (const [name, cmd] of commands) {
+      if (name.toLowerCase().includes(searchTerm) || 
+          cmd.config.description.toLowerCase().includes(searchTerm) ||
+          cmd.config.commandCategory.toLowerCase().includes(searchTerm)) {
+        results.push(name);
+      }
+    }
+    
+    if (results.length === 0) {
+      return api.sendMessage(`❌ No commands found for: "${searchTerm}"`, threadID, messageID);
+    }
+    
+    let searchMsg = "";
+    results.forEach((cmd, index) => {
+      searchMsg += `${index + 1}. ${prefix}${cmd}\n`;
+    });
+    
+    const searchMessage = getText("searchResults", searchTerm, results.length, searchMsg);
+    
+    var callback = () => api.sendMessage({ 
+      body: searchMessage,
+      attachment: fs.createReadStream(__dirname + "/cache/premium_search.jpg")
+    }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/premium_search.jpg"), event.messageID);
+    
+    return request(encodeURI(premiumBackgrounds[Math.floor(Math.random() * premiumBackgrounds.length)])).pipe(fs.createWriteStream(__dirname + "/cache/premium_search.jpg")).on("close", () => callback());
+  }
+
+  // 📂 CATEGORY SYSTEM
   if (args[0] === "categories" || args[0] === "category") {
     const categories = new Map();
     
@@ -104,9 +143,12 @@ module.exports.run = function({ api, event, args, getText }) {
     let categoryList = "";
     let index = 1;
     
-    for (const [category, cmds] of categories) {
+    const sortedCategories = Array.from(categories.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    
+    for (const [category, cmds] of sortedCategories) {
       const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
-      categoryList += `📁 ${index}. ${categoryName}\n   └─ 📊 ${cmds.length} commands\n\n`;
+      const emoji = getCategoryEmoji(category);
+      categoryList += `${emoji} ${index}. ${categoryName}\n   └─ 📊 ${cmds.length} commands\n\n`;
       index++;
     }
     
@@ -114,23 +156,23 @@ module.exports.run = function({ api, event, args, getText }) {
     
     var callback = () => api.sendMessage({ 
       body: categoryMessage,
-      attachment: fs.createReadStream(__dirname + "/cache/ultra_categories.jpg")
-    }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/ultra_categories.jpg"), event.messageID);
+      attachment: fs.createReadStream(__dirname + "/cache/premium_categories.jpg")
+    }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/premium_categories.jpg"), event.messageID);
     
-    return request(encodeURI(ultraBackgrounds[Math.floor(Math.random() * ultraBackgrounds.length)])).pipe(fs.createWriteStream(__dirname + "/cache/ultra_categories.jpg")).on("close", () => callback());
+    return request(encodeURI(premiumBackgrounds[Math.floor(Math.random() * premiumBackgrounds.length)])).pipe(fs.createWriteStream(__dirname + "/cache/premium_categories.jpg")).on("close", () => callback());
   }
 
-  // 🚀 ALL COMMANDS - ULTRA PREMIUM VIEW
+  // 🚀 ALL COMMANDS - NEXT LEVEL VIEW
   if (args[0] == "all") {
     const command = commands.values();
     var group = new Map();
     let msg = "";
     
-    // 🌟 ULTRA PREMIUM HEADER
-    msg += `╔════════════════════════════════════╗\n`;
-    msg += `           ⚡ 𝗨𝗟𝗧𝗥𝗔 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗦𝗬𝗦𝗧𝗘𝗠 ⚡\n`;
-    msg += `╚════════════════════════════════════╝\n\n`;
-    msg += `🎯 𝗖𝗢𝗠𝗣𝗟𝗘𝗧𝗘 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧\n\n`;
+    // 🚀 NEXT LEVEL HEADER
+    msg += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+    msg += `        🚀 𝐍𝐄𝐗𝐓 𝐋𝐄𝐕𝐄𝐋 𝐒𝐘𝐒𝐓𝐄𝐌 🚀\n`;
+    msg += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
+    msg += `🎯 𝐂𝐎𝐌𝐏𝐋𝐄𝐓𝐄 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐋𝐈𝐒𝐓\n\n`;
     
     for (const commandConfig of command) {
       const category = commandConfig.config.commandCategory;
@@ -143,75 +185,55 @@ module.exports.run = function({ api, event, args, getText }) {
     // Sort categories alphabetically
     const sortedCategories = Array.from(group.entries()).sort((a, b) => a[0].localeCompare(b[0]));
     
-    sortedCategories.forEach(([category, cmds], categoryIndex) => {
+    sortedCategories.forEach(([category, cmds]) => {
       const categoryName = category.charAt(0).toUpperCase() + category.slice(1);
-      msg += `📂 𝗖𝗔𝗧𝗘𝗚𝗢𝗥𝗬: ${categoryName}\n`;
-      msg += `├${'─'.repeat(35)}┤\n`;
+      const emoji = getCategoryEmoji(category);
+      msg += `${emoji} 𝐂𝐀𝐓𝐄𝐆𝐎𝐑𝐘: ${categoryName}\n`;
+      msg += `┌${'─'.repeat(32)}┐\n`;
       
-      // Group commands in chunks of 3 for better layout
-      for (let i = 0; i < cmds.length; i += 3) {
-        const chunk = cmds.slice(i, i + 3);
-        const commandLine = chunk.map(cmd => `• ${cmd}`).join('  │  ');
-        msg += `│ ${commandLine}${' '.repeat(35 - commandLine.length)}│\n`;
+      // Group commands in chunks of 4 for better layout
+      for (let i = 0; i < cmds.length; i += 4) {
+        const chunk = cmds.slice(i, i + 4);
+        const commandLine = chunk.map(cmd => `• ${cmd}`).join('  ');
+        msg += `│ ${commandLine}${' '.repeat(30 - commandLine.length)} │\n`;
       }
       
-      msg += `╰${'─'.repeat(35)}╯\n\n`;
+      msg += `└${'─'.repeat(32)}┘\n\n`;
     });
 
-    // 🎊 ULTRA PREMIUM FOOTER
-    msg += `╔════════════════════════════════════╗\n`;
-    msg += `📊 𝗦𝗬𝗦𝗧𝗘𝗠 𝗦𝗧𝗔𝗧𝗨𝗦:\n`;
+    // 🎊 NEXT LEVEL FOOTER
+    msg += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+    msg += `📊 𝐒𝐘𝐒𝐓𝐄𝐌 𝐒𝐓𝐀𝐓𝐔𝐒\n`;
     msg += `├─ Total Commands: ${commands.size}\n`;
     msg += `├─ Total Categories: ${sortedCategories.length}\n`;
     msg += `├─ Prefix: ${prefix}\n`;
-    msg += `├─ Version: 3.0.0 ULTRA\n`;
-    msg += `╰─ Status: 🟢 ONLINE\n\n`;
-    msg += `💡 𝗨𝗦𝗔𝗚𝗘 𝗚𝗨𝗜𝗗𝗘:\n`;
-    msg += `├─ ${prefix}help <command> - Command details\n`;
-    msg += `├─ ${prefix}help categories - Browse categories\n`;
-    msg += `├─ ${prefix}help <page> - Paginated view\n`;
-    msg += `╰─ ${prefix}help all - This view\n\n`;
-    msg += `🚫 𝗦𝗣𝗔𝗠𝗠𝗜𝗡𝗚 𝗦𝗧𝗥𝗜𝗖𝗧𝗟𝗬 𝗣𝗥𝗢𝗛𝗜𝗕𝗜𝗧𝗘𝗗\n`;
-    msg += `💎 𝗨𝗟𝗧𝗥𝗔 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗦𝗬𝗦𝗧𝗘𝗠 𝗩3.0\n`;
-    msg += `╚════════════════════════════════════╝`;
+    msg += `├─ Version: 4.0.0 NEXT LEVEL\n`;
+    msg += `└─ Status: 🟢 ONLINE\n\n`;
+    msg += `💡 𝐔𝐒𝐀𝐆𝐄 𝐆𝐔𝐈𝐃𝐄\n`;
+    msg += `├─ ${prefix}help <command>\n`;
+    msg += `├─ ${prefix}help categories\n`;
+    msg += `├─ ${prefix}help search <keyword>\n`;
+    msg += `├─ ${prefix}help <page>\n`;
+    msg += `└─ ${prefix}help all\n\n`;
+    msg += `⚡ 𝐍𝐄𝐗𝐓 𝐋𝐄𝐕𝐄𝐋 𝐒𝐘𝐒𝐓𝐄𝐌 𝐕4.0\n`;
+    msg += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
 
-    return axios.get('https://apikanna.maduka9.repl.co').then(res => {
-      let ext = res.data.data.substring(res.data.data.lastIndexOf(".") + 1);
-      let admID = "100022944679426";
-
-      api.getUserInfo(parseInt(admID), (err, data) => {
-        if(err) return console.log(err);
-        var obj = Object.keys(data);
-        var firstname = data[obj].name.replace("@", "");
-        
-        let callback = function () {
-          api.sendMessage({ 
-            body: msg,
-            mentions: [{
-              tag: firstname,
-              id: admID,
-              fromIndex: 0,
-            }],
-            attachment: fs.createReadStream(__dirname + `/cache/ultra_all.${ext}`)
-          }, event.threadID, (err, info) => {
-            fs.unlinkSync(__dirname + `/cache/ultra_all.${ext}`);
-            if (autoUnsend == false) {
-              setTimeout(() => { 
-                return api.unsendMessage(info.messageID);
-              }, delayUnsend * 1000);
-            }
-          }, event.messageID);
-        }
-        request(res.data.data).pipe(fs.createWriteStream(__dirname + `/cache/ultra_all.${ext}`)).on("close", callback);
-      });
-    });
+    return api.sendMessage({ 
+      body: msg
+    }, event.threadID, (err, info) => {
+      if (autoUnsend == false) {
+        setTimeout(() => { 
+          return api.unsendMessage(info.messageID);
+        }, delayUnsend * 1000);
+      }
+    }, event.messageID);
   };
 
-  // 📄 PAGINATED VIEW - ULTRA ENHANCED
+  // 📄 PAGINATED VIEW - NEXT LEVEL ENHANCED
   if (!command) {
     const arrayInfo = [];
     const page = parseInt(args[0]) || 1;
-    const numberOfOnePage = 15;
+    const numberOfOnePage = 20;
     let i = 0;
     let msg = "";
 
@@ -225,39 +247,41 @@ module.exports.run = function({ api, event, args, getText }) {
     const helpView = arrayInfo.slice(first, first + numberOfOnePage);
     const totalPages = Math.ceil(arrayInfo.length/numberOfOnePage);
 
-    // 🎨 ULTRA PREMIUM HEADER
-    msg += `╔════════════════════════════════════╗\n`;
-    msg += `           🎯 𝗖𝗢𝗠𝗠𝗔𝗡𝗗 𝗟𝗜𝗦𝗧 🎯\n`;
-    msg += `╚════════════════════════════════════╝\n\n`;
+    // 🎨 NEXT LEVEL HEADER
+    msg += `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+    msg += `          🎯 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐋𝐈𝐒𝐓 🎯\n`;
+    msg += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n\n`;
 
-    // 📝 COMMAND LIST WITH NUMBERING
+    // 📝 COMMAND LIST WITH BETTER NUMBERING
     helpView.forEach((cmds, index) => {
       const num = first + index + 1;
-      msg += `│ ${num.toString().padStart(2, '0')}. ${global.config.PREFIX}${cmds}\n`;
+      const emoji = getCommandEmoji(cmds);
+      msg += `${emoji} ${num.toString().padStart(2, '0')}. ${global.config.PREFIX}${cmds}\n`;
     });
 
-    // 📊 ULTRA PREMIUM FOOTER
-    msg += `\n╔════════════════════════════════════╗\n`;
-    msg += `📄 𝗣𝗔𝗚𝗘: ${page}/${totalPages}\n`;
-    msg += `📊 𝗧𝗢𝗧𝗔𝗟: ${arrayInfo.length} commands\n`;
-    msg += `🔧 𝗣𝗥𝗘𝗙𝗜𝗫: ${prefix}\n`;
-    msg += `╰────────────────────────────────────╯\n\n`;
-    msg += `🎯 𝗡𝗔𝗩𝗜𝗚𝗔𝗧𝗜𝗢𝗡:\n`;
-    msg += `├─ ${prefix}help all - Complete list\n`;
-    msg += `├─ ${prefix}help categories - Browse categories\n`;
-    msg += `├─ ${prefix}help <command> - Command details\n`;
-    if (page < totalPages) msg += `├─ ${prefix}help ${page + 1} - Next page\n`;
-    if (page > 1) msg += `├─ ${prefix}help ${page - 1} - Previous page\n`;
-    msg += `╰─ ${prefix}help 1 - First page\n\n`;
-    msg += `💎 𝗨𝗟𝗧𝗥𝗔 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗦𝗬𝗦𝗧𝗘𝗠 𝗩3.0\n`;
-    msg += `╚════════════════════════════════════╝`;
+    // 📊 NEXT LEVEL FOOTER
+    msg += `\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n`;
+    msg += `📄 Page: ${page}/${totalPages}\n`;
+    msg += `📊 Total: ${arrayInfo.length} commands\n`;
+    msg += `🔧 Prefix: ${prefix}\n`;
+    msg += `└──────────────────────────────────┘\n\n`;
+    msg += `🎯 𝐍𝐀𝐕𝐈𝐆𝐀𝐓𝐈𝐎𝐍\n`;
+    msg += `├─ ${prefix}help all\n`;
+    msg += `├─ ${prefix}help categories\n`;
+    msg += `├─ ${prefix}help search <keyword>\n`;
+    msg += `├─ ${prefix}help <command>\n`;
+    if (page < totalPages) msg += `├─ ${prefix}help ${page + 1}\n`;
+    if (page > 1) msg += `├─ ${prefix}help ${page - 1}\n`;
+    msg += `└─ ${prefix}help 1\n\n`;
+    msg += `⚡ 𝐍𝐄𝐗𝐓 𝐋𝐄𝐕𝐄𝐋 𝐒𝐘𝐒𝐓𝐄𝐌 𝐕4.0\n`;
+    msg += `┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
 
     var callback = () => api.sendMessage({ 
       body: msg, 
-      attachment: fs.createReadStream(__dirname + "/cache/ultra_help.jpg")
-    }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/ultra_help.jpg"), event.messageID);
+      attachment: fs.createReadStream(__dirname + "/cache/premium_help.jpg")
+    }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/premium_help.jpg"), event.messageID);
     
-    return request(encodeURI(ultraBackgrounds[Math.floor(Math.random() * ultraBackgrounds.length)])).pipe(fs.createWriteStream(__dirname + "/cache/ultra_help.jpg")).on("close", () => callback());
+    return request(encodeURI(premiumBackgrounds[Math.floor(Math.random() * premiumBackgrounds.length)])).pipe(fs.createWriteStream(__dirname + "/cache/premium_help.jpg")).on("close", () => callback());
   } 
 
   // 🎯 SINGLE COMMAND VIEW
@@ -265,8 +289,42 @@ module.exports.run = function({ api, event, args, getText }) {
 
   var callback = () => api.sendMessage({ 
     body: leiamname, 
-    attachment: fs.createReadStream(__dirname + "/cache/ultra_command.jpg")
-  }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/ultra_command.jpg"), event.messageID);
+    attachment: fs.createReadStream(__dirname + "/cache/premium_command.jpg")
+  }, event.threadID, () => fs.unlinkSync(__dirname + "/cache/premium_command.jpg"), event.messageID);
   
-  return request(encodeURI(ultraBackgrounds[Math.floor(Math.random() * ultraBackgrounds.length)])).pipe(fs.createWriteStream(__dirname + "/cache/ultra_command.jpg")).on("close", () => callback());
+  return request(encodeURI(premiumBackgrounds[Math.floor(Math.random() * premiumBackgrounds.length)])).pipe(fs.createWriteStream(__dirname + "/cache/premium_command.jpg")).on("close", () => callback());
 };
+
+// 🎯 EMOJI FUNCTIONS FOR BETTER VISUALS
+function getCategoryEmoji(category) {
+  const emojiMap = {
+    'system': '⚙️',
+    'game': '🎮',
+    'fun': '🎯',
+    'music': '🎵',
+    'image': '🖼️',
+    'video': '🎬',
+    'tool': '🛠️',
+    'utility': '🔧',
+    'group': '👥',
+    'user': '👤',
+    'admin': '👑',
+    'nsfw': '🔞',
+    'download': '📥',
+    'create': '🎨'
+  };
+  return emojiMap[category.toLowerCase()] || '📁';
+}
+
+function getCommandEmoji(command) {
+  if (command.includes('game') || command.includes('play')) return '🎮';
+  if (command.includes('music') || command.includes('song')) return '🎵';
+  if (command.includes('image') || command.includes('img')) return '🖼️';
+  if (command.includes('video') || command.includes('movie')) return '🎬';
+  if (command.includes('admin') || command.includes('mod')) return '👑';
+  if (command.includes('group') || command.includes('box')) return '👥';
+  if (command.includes('search') || command.includes('find')) return '🔍';
+  if (command.includes('download') || command.includes('get')) return '📥';
+  if (command.includes('create') || command.includes('make')) return '🎨';
+  return '✨';
+}
