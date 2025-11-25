@@ -53,7 +53,7 @@ module.exports.handleEvent = function ({ api, event, getText }) {
 	const prefix = (threadSetting.hasOwnProperty("PREFIX")) ? threadSetting.PREFIX : global.config.PREFIX;
 	
 	const commandInfo = getText("moduleInfo", 
-		`💫 ${command.config.name}`,
+		command.config.name,
 		command.config.description, 
 		`${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, 
 		command.config.commandCategory, 
@@ -76,7 +76,7 @@ module.exports.run = function({ api, event, args, getText }) {
 		const arrayInfo = Array.from(commands.keys());
 		const totalCommands = arrayInfo.length;
 
-		// 💎 PREMIUM PLATINUM DESIGN
+		// 💎 PREMIUM PLATINUM DESIGN - FIXED STRING REPEAT ISSUES
 		let helpMenu = `◥▶ 𝙈𝘼𝙍𝙄𝘼 𝘽𝙊𝙏 - 𝙋𝙇𝘼𝙏𝙄𝙉𝙐𝙈 𝙀𝘿𝙄𝙏𝙄𝙊𝙉 ◀◤
 
 ╔══════════════════════════════════════╗
@@ -153,20 +153,26 @@ module.exports.run = function({ api, event, args, getText }) {
 			}
 		];
 
-		// Display premium categories
+		// Display premium categories - FIXED STRING REPEAT
 		categories.forEach(category => {
 			const availableCmds = category.commands.filter(cmd => commands.has(cmd));
 			if (availableCmds.length > 0) {
 				helpMenu += `\n\n${category.color} ${category.icon} ${category.title}`;
-				helpMenu += `\n╭─${'─'.repeat(38)}─╮`;
 				
-				// Smart command display
+				// Fixed string repeat with safe values
+				const boxWidth = 38;
+				const safeWidth = Math.max(10, Math.min(boxWidth, 50)); // Ensure safe range
+				const borderLine = "─".repeat(safeWidth);
+				
+				helpMenu += `\n╭─${borderLine}─╮`;
+				
+				// Smart command display with safe padding
 				let currentLine = "";
 				const lines = [];
 				
 				availableCmds.forEach(cmd => {
 					const cmdText = `${prefix}${cmd}`;
-					if (currentLine.length + cmdText.length > 36) {
+					if (currentLine.length + cmdText.length > safeWidth) {
 						lines.push(currentLine);
 						currentLine = cmdText;
 					} else {
@@ -176,10 +182,11 @@ module.exports.run = function({ api, event, args, getText }) {
 				if (currentLine) lines.push(currentLine);
 				
 				lines.forEach(line => {
-					helpMenu += `\n│ ${line.padEnd(38)} │`;
+					const safePadding = Math.max(0, Math.min(safeWidth, safeWidth - line.length));
+					helpMenu += `\n│ ${line}${" ".repeat(safePadding)} │`;
 				});
 				
-				helpMenu += `\n╰─${'─'.repeat(38)}─╯`;
+				helpMenu += `\n╰─${borderLine}─╯`;
 			}
 		});
 
@@ -187,24 +194,33 @@ module.exports.run = function({ api, event, args, getText }) {
             🃏 𝙍𝙀𝘾𝙊𝙈𝙈𝙀𝙉𝘿𝙀𝘿 𝘾𝙊𝙈𝙈𝘼𝙉𝘿𝙎
 ╚══════════════════════════════════════╝`;
 
-		// Premium command grid
+		// Premium command grid - FIXED STRING REPEAT
 		const featuredCommands = arrayInfo.slice(0, 12);
 		const rows = [];
+		const gridWidth = 40;
+		const safeGridWidth = Math.max(20, Math.min(gridWidth, 50)); // Safe range
 		
 		for (let i = 0; i < featuredCommands.length; i += 3) {
 			const rowCommands = featuredCommands.slice(i, i + 3);
 			let row = "│ ";
 			rowCommands.forEach((cmd, index) => {
-				row += `✨ ${prefix}${cmd.padEnd(10)}`;
+				const cmdDisplay = `✨ ${prefix}${cmd}`;
+				row += cmdDisplay.slice(0, 12).padEnd(12); // Limit to 12 chars
 				if (index < rowCommands.length - 1) row += " ▸ ";
 			});
-			row += " ".repeat(40 - row.length) + "│";
+			
+			// Safe padding calculation
+			const currentLength = row.length;
+			const safePadding = Math.max(0, Math.min(safeGridWidth, safeGridWidth + 2 - currentLength));
+			row += " ".repeat(safePadding) + "│";
 			rows.push(row);
 		}
 		
-		helpMenu += `\n╭─${'─'.repeat(40)}─╮`;
+		// Safe border creation
+		const safeBorder = "─".repeat(Math.max(20, Math.min(safeGridWidth, 45)));
+		helpMenu += `\n╭─${safeBorder}─╮`;
 		helpMenu += `\n${rows.join('\n')}`;
-		helpMenu += `\n╰─${'─'.repeat(40)}─╯`;
+		helpMenu += `\n╰─${safeBorder}─╯`;
 
 		if (arrayInfo.length > 12) {
 			helpMenu += `\n\n📊 ...𝙖𝙣𝙙 ${arrayInfo.length - 12} 𝙢𝙤𝙧𝙚 𝙥𝙧𝙚𝙢𝙞𝙪𝙢 𝙘𝙤𝙢𝙢𝙖𝙣𝙙𝙨!`;
@@ -231,7 +247,12 @@ module.exports.run = function({ api, event, args, getText }) {
 
 		// Send with premium reactions
 		return api.sendMessage(helpMenu, threadID, (error, info) => {
-			if (error) return console.error(error);
+			if (error) {
+				console.error("Help2 command error:", error);
+				// Fallback simple help
+				const simpleHelp = `🤖 Maria Bot Help\nCommands: ${totalCommands}\nPrefix: ${prefix}\nUse: ${prefix}help2 <command>`;
+				return api.sendMessage(simpleHelp, threadID, messageID);
+			}
 			
 			// Premium reaction sequence
 			try {
