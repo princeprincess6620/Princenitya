@@ -1,25 +1,41 @@
 module.exports.config = {
 	name: "help2",
-	version: "5.0.0", 
+	version: "PLATINUM", 
 	hasPermssion: 0,
 	credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
-	description: "🎴 𝐏𝐑𝐄𝐌𝐈𝐔𝐌 𝐂𝐀𝐑𝐃 𝐇𝐄𝐋𝐏 - 𝐈𝐧𝐭𝐞𝐫𝐚𝐜𝐭𝐢𝐯𝐞 𝐂𝐨𝐦𝐦𝐚𝐧𝐝 𝐆𝐮𝐢𝐝𝐞",
+	description: "💎 𝐏𝐋𝐀𝐓𝐈𝐍𝐔𝐌 𝐇𝐄𝐋𝐏 - 𝐏𝐑𝐄𝐌𝐈𝐔𝐌 𝐄𝐃𝐈𝐓𝐈𝐎𝐍",
 	commandCategory: "system",
-	usages: "[command/category]",
+	usages: "[cmd]",
 	cooldowns: 1,
 	envConfig: {
 		autoUnsend: false,
-		delayUnsend: 120
+		delayUnsend: 240
 	}
 };
 
 module.exports.languages = {
 	"en": {
-		"moduleInfo": "🃏 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐂𝐀𝐑𝐃\n\n┏━━━━━━━━━━━━━━━━━━┓\n┃    🎯 𝐂𝐀𝐑𝐃 𝐈𝐍𝐅𝐎    ┃\n┗━━━━━━━━━━━━━━━━━━┛\n\n🃏 𝐍𝐚𝐦𝐞: %1\n📝 𝐃𝐞𝐬𝐜: %2\n⚡ 𝐔𝐬𝐚𝐠𝐞: %3\n📁 𝐂𝐚𝐭𝐞𝐠𝐨𝐫𝐲: %4\n⏱️ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧: %5s\n🔐 𝐏𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧: %6\n👨‍💻 𝐃𝐞𝐯: %7\n\n┏━━━━━━━━━━━━━━━━━━┓\n┃  ⚡ 𝐏𝐎𝐖𝐄𝐑𝐄𝐃 𝐁𝐘   ┃\n┗━━━━━━━━━━━━━━━━━━┛\n       𝐌𝐀𝐑𝐈𝐀 𝐁𝐎𝐓",
-		"helpList": "🃏 𝐓𝐨𝐭𝐚𝐥 %1 𝐜𝐚𝐫𝐝𝐬 • \"%2help2 <𝐜𝐦𝐝>\"",
-		"user": "👤 𝐔𝐬𝐞𝐫",
-		"adminGroup": "👑 𝐀𝐝𝐦𝐢𝐧", 
-		"adminBot": "🤖 𝐁𝐨𝐭 𝐀𝐝𝐦𝐢𝐧"
+		"moduleInfo": `◥▶ 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝘾𝙊𝙈𝙈𝘼𝙉𝘿 𝘾𝘼𝙍𝘿 ◀◤
+
+╭─━━━━━─━━━━━─━━━━━─╮
+         🎯 𝘾𝙊𝙈𝙈𝘼𝙉𝘿 𝙄𝙉𝙁𝙊
+╰─━━━━━─━━━━━─━━━━━─╯
+
+✨ 𝙉𝘼𝙈𝙀: %1
+📖 𝘿𝙀𝙎𝘾: %2  
+⚡ 𝙐𝙎𝘼𝙂𝙀: %3
+📂 𝘾𝘼𝙏𝙀𝙂𝙊𝙍𝙔: %4
+⏰ 𝘾𝙊𝙊𝙇𝘿𝙊𝙒𝙉: %5s
+🔐 𝙋𝙀𝙍𝙈𝙄𝙎𝙎𝙄𝙊𝙉: %6
+👨‍💻 𝘿𝙀𝙑𝙀𝙇𝙊𝙋𝙀𝙍: %7
+
+╭─━━━━━─━━━━━─━━━━━─╮
+      💎 𝙋𝙊𝙒𝙀𝙍𝙀𝘿 𝘽𝙔 𝙈𝘼𝙍𝙄𝘼
+╰─━━━━━─━━━━━─━━━━━─╯`,
+		"helpList": "💎 𝙏𝙤𝙩𝙖𝙡 %1 𝙘𝙤𝙢𝙢𝙖𝙣𝙙𝙨 • 𝙐𝙨𝙚 \"%2𝙝𝙚𝙡𝙥2 <𝙘𝙢𝙙>\"",
+		"user": "👤 𝙐𝙨𝙚𝙧",
+		"adminGroup": "👑 𝘼𝙙𝙢𝙞𝙣", 
+		"adminBot": "🤖 𝘽𝙤𝙩 𝘼𝙙𝙢𝙞𝙣"
 	}
 };
 
@@ -27,7 +43,6 @@ module.exports.handleEvent = function ({ api, event, getText }) {
 	const { commands } = global.client;
 	const { threadID, messageID, body } = event;
 
-	// Only respond to help2 command
 	if (!body || typeof body == "undefined" || body.indexOf("help2") != 0) return;
 	
 	const splitBody = body.slice(body.indexOf("help2")).trim().split(/\s+/);
@@ -38,7 +53,7 @@ module.exports.handleEvent = function ({ api, event, getText }) {
 	const prefix = (threadSetting.hasOwnProperty("PREFIX")) ? threadSetting.PREFIX : global.config.PREFIX;
 	
 	const commandInfo = getText("moduleInfo", 
-		command.config.name,
+		`💫 ${command.config.name}`,
 		command.config.description, 
 		`${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, 
 		command.config.commandCategory, 
@@ -61,173 +76,185 @@ module.exports.run = function({ api, event, args, getText }) {
 		const arrayInfo = Array.from(commands.keys());
 		const totalCommands = arrayInfo.length;
 
-		// 🎴 PREMIUM CARD DESIGN HELP MENU
-		let helpMenu = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        🎴 𝐌𝐀𝐑𝐈𝐀 𝐁𝐎𝐓 𝐂𝐀𝐑𝐃𝐒        ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+		// 💎 PREMIUM PLATINUM DESIGN
+		let helpMenu = `◥▶ 𝙈𝘼𝙍𝙄𝘼 𝘽𝙊𝙏 - 𝙋𝙇𝘼𝙏𝙄𝙉𝙐𝙈 𝙀𝘿𝙄𝙏𝙄𝙊𝙉 ◀◤
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃        📊 𝐒𝐓𝐀𝐓𝐒 𝐂𝐀𝐑𝐃        ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-🃏 𝐓𝐨𝐭𝐚𝐥 𝐂𝐚𝐫𝐝𝐬: ${totalCommands}
-🎯 𝐏𝐫𝐞𝐟𝐢𝐱: ${prefix}
-👑 𝐎𝐰𝐧𝐞𝐫: 𝐫𝐗 𝐀𝐛𝐝𝐮𝐥𝐥𝐚𝐡
-⚡ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧: 5.0.0
+╔══════════════════════════════════════╗
+            💫 𝙎𝙔𝙎𝙏𝙀𝙈 𝙎𝙏𝘼𝙏𝙐𝙎
+╚══════════════════════════════════════╝
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃       🎪 𝐂𝐀𝐓𝐄𝐆𝐎𝐑𝐘 𝐂𝐀𝐑𝐃𝐒       ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
+◈ 𝙏𝙤𝙩𝙖𝙡 𝘾𝙤𝙢𝙢𝙖𝙣𝙙𝙨: ${totalCommands}
+◈ 𝘽𝙤𝙩 𝙋𝙧𝙚𝙛𝙞𝙭: [ ${prefix} ]
+◈ 𝙑𝙚𝙧𝙨𝙞𝙤𝙣: 𝙋𝙇𝘼𝙏𝙄𝙉𝙐𝙈
+◈ 𝙊𝙬𝙣𝙚𝙧: 𝐫𝐗 𝐀𝐛𝐝𝐮𝐥𝐥𝐚𝐡
+◈ 𝙎𝙩𝙖𝙩𝙪𝙨: 🟢 𝙊𝙣𝙡𝙞𝙣𝙚 & 𝘼𝙘𝙩𝙞𝙫𝙚
 
-		// 🎯 CARD STYLE CATEGORIES - MIRAI BOT COMPATIBLE
-		const cardCategories = [
+╔══════════════════════════════════════╗
+            🎯 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝘾𝘼𝙏𝙀𝙂𝙊𝙍𝙄𝙀𝙎
+╚══════════════════════════════════════╝`;
+
+		// 💎 PREMIUM CATEGORIES WITH ICONS
+		const categories = [
 			{ 
-				title: "🤖 𝐀𝐈 𝐂𝐀𝐑𝐃𝐒", 
-				commands: ["ai", "openai", "simsimi", "baby", "maria", "gpt", "bard"],
-				color: "🟦"
+				title: "🤖 𝘼𝙄 & 𝘾𝙃𝘼𝙏", 
+				commands: ["ai", "gpt", "bard", "simsimi", "chat", "maria", "openai"],
+				icon: "🤖",
+				style: "🔷",
+				color: "🔵"
 			},
 			{ 
-				title: "🎮 𝐆𝐀𝐌𝐄 𝐂𝐀𝐑𝐃𝐒", 
-				commands: ["game", "casino", "slot", "quiz", "mine", "dice", "rps"],
-				color: "🟩" 
+				title: "🎮 𝙂𝘼𝙈𝙄𝙉𝙂", 
+				commands: ["game", "casino", "slot", "dice", "rps", "quiz", "mine"],
+				icon: "🎮", 
+				style: "🎯",
+				color: "🟢"
 			},
 			{ 
-				title: "🖼️ 𝐈𝐌𝐀𝐆𝐄 𝐂𝐀𝐑𝐃𝐒", 
+				title: "🖼️ 𝙄𝙈𝘼𝙂𝙀", 
 				commands: ["edit", "avt", "pp", "meme", "create", "generate", "img"],
-				color: "🟪"
+				icon: "🖼️",
+				style: "💜", 
+				color: "🟣"
 			},
 			{ 
-				title: "👥 𝐆𝐑𝐎𝐔𝐏 𝐂𝐀𝐑𝐃𝐒", 
-				commands: ["adduser", "ban", "kick", "setname", "boxinfo", "admin", "members"],
-				color: "🟨"
+				title: "👥 𝙂𝙍𝙊𝙐𝙋", 
+				commands: ["adduser", "ban", "kick", "setname", "admin", "members", "boxinfo"],
+				icon: "👥",
+				style: "💛",
+				color: "🟡"
 			},
 			{ 
-				title: "🎵 𝐌𝐄𝐃𝐈𝐀 𝐂𝐀𝐑𝐃𝐒", 
-				commands: ["song", "video", "youtube", "mp3", "getvideo", "play", "music"],
-				color: "🟥"
+				title: "🎵 𝙈𝙀𝘿𝙄𝘼", 
+				commands: ["song", "video", "yt", "mp3", "play", "music", "getvideo"],
+				icon: "🎵",
+				style: "❤️",
+				color: "🔴"
 			},
 			{ 
-				title: "⚙️ 𝐓𝐎𝐎𝐋 𝐂𝐀𝐑𝐃𝐒", 
-				commands: ["getlink", "removebg", "translate", "qr", "scan", "weather", "time"],
-				color: "🟧"
+				title: "⚡ 𝙏𝙊𝙊𝙇𝙎", 
+				commands: ["getlink", "removebg", "translate", "qr", "weather", "time", "scan"],
+				icon: "⚡",
+				style: "💚",
+				color: "🟢"
 			},
 			{ 
-				title: "💖 𝐅𝐔𝐍 𝐂𝐀𝐑𝐃𝐒", 
-				commands: ["hug", "kiss", "marry", "couple", "truth", "dare", "joke"],
-				color: "💗"
+				title: "😄 𝙁𝙐𝙉", 
+				commands: ["hug", "kiss", "marry", "couple", "joke", "meme", "truth", "dare"],
+				icon: "😄",
+				style: "💖",
+				color: "❤️"
 			},
 			{ 
-				title: "👑 𝐀𝐃𝐌𝐈𝐍 𝐂𝐀𝐑𝐃𝐒", 
-				commands: ["admin", "approve", "unban", "settings", "config", "eval", "shell"],
-				color: "👑"
+				title: "👑 𝘼𝘿𝙈𝙄𝙉", 
+				commands: ["admin", "settings", "config", "eval", "shell", "broadcast", "approve"],
+				icon: "👑",
+				style: "🔥",
+				color: "🟠"
 			}
 		];
 
-		// Display category cards
-		cardCategories.forEach(category => {
+		// Display premium categories
+		categories.forEach(category => {
 			const availableCmds = category.commands.filter(cmd => commands.has(cmd));
 			if (availableCmds.length > 0) {
-				helpMenu += `\n${category.color} ${category.title}`;
-				helpMenu += `\n┌─${'─'.repeat(26)}─┐`;
+				helpMenu += `\n\n${category.color} ${category.icon} ${category.title}`;
+				helpMenu += `\n╭─${'─'.repeat(38)}─╮`;
 				
-				// Split commands into chunks to fit in box
-				const cmdChunks = [];
-				let currentChunk = [];
-				let currentLength = 0;
+				// Smart command display
+				let currentLine = "";
+				const lines = [];
 				
 				availableCmds.forEach(cmd => {
 					const cmdText = `${prefix}${cmd}`;
-					if (currentLength + cmdText.length > 25) {
-						cmdChunks.push([...currentChunk]);
-						currentChunk = [cmdText];
-						currentLength = cmdText.length;
+					if (currentLine.length + cmdText.length > 36) {
+						lines.push(currentLine);
+						currentLine = cmdText;
 					} else {
-						currentChunk.push(cmdText);
-						currentLength += cmdText.length + 2;
+						currentLine += (currentLine ? " • " : "") + cmdText;
 					}
 				});
-				if (currentChunk.length > 0) cmdChunks.push(currentChunk);
+				if (currentLine) lines.push(currentLine);
 				
-				cmdChunks.forEach(chunk => {
-					helpMenu += `\n│ ${chunk.join(' ')}`;
+				lines.forEach(line => {
+					helpMenu += `\n│ ${line.padEnd(38)} │`;
 				});
-				helpMenu += `\n└─${'─'.repeat(26)}─┘\n`;
+				
+				helpMenu += `\n╰─${'─'.repeat(38)}─╯`;
 			}
 		});
 
-		helpMenu += `\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃       🃏 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐂𝐀𝐑𝐃𝐒       ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
+		helpMenu += `\n\n╔══════════════════════════════════════╗
+            🃏 𝙍𝙀𝘾𝙊𝙈𝙈𝙀𝙉𝘿𝙀𝘿 𝘾𝙊𝙈𝙈𝘼𝙉𝘿𝙎
+╚══════════════════════════════════════╝`;
 
-		// Display first 12 commands in card format
-		const displayCommands = arrayInfo.slice(0, 12);
-		let commandGrid = "";
+		// Premium command grid
+		const featuredCommands = arrayInfo.slice(0, 12);
+		const rows = [];
 		
-		for (let i = 0; i < displayCommands.length; i++) {
-			if (i % 3 === 0) {
-				if (i !== 0) commandGrid += `\n`;
-				commandGrid += `│ `;
-			}
-			commandGrid += `🃏 ${prefix}${displayCommands[i].padEnd(10)}`;
-			if ((i + 1) % 3 !== 0 && i !== displayCommands.length - 1) {
-				commandGrid += ` • `;
-			}
+		for (let i = 0; i < featuredCommands.length; i += 3) {
+			const rowCommands = featuredCommands.slice(i, i + 3);
+			let row = "│ ";
+			rowCommands.forEach((cmd, index) => {
+				row += `✨ ${prefix}${cmd.padEnd(10)}`;
+				if (index < rowCommands.length - 1) row += " ▸ ";
+			});
+			row += " ".repeat(40 - row.length) + "│";
+			rows.push(row);
 		}
 		
-		helpMenu += `\n${commandGrid}`;
+		helpMenu += `\n╭─${'─'.repeat(40)}─╮`;
+		helpMenu += `\n${rows.join('\n')}`;
+		helpMenu += `\n╰─${'─'.repeat(40)}─╯`;
 
-		// Show remaining commands count
 		if (arrayInfo.length > 12) {
-			helpMenu += `\n\n📋 ...and ${arrayInfo.length - 12} more commands!`;
+			helpMenu += `\n\n📊 ...𝙖𝙣𝙙 ${arrayInfo.length - 12} 𝙢𝙤𝙧𝙚 𝙥𝙧𝙚𝙢𝙞𝙪𝙢 𝙘𝙤𝙢𝙢𝙖𝙣𝙙𝙨!`;
 		}
 
-		helpMenu += `\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃       📖 𝐆𝐔𝐈𝐃𝐄 𝐂𝐀𝐑𝐃        ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-🎴 ${prefix}help2 <command> - View card
-🎴 ${prefix}help2 ai - AI commands  
-🎴 ${prefix}help - Main help menu
-🎴 ${prefix}menu - Alternative menu
+		helpMenu += `\n\n╔══════════════════════════════════════╗
+            📖 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙂𝙐𝙄𝘿𝙀
+╚══════════════════════════════════════╝
+◈ ${prefix}help2 <command>  - 𝘾𝙤𝙢𝙢𝙖𝙣𝙙 𝙙𝙚𝙩𝙖𝙞𝙡𝙨
+◈ ${prefix}help2 ai        - 𝘼𝙄 𝙘𝙤𝙢𝙢𝙖𝙣𝙙𝙨
+◈ ${prefix}help2 game      - 𝙂𝙖𝙢𝙞𝙣𝙜 𝙛𝙚𝙖𝙩𝙪𝙧𝙚𝙨  
+◈ ${prefix}help2 admin     - 𝘼𝙙𝙢𝙞𝙣 𝙩𝙤𝙤𝙡𝙨
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃       🌟 𝐂𝐑𝐄𝐃𝐈𝐓 𝐂𝐀𝐑𝐃        ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-👨‍💻 𝐃𝐞𝐯: 𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭
-🤖 𝐁𝐨𝐭: 𝐌𝐚𝐫𝐢𝐚 𝐁𝐨𝐭 𝐕5
-🎨 𝐃𝐞𝐬𝐢𝐠𝐧: 𝐏𝐫𝐞𝐦𝐢𝐮𝐦 𝐂𝐚𝐫𝐝𝐬
-📱 𝐏𝐥𝐚𝐭𝐟𝐨𝐫𝐦: 𝐌𝐢𝐫𝐚𝐢 𝐁𝐨𝐭
+╔══════════════════════════════════════╗
+            💎 𝙋𝙍𝙀𝙈𝙄𝙐𝙈 𝙄𝙉𝙁𝙊
+╚══════════════════════════════════════╝
+✨ 𝘿𝙚𝙫𝙚𝙡𝙤𝙥𝙚𝙧: 𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭
+🤖 𝘽𝙤𝙩: 𝙈𝙖𝙧𝙞𝙖 𝘽𝙤𝙩 𝙋𝙡𝙖𝙩𝙞𝙣𝙪𝙢
+👑 𝙊𝙬𝙣𝙚𝙧: 𝐫𝐗 𝐀𝐛𝐝𝐮𝐥𝐥𝐚𝐡
+🎨 𝘿𝙚𝙨𝙞𝙜𝙣: 𝙋𝙧𝙚𝙢𝙞𝙪𝙢 𝙀𝙙𝙞𝙩𝙞𝙤𝙣
+⏰ 𝘼𝙪𝙩𝙤-𝙘𝙡𝙚𝙖𝙣: 4 𝙢𝙞𝙣𝙪𝙩𝙚𝙨
 
-${'╔' + '═'.repeat(30) + '╗'}
-${'║' + ' '.repeat(30) + '║'}
-║    🎴 𝐄𝐧𝐣𝐨𝐲 𝐭𝐡𝐞 𝐂𝐚𝐫𝐝𝐬! 🎴    ║
-${'║' + ' '.repeat(30) + '║'}
-${'╚' + '═'.repeat(30) + '╝'}`;
+◥▶ 𝙏𝙃𝘼𝙉𝙆 𝙔𝙊𝙐 𝙁𝙊𝙍 𝘾𝙃𝙊𝙊𝙎𝙄𝙉𝙂 𝙋𝙍𝙀𝙈𝙄𝙐𝙈! ◀◤`;
 
-		// Send the help menu
+		// Send with premium reactions
 		return api.sendMessage(helpMenu, threadID, (error, info) => {
 			if (error) return console.error(error);
 			
-			// Add card-themed reactions if possible
+			// Premium reaction sequence
 			try {
-				setTimeout(() => {
-					api.setMessageReaction("🃏", info.messageID, () => {}, true);
+				const premiumReactions = ["💎", "✨", "⭐", "🔥", "🎯", "👑"];
+				premiumReactions.forEach((reaction, index) => {
 					setTimeout(() => {
-						api.setMessageReaction("🎴", info.messageID, () => {}, true);
-					}, 500);
-				}, 1000);
+						api.setMessageReaction(reaction, info.messageID, () => {}, true);
+					}, (index + 1) * 600);
+				});
 			} catch (e) {
 				// Ignore reaction errors
 			}
 
-			// Auto delete after 2 minutes if enabled
-			if (global.configModule[module.exports.config.name].envConfig.autoUnsend) {
-				setTimeout(() => {
+			// Auto delete after 4 minutes
+			setTimeout(() => {
+				try {
 					api.unsendMessage(info.messageID);
-				}, global.configModule[module.exports.config.name].envConfig.delayUnsend * 1000);
-			}
+				} catch (e) {}
+			}, 240000);
 		});
 	}
 
-	// 🎴 INDIVIDUAL COMMAND CARD
+	// Individual command premium card
 	const commandInfo = getText("moduleInfo", 
 		command.config.name,
 		command.config.description, 
