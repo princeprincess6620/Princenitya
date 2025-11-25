@@ -1,25 +1,42 @@
 module.exports.config = {
 	name: "help2",
-	version: "1.0.2",
+	version: "5.0.0", 
 	hasPermssion: 0,
 	credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
-	description: "Beginner's Guide",
+	description: "🎴 𝐏𝐑𝐄𝐌𝐈𝐔𝐌 𝐂𝐀𝐑𝐃 𝐇𝐄𝐋𝐏 - 𝐈𝐧𝐭𝐞𝐫𝐚𝐜𝐭𝐢𝐯𝐞 𝐂𝐨𝐦𝐦𝐚𝐧𝐝 𝐆𝐮𝐢𝐝𝐞",
 	commandCategory: "system",
-	usages: "[Tên module]",
+	usages: "[command/category]",
 	cooldowns: 1,
 	envConfig: {
-		autoUnsend: true,
-		delayUnsend: 300
+		autoUnsend: false,
+		delayUnsend: 120
 	}
 };
 
 module.exports.languages = {
 	"en": {
-		"moduleInfo": "「 %1 」\n%2\n\n❯ Usage: %3\n❯ Category: %4\n❯ Waiting time: %5 seconds(s)\n❯ Permission: %6\n\n» Module code by %7 «",
-		"helpList": '[ There are %1 commands on this bot, Use: "%2help nameCommand" to know how to use! ]',
-		"user": "User",
-		"adminGroup": "Admin group",
-		"adminBot": "Admin bot"
+		"moduleInfo": `🃏 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐂𝐀𝐑𝐃
+
+┏━━━━━━━━━━━━━━━━━━┓
+┃    🎯 𝐂𝐀𝐑𝐃 𝐈𝐍𝐅𝐎    ┃
+┗━━━━━━━━━━━━━━━━━━┛
+
+🃏 𝐍𝐚𝐦𝐞: ${"%" + "1"}
+📝 𝐃𝐞𝐬𝐜: ${"%" + "2"}
+⚡ 𝐔𝐬𝐚𝐠𝐞: ${"%" + "3"}
+📁 𝐂𝐚𝐭𝐞𝐠𝐨𝐫𝐲: ${"%" + "4"}
+⏱️ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧: ${"%" + "5"}s
+🔐 𝐏𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧: ${"%" + "6"}
+👨‍💻 𝐃𝐞𝐯: ${"%" + "7"}
+
+┏━━━━━━━━━━━━━━━━━━┓
+┃  ⚡ 𝐏𝐎𝐖𝐄𝐑𝐄𝐃 𝐁𝐘   ┃
+┗━━━━━━━━━━━━━━━━━━┛
+       𝐌𝐀𝐑𝐈𝐀 𝐁𝐎𝐓`,
+		"helpList": '🃏 𝐓𝐨𝐭𝐚𝐥 ${"%" + "1"} 𝐜𝐚𝐫𝐝𝐬 • "${"%" + "2"}𝐡𝐞𝐥𝐩 <𝐜𝐦𝐝>"',
+		"user": "👤 𝐔𝐬𝐞𝐫",
+		"adminGroup": "👑 𝐀𝐝𝐦𝐢𝐧", 
+		"adminBot": "🤖 𝐁𝐨𝐭 𝐀𝐝𝐦𝐢𝐧"
 	}
 };
 
@@ -33,7 +50,20 @@ module.exports.handleEvent = function ({ api, event, getText }) {
 	const threadSetting = global.data.threadData.get(parseInt(threadID)) || {};
 	const command = commands.get(splitBody[1].toLowerCase());
 	const prefix = (threadSetting.hasOwnProperty("PREFIX")) ? threadSetting.PREFIX : global.config.PREFIX;
-	return api.sendMessage(getText("moduleInfo", command.config.name, command.config.description, `${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, command.config.commandCategory, command.config.cooldowns, ((command.config.hasPermssion == 0) ? getText("user") : (command.config.hasPermssion == 1) ? getText("adminGroup") : getText("adminBot")), command.config.credits), threadID, messageID);
+	
+	const commandInfo = getText("moduleInfo", 
+		`${command.config.name}`,
+		command.config.description, 
+		`${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, 
+		command.config.commandCategory, 
+		command.config.cooldowns, 
+		((command.config.hasPermssion == 0) ? getText("user") : (command.config.hasPermssion == 1) ? getText("adminGroup") : getText("adminBot")), 
+		command.config.credits
+	);
+	
+	api.sendTypingIndicator(threadID, () => {
+		api.sendMessage(commandInfo, threadID, messageID);
+	});
 }
 
 module.exports.run = function({ api, event, args, getText }) {
@@ -41,307 +71,169 @@ module.exports.run = function({ api, event, args, getText }) {
 	const { threadID, messageID } = event;
 	const command = commands.get((args[0] || "").toLowerCase());
 	const threadSetting = global.data.threadData.get(parseInt(threadID)) || {};
-	const { autoUnsend, delayUnsend } = global.configModule[this.config.name];
 	const prefix = (threadSetting.hasOwnProperty("PREFIX")) ? threadSetting.PREFIX : global.config.PREFIX;
 
 	if (!command) {
-		const arrayInfo = [];
-		const page = parseInt(args[0]) || 1;
-		const numberOfOnePage = 9999;
-		let i = 0;
-		let msg = "";
-		
-		for (var [name, value] of (commands)) {
-			name += ``;
-			arrayInfo.push(name);
+		const arrayInfo = Array.from(commands.keys());
+		const totalCommands = arrayInfo.length;
+
+		// 🎴 PREMIUM CARD DESIGN HELP MENU
+		let helpMenu = `┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        🎴 𝐌𝐀𝐑𝐈𝐀 𝐁𝐎𝐓 𝐂𝐀𝐑𝐃𝐒        ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        📊 𝐒𝐓𝐀𝐓𝐒 𝐂𝐀𝐑𝐃        ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+🃏 𝐓𝐨𝐭𝐚𝐥 𝐂𝐚𝐫𝐝𝐬: ${totalCommands}
+🎯 𝐏𝐫𝐞𝐟𝐢𝐱: ${prefix}
+👑 𝐎𝐰𝐧𝐞𝐫: 𝐫𝐗 𝐀𝐛𝐝𝐮𝐥𝐥𝐚𝐡
+⚡ 𝐕𝐞𝐫𝐬𝐢𝐨𝐧: 5.0.0
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃       🎪 𝐂𝐀𝐓𝐄𝐆𝐎𝐑𝐘 𝐂𝐀𝐑𝐃𝐒       ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
+
+		// 🎯 CARD STYLE CATEGORIES
+		const cardCategories = [
+			{ 
+				title: "🤖 𝐀𝐈 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["ai", "openai", "simsimi", "baby", "maria"],
+				color: "🟦"
+			},
+			{ 
+				title: "🎮 𝐆𝐀𝐌𝐄 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["3card", "baicao", "casino", "slot", "quiz", "mine"],
+				color: "🟩" 
+			},
+			{ 
+				title: "🖼️ 𝐈𝐌𝐀𝐆𝐄 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["4k", "avt", "pp", "meme", "flux", "imagine"],
+				color: "🟪"
+			},
+			{ 
+				title: "👥 𝐆𝐑𝐎𝐔𝐏 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["adduser", "ban", "kick", "setname", "boxinfo"],
+				color: "🟨"
+			},
+			{ 
+				title: "🎵 𝐌𝐄𝐃𝐈𝐀 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["song", "video", "youtube", "mp3", "getvideo"],
+				color: "🟥"
+			},
+			{ 
+				title: "⚙️ 𝐓𝐎𝐎𝐋 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["getlink", "removebg", "translate", "qr", "scan"],
+				color: "🟧"
+			},
+			{ 
+				title: "💖 𝐅𝐔𝐍 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["hug", "kiss", "marry", "couple", "truthordare"],
+				color: "💗"
+			},
+			{ 
+				title: "👑 𝐀𝐃𝐌𝐈𝐍 𝐂𝐀𝐑𝐃𝐒", 
+				commands: ["admin", "approve", "unban", "settings", "config"],
+				color: "👑"
+			}
+		];
+
+		// Display category cards
+		cardCategories.forEach(category => {
+			const availableCmds = category.commands.filter(cmd => commands.has(cmd));
+			if (availableCmds.length > 0) {
+				helpMenu += `\n${category.color} ${category.title}`;
+				helpMenu += `\n┌─${'─'.repeat(28)}─┐`;
+				helpMenu += `\n│ ${availableCmds.map(cmd => `${prefix}${cmd}`).join(' │ ')}`;
+				helpMenu += `\n└─${'─'.repeat(28)}─┘\n`;
+			}
+		});
+
+		helpMenu += `\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃       🃏 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐂𝐀𝐑𝐃𝐒       ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
+
+		// Display commands in card format (3 columns)
+		for (let i = 0; i < Math.min(15, arrayInfo.length); i++) {
+			if (i % 3 === 0) {
+				if (i !== 0) helpMenu += ` │\n`;
+				helpMenu += `\n│ `;
+			}
+			helpMenu += `🃏 ${prefix}${arrayInfo[i].padEnd(12)}`;
+			if ((i + 1) % 3 !== 0 && i !== arrayInfo.length - 1) {
+				helpMenu += ` │ `;
+			}
 		}
-
-		arrayInfo.sort((a, b) => a.data - b.data);
-		
-		const startSlice = numberOfOnePage*page - numberOfOnePage;
-		i = startSlice;
-		const returnArray = arrayInfo.slice(startSlice, startSlice + numberOfOnePage);
-		
-		for (let item of returnArray) msg += `「 ${++i} 」${prefix}${item}\n`;
-		
-		// Create the help menu with all categories
-		let helpMenu = `╭──❏ 𝐀𝐮𝐭𝐨 𝐃𝐞𝐭𝐞𝐜𝐭 𝐇𝐞𝐥𝐩 ❏──╮\n`;
-		helpMenu += `│ ✧ Total Commands: ${arrayInfo.length}\n`;
-		helpMenu += `│ ✧ Prefix: ${prefix}\n`;
-		helpMenu += `╰─────────────────────⭓\n\n`;
-
-		// Add all categories and commands
-		helpMenu += `╭─────⭓ NO PREFIX\n`;
-		helpMenu += `│ ✧gali ✧✧suar ✧✧fyoutoo ✧✧gali ✧✧rumana\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ FUN\n`;
-		helpMenu += `│ ✧maria ✧✧needgf ✧✧reedit ✧✧truefalse ✧✧truthordare\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ ADMIN\n`;
-		helpMenu += `│ ✧out ✧✧admin ✧✧allbox ✧✧approve ✧✧appstate ✧✧by ✧✧callad ✧✧file ✧✧load ✧✧leave ✧✧setprofile ✧✧unban ✧✧vip\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ NOPREFIX\n`;
-		helpMenu += `│ ✧😔 ✧✧😅 ✧✧fixspam-chuibot ✧✧babyteach ✧✧bot ✧✧rules\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ GAME\n`;
-		helpMenu += `│ ✧3card ✧✧baicao ✧✧banbaucua ✧✧banchim ✧✧bantaixiu ✧✧bc ✧✧mine ✧✧quiz\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ IMAGE EDITING TOOLS\n`;
-		helpMenu += `│ ✧4k\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ ADMIN\n`;
-		helpMenu += `│ ✧bio ✧✧config ✧✧delete ✧✧setkey ✧✧settings\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ GROUP\n`;
-		helpMenu += `│ ✧rank ✧✧setemoji ✧✧setprefix\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ FRIEND REQUEST\n`;
-		helpMenu += `│ ✧acp\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ SYSTEM\n`;
-		helpMenu += `│ ✧actionGuard ✧✧cmd ✧✧gettoken ✧✧join ✧✧language ✧✧leave ✧✧listban ✧✧listbox ✧✧logout ✧✧resetexp ✧✧rnamebox ✧✧shell ✧✧spamban ✧✧stt\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ MEDIA\n`;
-		helpMenu += `│ ✧ckbot ✧✧album ✧✧ckuser ✧✧Convert\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ GROUP\n`;
-		helpMenu += `│ ✧adduser ✧✧ban ✧✧lock ✧✧tid ✧✧warn\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ AI\n`;
-		helpMenu += `│ ✧ai ✧✧openai\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ GENERAL\n`;
-		helpMenu += `│ ✧allgc\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ SYSTEM\n`;
-		helpMenu += `│ ✧message ✧✧antijoin ✧✧antiout ✧✧birthdayAuto ✧✧clearcache ✧✧cs ✧✧custom ✧✧help ✧✧menu ✧✧pending ✧✧prefix ✧✧restart ✧✧setphoto ✧✧typingtest ✧✧unsend ✧✧upt ✧✧uptime ✧✧user\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ MODERATION\n`;
-		helpMenu += `│ ✧antigali\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ USER\n`;
-		helpMenu += `│ ✧autodl ✧✧qr ✧✧scan\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ NO PREFIX\n`;
-		helpMenu += `│ ✧autoreact\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ TOOLS\n`;
-		helpMenu += `│ ✧autoseen\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ CÔNG CỤ\n`;
-		helpMenu += `│ ✧avt ✧✧pp\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ CHAT\n`;
-		helpMenu += `│ ✧baby\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ AUTO\n`;
-		helpMenu += `│ ✧babyimg ✧✧babylove\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ ECONOMY\n`;
-		helpMenu += `│ ✧bal\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ TIỆN ÍCH\n`;
-		helpMenu += `│ ✧bank ✧✧fbsearch1 ✧✧ndfb\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ PNG\n`;
-		helpMenu += `│ ✧bestie ✧✧bestu ✧✧crush\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ IMG\n`;
-		helpMenu += `│ ✧bf ✧✧gf ✧✧married\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ INFO\n`;
-		helpMenu += `│ ✧birthday ✧✧siteinf ✧✧owner\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ FUN\n`;
-		helpMenu += `│ ✧bkashf ✧✧simsimi\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ 18+ COMMAND\n`;
-		helpMenu += `│ ✧boobs\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ CONFIG\n`;
-		helpMenu += `│ ✧otherbots ✧✧self ✧✧setjoin\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ BOX\n`;
-		helpMenu += `│ ✧group\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ BOX\n`;
-		helpMenu += `│ ✧boxinfo ✧✧group\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ UTILITY\n`;
-		helpMenu += `│ ✧busy ✧✧install ✧✧color ✧✧copy ✧✧ffinfo ✧✧give ✧✧playlyrics ✧✧rxhit ✧✧spam ✧✧tag\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ GAMES\n`;
-		helpMenu += `│ ✧casino\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ LOVE\n`;
-		helpMenu += `│ ✧couple ✧✧marry\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ GAME\n`;
-		helpMenu += `│ ✧dating ✧✧hug ✧✧kbb ✧✧kick ✧✧kiss ✧✧pokemon ✧✧punch ✧✧rob ✧✧slap\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ CREATE A PHOTO\n`;
-		helpMenu += `│ ✧family\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ COVER\n`;
-		helpMenu += `│ ✧fbcover\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ 𝗜𝗠𝗔𝗚𝗘 𝗚𝗘𝗡𝗘𝗥𝗔𝗧𝗢𝗥\n`;
-		helpMenu += `│ ✧flux\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ IMAGE\n`;
-		helpMenu += `│ ✧fp ✧✧imagesearch ✧✧imagine\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ TOOL\n`;
-		helpMenu += `│ ✧getlink ✧✧removebg\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ MEDIA\n`;
-		helpMenu += `│ ✧getpix ✧✧getvideo ✧✧inbox ✧✧song ✧✧tenor ✧✧tns ✧✧translate ✧✧ar ✧✧video ✧✧x ✧✧youtube\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ BOX CHAT\n`;
-		helpMenu += `│ ✧listadmin ✧✧listadmin ✧✧setname\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ HACK\n`;
-		helpMenu += `│ ✧hack\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ QTV BOX\n`;
-		helpMenu += `│ ✧hi\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ OTHER\n`;
-		helpMenu += `│ ✧imgur ✧✧ip ✧✧ss\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ ...\n`;
-		helpMenu += `│ ✧info\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ RANDOM-IMG\n`;
-		helpMenu += `│ ✧japan\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ M H BD\n`;
-		helpMenu += `│ ✧love\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ PICTURE\n`;
-		helpMenu += `│ ✧match ✧✧pair ✧✧pair1 ✧✧rip\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ STUDY\n`;
-		helpMenu += `│ ✧math\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ STUDY, LEARN MORE, LEARN FOREVER\n`;
-		helpMenu += `│ ✧mathematics\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ NSFW\n`;
-		helpMenu += `│ ✧Power\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ IMAGE\n`;
-		helpMenu += `│ ✧meme ✧✧toilet\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ OTHER\n`;
-		helpMenu += `│ ✧goiadmin\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ VIDEO CONVERT AUDIO\n`;
-		helpMenu += `│ ✧mp3\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ INFORMATION\n`;
-		helpMenu += `│ ✧numinfo\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ UTILITY\n`;
-		helpMenu += `│ ✧paste ✧✧proxy\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ SEARCH\n`;
-		helpMenu += `│ ✧pic\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ TOOL\n`;
-		helpMenu += `│ ✧pixup\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ GENERAL\n`;
-		helpMenu += `│ ✧resend\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ BONDING\n`;
-		helpMenu += `│ ✧sala\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ TRÒ CHƠI\n`;
-		helpMenu += `│ ✧slot\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ TOOLS\n`;
-		helpMenu += `│ ✧uid\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `╭─────⭓ VIDEO\n`;
-		helpMenu += `│ ✧videomix\n`;
-		helpMenu += `╰────────────⭓\n\n`;
-
-		helpMenu += `⭔ Type ${prefix}help [command] to see details\n`;
-		helpMenu += `╭─[⋆˚🦋𝐍𝐢𝐭𝐲𝐚 × 𝐫𝐗🎀⋆˚]\n`;
-		helpMenu += `╰‣ 𝐀𝐝𝐦𝐢𝐧 : 𝐫𝐗 𝐀𝐫𝐲𝐚𝐧`;
-
-		return api.sendMessage(helpMenu, threadID, async (error, info) => {
-			if (autoUnsend) {
-				await new Promise(resolve => setTimeout(resolve, delayUnsend * 1000));
-				return api.unsendMessage(info.messageID);
-			} else return;
-		}, event.messageID);
+		if (arrayInfo.length > 0) helpMenu += ` │`;
+
+		helpMenu += `\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃       📖 𝐆𝐔𝐈𝐃𝐄 𝐂𝐀𝐑𝐃        ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+🎴 ${prefix}help <command> - View card
+🎴 ${prefix}help ai - AI commands  
+🎴 ${prefix}menu - Full menu
+🎴 ${prefix}allcmds - All commands
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃       🌟 𝐂𝐑𝐄𝐃𝐈𝐓 𝐂𝐀𝐑𝐃        ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+👨‍💻 𝐃𝐞𝐯: 𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭
+🤖 𝐁𝐨𝐭: 𝐌𝐚𝐫𝐢𝐚 𝐁𝐨𝐭 𝐕5
+🎨 𝐃𝐞𝐬𝐢𝐠𝐧: 𝐏𝐫𝐞𝐦𝐢𝐮𝐦 𝐂𝐚𝐫𝐝𝐬
+⏰ 𝐀𝐮𝐭𝐨-𝐜𝐥𝐨𝐬𝐞: 2 𝐦𝐢𝐧𝐬
+
+${'╔' + '═'.repeat(30) + '╗'}
+${'║' + ' '.repeat(30) + '║'}
+║    🎴 𝐄𝐧𝐣𝐨𝐲 𝐭𝐡𝐞 𝐂𝐚𝐫𝐝𝐬! 🎴    ║
+${'║' + ' '.repeat(30) + '║'}
+${'╚' + '═'.repeat(30) + '╝'}`;
+
+		// 🎭 SEND WITH TYPING EFFECT
+		api.sendTypingIndicator(threadID, (err) => {
+			if (err) return;
+			api.sendMessage(helpMenu, threadID, (error, info) => {
+				if (error) return console.error(error);
+				
+				// Add card-themed reactions
+				setTimeout(() => {
+					api.setMessageReaction("🃏", info.messageID, () => {}, true);
+					api.setMessageReaction("🎴", info.messageID, () => {}, true);
+					api.setMessageReaction("⭐", info.messageID, () => {}, true);
+				}, 800);
+
+				// Auto delete after 2 minutes
+				setTimeout(() => {
+					api.unsendMessage(info.messageID);
+				}, 120000);
+			});
+		});
+		return;
 	}
 
-	return api.sendMessage(getText("moduleInfo", command.config.name, command.config.description, `${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, command.config.commandCategory, command.config.cooldowns, ((command.config.hasPermssion == 0) ? getText("user") : (command.config.hasPermssion == 1) ? getText("adminGroup") : getText("adminBot")), command.config.credits), threadID, messageID);
+	// 🎴 INDIVIDUAL COMMAND CARD
+	const commandInfo = getText("moduleInfo", 
+		`${command.config.name}`,
+		command.config.description, 
+		`${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, 
+		command.config.commandCategory, 
+		command.config.cooldowns, 
+		((command.config.hasPermssion == 0) ? getText("user") : (command.config.hasPermssion == 1) ? getText("adminGroup") : getText("adminBot")), 
+		command.config.credits
+	);
+
+	api.sendTypingIndicator(threadID, () => {
+		api.sendMessage(commandInfo, threadID, messageID);
+	});
+};
+
+// 🎯 CARD THEMED ADDITIONAL FEATURES
+global.cardHelp = {
+	"ai": "🤖 AI & Chatting commands",
+	"games": "🎮 Gaming and entertainment", 
+	"image": "🖼️ Image editing and generation",
+	"media": "🎵 Music and video commands",
+	"tools": "⚙️ Utility and tools",
+	"fun": "💖 Fun and interaction",
+	"admin": "👑 Administration commands",
+	"group": "👥 Group management"
 };
