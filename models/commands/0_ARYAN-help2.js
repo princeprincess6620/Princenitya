@@ -21,19 +21,19 @@ module.exports.languages = {
 ┃    🎯 𝐂𝐀𝐑𝐃 𝐈𝐍𝐅𝐎    ┃
 ┗━━━━━━━━━━━━━━━━━━┛
 
-🃏 𝐍𝐚𝐦𝐞: ${"%" + "1"}
-📝 𝐃𝐞𝐬𝐜: ${"%" + "2"}
-⚡ 𝐔𝐬𝐚𝐠𝐞: ${"%" + "3"}
-📁 𝐂𝐚𝐭𝐞𝐠𝐨𝐫𝐲: ${"%" + "4"}
-⏱️ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧: ${"%" + "5"}s
-🔐 𝐏𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧: ${"%" + "6"}
-👨‍💻 𝐃𝐞𝐯: ${"%" + "7"}
+🃏 𝐍𝐚𝐦𝐞: %1
+📝 𝐃𝐞𝐬𝐜: %2
+⚡ 𝐔𝐬𝐚𝐠𝐞: %3
+📁 𝐂𝐚𝐭𝐞𝐠𝐨𝐫𝐲: %4
+⏱️ 𝐂𝐨𝐨𝐥𝐝𝐨𝐰𝐧: %5s
+🔐 𝐏𝐞𝐫𝐦𝐢𝐬𝐬𝐢𝐨𝐧: %6
+👨‍💻 𝐃𝐞𝐯: %7
 
 ┏━━━━━━━━━━━━━━━━━━┓
 ┃  ⚡ 𝐏𝐎𝐖𝐄𝐑𝐄𝐃 𝐁𝐘   ┃
 ┗━━━━━━━━━━━━━━━━━━┛
        𝐌𝐀𝐑𝐈𝐀 𝐁𝐎𝐓`,
-		"helpList": '🃏 𝐓𝐨𝐭𝐚𝐥 ${"%" + "1"} 𝐜𝐚𝐫𝐝𝐬 • "${"%" + "2"}𝐡𝐞𝐥𝐩 <𝐜𝐦𝐝>"',
+		"helpList": '🃏 𝐓𝐨𝐭𝐚𝐥 %1 𝐜𝐚𝐫𝐝𝐬 • "%2𝐡𝐞𝐥𝐩𝟐 <𝐜𝐦𝐝>"',
 		"user": "👤 𝐔𝐬𝐞𝐫",
 		"adminGroup": "👑 𝐀𝐝𝐦𝐢𝐧", 
 		"adminBot": "🤖 𝐁𝐨𝐭 𝐀𝐝𝐦𝐢𝐧"
@@ -44,15 +44,18 @@ module.exports.handleEvent = function ({ api, event, getText }) {
 	const { commands } = global.client;
 	const { threadID, messageID, body } = event;
 
-	if (!body || typeof body == "undefined" || body.indexOf("help") != 0) return;
-	const splitBody = body.slice(body.indexOf("help")).trim().split(/\s+/);
+	// Only respond to help2 command
+	if (!body || typeof body == "undefined" || body.indexOf("help2") != 0) return;
+	
+	const splitBody = body.slice(body.indexOf("help2")).trim().split(/\s+/);
 	if (splitBody.length == 1 || !commands.has(splitBody[1].toLowerCase())) return;
+	
 	const threadSetting = global.data.threadData.get(parseInt(threadID)) || {};
 	const command = commands.get(splitBody[1].toLowerCase());
 	const prefix = (threadSetting.hasOwnProperty("PREFIX")) ? threadSetting.PREFIX : global.config.PREFIX;
 	
 	const commandInfo = getText("moduleInfo", 
-		`${command.config.name}`,
+		command.config.name,
 		command.config.description, 
 		`${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, 
 		command.config.commandCategory, 
@@ -153,25 +156,31 @@ module.exports.run = function({ api, event, args, getText }) {
 ┃       🃏 𝐂𝐎𝐌𝐌𝐀𝐍𝐃 𝐂𝐀𝐑𝐃𝐒       ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`;
 
-		// Display commands in card format (3 columns)
-		for (let i = 0; i < Math.min(15, arrayInfo.length); i++) {
+		// Display first 15 commands in card format
+		const displayCommands = arrayInfo.slice(0, 15);
+		for (let i = 0; i < displayCommands.length; i++) {
 			if (i % 3 === 0) {
-				if (i !== 0) helpMenu += ` │\n`;
+				if (i !== 0) helpMenu += ` │`;
 				helpMenu += `\n│ `;
 			}
-			helpMenu += `🃏 ${prefix}${arrayInfo[i].padEnd(12)}`;
-			if ((i + 1) % 3 !== 0 && i !== arrayInfo.length - 1) {
+			helpMenu += `🃏 ${prefix}${displayCommands[i].padEnd(12)}`;
+			if ((i + 1) % 3 !== 0 && i !== displayCommands.length - 1) {
 				helpMenu += ` │ `;
 			}
 		}
-		if (arrayInfo.length > 0) helpMenu += ` │`;
+		if (displayCommands.length > 0) helpMenu += ` │`;
+
+		// Show remaining commands count
+		if (arrayInfo.length > 15) {
+			helpMenu += `\n\n📋 ...and ${arrayInfo.length - 15} more commands!`;
+		}
 
 		helpMenu += `\n\n┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃       📖 𝐆𝐔𝐈𝐃𝐄 𝐂𝐀𝐑𝐃        ┃
 ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-🎴 ${prefix}help <command> - View card
-🎴 ${prefix}help ai - AI commands  
-🎴 ${prefix}menu - Full menu
+🎴 ${prefix}help2 <command> - View card
+🎴 ${prefix}help2 ai - AI commands  
+🎴 ${prefix}help - Main help
 🎴 ${prefix}allcmds - All commands
 
 ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
@@ -196,15 +205,21 @@ ${'╚' + '═'.repeat(30) + '╝'}`;
 				
 				// Add card-themed reactions
 				setTimeout(() => {
-					api.setMessageReaction("🃏", info.messageID, () => {}, true);
-					api.setMessageReaction("🎴", info.messageID, () => {}, true);
-					api.setMessageReaction("⭐", info.messageID, () => {}, true);
+					try {
+						api.setMessageReaction("🃏", info.messageID, () => {}, true);
+						api.setMessageReaction("🎴", info.messageID, () => {}, true);
+						api.setMessageReaction("⭐", info.messageID, () => {}, true);
+					} catch (e) {
+						console.log("Reaction error:", e);
+					}
 				}, 800);
 
 				// Auto delete after 2 minutes
-				setTimeout(() => {
-					api.unsendMessage(info.messageID);
-				}, 120000);
+				if (global.configModule[module.exports.config.name].autoUnsend) {
+					setTimeout(() => {
+						api.unsendMessage(info.messageID);
+					}, global.configModule[module.exports.config.name].delayUnsend * 1000);
+				}
 			});
 		});
 		return;
@@ -212,7 +227,7 @@ ${'╚' + '═'.repeat(30) + '╝'}`;
 
 	// 🎴 INDIVIDUAL COMMAND CARD
 	const commandInfo = getText("moduleInfo", 
-		`${command.config.name}`,
+		command.config.name,
 		command.config.description, 
 		`${prefix}${command.config.name} ${(command.config.usages) ? command.config.usages : ""}`, 
 		command.config.commandCategory, 
@@ -224,16 +239,4 @@ ${'╚' + '═'.repeat(30) + '╝'}`;
 	api.sendTypingIndicator(threadID, () => {
 		api.sendMessage(commandInfo, threadID, messageID);
 	});
-};
-
-// 🎯 CARD THEMED ADDITIONAL FEATURES
-global.cardHelp = {
-	"ai": "🤖 AI & Chatting commands",
-	"games": "🎮 Gaming and entertainment", 
-	"image": "🖼️ Image editing and generation",
-	"media": "🎵 Music and video commands",
-	"tools": "⚙️ Utility and tools",
-	"fun": "💖 Fun and interaction",
-	"admin": "👑 Administration commands",
-	"group": "👥 Group management"
 };
