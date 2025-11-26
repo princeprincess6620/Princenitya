@@ -17,19 +17,19 @@ module.exports.run = async ({ api, event }) => {
   try {
     // Loading Animation
     const frames = [
-      "🔄 𝐀𝐫𝐲𝐚𝐧 𝐛𝐨𝐭 Loading...",
-      "🔄 𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓 𝐎𝐅 𝐅𝐀𝐓𝐇𝐄𝐑 Loading... █",
-      "🔄 Aryan Status Loading... ██", 
-      "🔄 ARYAN BOT Loading... ███",
-      "🔄 ARYAN GROUP Loading... ████",
-      "🔄 Aryan sytem Loading... █████"
+      "🔄 System Status Loading...",
+      "🔄 System Status Loading... █",
+      "🔄 System Status Loading... ██", 
+      "🔄 System Status Loading... ███",
+      "🔄 System Status Loading... ████",
+      "🔄 System Status Loading... █████"
     ];
 
-    let loadMsg = await api.sendMessage(frames[0], threadID);
+    let loadMsg = await api.sendMessage(frames[0], threadID, messageID);
     
     for (const frame of frames) {
       await new Promise(resolve => setTimeout(resolve, 200));
-      await api.editMessage(frame, loadMsg.messageID, threadID);
+      await api.editMessage(frame, loadMsg.messageID);
     }
 
     // System Data Collection
@@ -42,7 +42,7 @@ module.exports.run = async ({ api, event }) => {
     // Status Card
     const statusCard = `
 ╔═══════════════════════════════╗
-║       💫𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓 𝐒𝐘𝐒𝐓𝐌💫         ║
+║         SYSTEM STATUS         ║
 ╠═══════════════════════════════╣
 ║ 📊 UPTIME: ${uptime}
 ║ 💾 MEMORY: ${memory.used} / ${memory.total}
@@ -55,12 +55,24 @@ module.exports.run = async ({ api, event }) => {
 ╚═══════════════════════════════╝
     `.trim();
 
-    await api.editMessage("✅ Status Ready!", loadMsg.messageID, threadID);
-    return api.sendMessage(statusCard, threadID, messageID);
+    await api.editMessage(statusCard, loadMsg.messageID);
 
   } catch (error) {
     console.error("Status Error:", error);
-    return api.sendMessage(`❌ Error: ${error.message}`, threadID, messageID);
+    
+    // Fallback simple status
+    const simpleStatus = `
+📊 SYSTEM STATUS (Simple Mode)
+
+⏰ UPTIME: ${getUptime()}
+💾 MEMORY: ${getMemory().used}
+🖥️  PLATFORM: ${os.platform()}
+🔧 NODE: ${process.version}
+
+❌ Detailed mode failed, but bot is running!
+    `.trim();
+    
+    return api.sendMessage(simpleStatus, threadID, messageID);
   }
 };
 
@@ -86,31 +98,49 @@ function getMemory() {
 }
 
 function getSystemInfo() {
-  const cpus = os.cpus();
-  const load = os.loadavg()[0] * 100 / cpus.length;
-  
-  return {
-    cpu: load.toFixed(1),
-    cores: cpus.length,
-    temp: "N/A", // Actual temperature requires additional packages
-    platform: os.platform(),
-    node: process.version
-  };
+  try {
+    const cpus = os.cpus();
+    const load = os.loadavg()[0];
+    const cpuUsage = ((load / cpus.length) * 100).toFixed(1);
+    
+    return {
+      cpu: cpuUsage,
+      cores: cpus.length,
+      temp: "N/A",
+      platform: os.platform(),
+      node: process.version
+    };
+  } catch (error) {
+    return {
+      cpu: "N/A",
+      cores: os.cpus().length,
+      temp: "N/A",
+      platform: os.platform(),
+      node: process.version
+    };
+  }
 }
 
 async function getPing(api, event) {
-  const startTime = performance.now();
-  await api.sendMessage("", event.threadID);
-  const endTime = performance.now();
-  return (endTime - startTime).toFixed(1);
+  try {
+    const startTime = Date.now();
+    await api.sendMessage("", event.threadID);
+    const endTime = Date.now();
+    return (endTime - startTime).toFixed(0);
+  } catch {
+    return "N/A";
+  }
 }
 
 async function getBotSpeed() {
-  const start = performance.now();
-  // Simple calculation to test speed
-  let result = 0;
-  for (let i = 0; i < 1000000; i++) {
-    result += i;
+  try {
+    const start = Date.now();
+    let result = 0;
+    for (let i = 0; i < 1000000; i++) {
+      result += i;
+    }
+    return (Date.now() - start).toFixed(0);
+  } catch {
+    return "N/A";
   }
-  return (performance.now() - start).toFixed(1);
 }
