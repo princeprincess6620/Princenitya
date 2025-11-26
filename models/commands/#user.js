@@ -1,4 +1,4 @@
-// commands/user.js
+// commands/user.js - UNBAN SYSTEM ADDED
 const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
@@ -6,200 +6,476 @@ const { createCanvas, loadImage } = require("canvas");
 
 module.exports.config = {
   name: "user",
-  version: "3.0.2",
+  version: "6.0.0",
   hasPermssion: 1,
-  credits: "Modified by ChatGPT for Aryan",
-  description: "User protection: auto-ban & messenger-style ban screenshot",
+  credits: "🔥 PREMIUM BY ARYAN | UNBAN SYSTEM",
+  description: "Advanced User Protection with Unban System",
   commandCategory: "System",
-  cooldowns: 1
+  cooldowns: 0,
+  dependencies: {
+    "canvas": ""
+  }
 };
 
-// runtime storage
-global.data = global.data || {};
-global.data.userBanned = global.data.userBanned || new Map();
+// GLOBAL STORAGE FOR MIRAI
+if (!global.premiumProtection) {
+  global.premiumProtection = {
+    spamUsers: new Map(),
+    whitelist: new Set(),
+    userBanned: new Map(),
+    userWarnings: new Map(),
+    premiumUsers: new Set(["100000000000000"]), // YOUR ID HERE
+    banHistory: new Map() // NEW: Ban history tracking
+  };
+}
 
-const abuseWords = [
-  "bsdk","bhosdk","bhosdike","madarchod","bhenchod","mc","bc",
-  "chutiya","gaand","kutta","suvar","randi","loda","launde",
-  "btc","sale","saale","fuck you","motherfucker"
-];
+const { spamUsers, whitelist, userBanned, userWarnings, premiumUsers, banHistory } = global.premiumProtection;
+
+// PROTECTION SETTINGS
+const protectedNames = ["aryan", "bot", "aryan bot", "owner"];
+const abuseWords = ["bsdk", "mc", "bc", "madarchod", "chutiya", "fuck you"];
 
 const CACHE_DIR = path.join(__dirname, "..", "cache");
 if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
-// ---------------- Helpers ----------------
+// 🔧 MIRAI-COMPATIBLE FUNCTIONS
+function roundRect(ctx, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 async function downloadImageBuffer(url) {
   try {
-    const resp = await axios.get(url, { responseType: "arraybuffer", timeout: 10000 });
-    return Buffer.from(resp.data, "binary");
+    const response = await axios({
+      method: "GET",
+      url: url,
+      responseType: "arraybuffer",
+      timeout: 10000
+    });
+    return Buffer.from(response.data);
   } catch (e) {
     return null;
   }
 }
 
-async function fetchUserInfo(api, uid) {
-  try {
-    if (typeof api.getUserInfo === "function") {
-      const info = await api.getUserInfo(uid);
-      if (info && info[uid]) return info[uid];
-      if (info && info.name) return info;
-    }
-  } catch (err) {}
-  return { id: uid, name: `User ${uid}`, avatarUrl: null };
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-}
-
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
-  const words = text.split(' ');
-  let line = '';
-  for (let n = 0; n < words.length; n++) {
-    const testLine = line + words[n] + ' ';
-    const metrics = ctx.measureText(testLine);
-    if (metrics.width > maxWidth && n > 0) {
-      ctx.fillText(line, x, y);
-      line = words[n] + ' ';
-      y += lineHeight;
-    } else {
-      line = testLine;
-    }
-  }
-  ctx.fillText(line, x, y);
-}
-
-async function createBanImage({ name, uid, reason, dpBuffer }) {
-  const width = 900;
-  const height = 360;
+// 🎨 UNBAN SUCCESS CARD
+async function createUnbanCard(userName, userId, unbannedBy) {
+  const width = 800;
+  const height = 400;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#f0f2f5";
+  // Green gradient background for unban
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#00ff00");
+  gradient.addColorStop(1, "#008800");
+  ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
 
-  const panelX = 18, panelY = 18, panelW = width - 36, panelH = height - 36;
-  ctx.fillStyle = "#ffffff";
-  roundRect(ctx, panelX, panelY, panelW, panelH, 14);
+  // Main Card
+  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+  roundRect(ctx, 20, 20, width - 40, height - 40, 20);
   ctx.fill();
 
   // Header
-  ctx.fillStyle = "#0084ff";
-  roundRect(ctx, panelX, panelY, panelW, 72, 14);
+  ctx.fillStyle = "#00ff00";
+  roundRect(ctx, 20, 20, width - 40, 60, 20);
   ctx.fill();
+
+  // Title
+  ctx.fillStyle = "#000000";
+  ctx.font = "bold 28px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("✅ UNBAN SUCCESSFUL", width / 2, 55);
+
+  // User Info
   ctx.fillStyle = "#ffffff";
-  ctx.font = "bold 28px Sans";
-  ctx.fillText("🚨 BABU TU BAN HAI RE 🚫", panelX + 20, panelY + 45);
+  ctx.font = "bold 24px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText(`User: ${userName}`, 50, 120);
 
-  // Avatar
-  const avatarX = panelX + 20, avatarY = panelY + 100, avatarSize = 140;
-  ctx.beginPath();
-  ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 + 6, 0, Math.PI * 2);
-  ctx.fillStyle = "#f0f2f5";
-  ctx.fill();
+  ctx.font = "18px Arial";
+  ctx.fillText(`ID: ${userId}`, 50, 150);
+  ctx.fillText(`Unbanned By: ${unbannedBy}`, 50, 180);
 
-  if (dpBuffer) {
-    try {
-      const img = await loadImage(dpBuffer);
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(img, avatarX, avatarY, avatarSize, avatarSize);
-      ctx.restore();
-    } catch (e) {
-      ctx.fillStyle = "#d0d0d0";
-      ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
-    }
-  } else {
-    ctx.fillStyle = "#d0d0d0";
-    ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
-  }
+  // Success Message
+  ctx.fillStyle = "#00ff00";
+  ctx.font = "bold 20px Arial";
+  ctx.fillText("🎉 User has been successfully unbanned!", 50, 220);
 
-  // Info
-  const infoX = avatarX + avatarSize + 30;
-  const infoY = avatarY;
-  ctx.fillStyle = "#111827";
-  ctx.font = "bold 26px Sans";
-  ctx.fillText(name, infoX, infoY + 30);
-
-  ctx.font = "16px Sans";
-  ctx.fillStyle = "#374151";
-  ctx.fillText(`UID: ${uid}`, infoX, infoY + 68);
-
-  ctx.fillStyle = "#fff5f5";
-  roundRect(ctx, infoX, infoY + 86, panelW - infoX - 40, 72, 8);
-  ctx.fill();
-
-  ctx.fillStyle = "#b91c1c";
-  ctx.font = "bold 18px Sans";
-  ctx.fillText("Reason:", infoX + 12, infoY + 112);
-
-  ctx.fillStyle = "#991b1b";
-  ctx.font = "16px Sans";
-  wrapText(ctx, reason, infoX + 90, infoY + 112, panelW - infoX - 120, 20);
-
-  const timeStr = new Date().toLocaleString("en-GB", { timeZone: "Asia/Kolkata" });
-  ctx.fillStyle = "#374151";
-  ctx.font = "14px Sans";
-  ctx.fillText(`Action: 24 hours ban`, panelX + 22, panelY + panelH - 30);
-  ctx.fillText(`Time: ${timeStr}`, panelX + 220, panelY + panelH - 30);
+  // Footer
+  const timeStr = new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" });
+  ctx.fillStyle = "#cccccc";
+  ctx.font = "14px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(`Mirai Unban System • ${timeStr}`, width / 2, height - 30);
 
   return canvas.toBuffer("image/png");
 }
 
-// ---------------- Command ----------------
-module.exports.run = async function({ api, event, args }) {
-  const uid = event.senderID;
-  const message = (event.body || "").toLowerCase();
+// 🎨 BANNED LIST CARD
+async function createBannedListCard(bannedUsers) {
+  const width = 800;
+  const height = 400 + (bannedUsers.length * 30);
+  const canvas = createCanvas(width, height);
+  const ctx = canvas.getContext("2d");
 
-  // Check abusive
-  const isAbusive = abuseWords.some(word => message.includes(word));
-  if (!isAbusive) return;
+  // Background
+  const gradient = ctx.createLinearGradient(0, 0, width, height);
+  gradient.addColorStop(0, "#ffa500");
+  gradient.addColorStop(1, "#ff8c00");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
 
-  if (global.data.userBanned.has(uid)) {
-    return api.sendMessage("User already banned!", event.threadID);
+  // Main Card
+  ctx.fillStyle = "rgba(0, 0, 0, 0.8)";
+  roundRect(ctx, 20, 20, width - 40, height - 40, 20);
+  ctx.fill();
+
+  // Header
+  ctx.fillStyle = "#ffa500";
+  roundRect(ctx, 20, 20, width - 40, 60, 20);
+  ctx.fill();
+
+  // Title
+  ctx.fillStyle = "#000000";
+  ctx.font = "bold 28px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText("📋 BANNED USERS LIST", width / 2, 55);
+
+  // List Header
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 20px Arial";
+  ctx.textAlign = "left";
+  ctx.fillText("User ID", 50, 100);
+  ctx.fillText("Name", 250, 100);
+  ctx.fillText("Time Left", 500, 100);
+
+  // Draw line
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(50, 110);
+  ctx.lineTo(width - 50, 110);
+  ctx.stroke();
+
+  // List Users
+  let yPos = 140;
+  ctx.font = "16px Arial";
+  
+  for (const user of bannedUsers) {
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(user.id, 50, yPos);
+    ctx.fillText(user.name, 250, yPos);
+    
+    // Time calculation
+    const timeLeft = user.banTime - Date.now();
+    if (timeLeft > 0) {
+      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      ctx.fillStyle = "#ff4444";
+      ctx.fillText(`${hours}h ${minutes}m`, 500, yPos);
+    } else {
+      ctx.fillStyle = "#00ff00";
+      ctx.fillText("EXPIRED", 500, yPos);
+    }
+    
+    yPos += 30;
   }
 
-  // Fetch user info
-  const userInfo = await fetchUserInfo(api, uid);
-  const dpBuffer = await downloadImageBuffer(userInfo.avatarUrl || "");
+  // Footer
+  ctx.fillStyle = "#cccccc";
+  ctx.font = "14px Arial";
+  ctx.textAlign = "center";
+  ctx.fillText(`Total Banned: ${bannedUsers.length} • Use "user unban [uid]" to unban`, width / 2, height - 30);
 
-  // Create ban image
-  const banImg = await createBanImage({
-    name: userInfo.name,
-    uid,
-    reason: "Abusive language detected",
-    dpBuffer
-  });
+  return canvas.toBuffer("image/png");
+}
 
-  const filePath = path.join(CACHE_DIR, `ban_${uid}.png`);
-  fs.writeFileSync(filePath, banImg);
+// 🎯 MIRAI MAIN COMMAND HANDLER WITH UNBAN SYSTEM
+module.exports.onStart = async function({ api, event, args }) {
+  const { threadID, messageID, senderID } = event;
 
-  // ---------------- Actual Ban ----------------
   try {
-    await api.removeUserFromGroup(uid, event.threadID); // remove user from group
-  } catch (err) {
-    console.log("Ban failed:", err.message);
+    const command = args[0]?.toLowerCase();
+
+    // 📊 STATUS COMMAND
+    if (command === "status") {
+      const warnings = userWarnings.get(senderID) || 0;
+      const banTime = userBanned.get(senderID);
+      const isBanned = banTime && Date.now() < banTime;
+      
+      let statusMessage = `🛡️ USER PROTECTION STATUS\n\n👤 User: ${senderID}\n⚠️ Warnings: ${warnings}/3\n`;
+      
+      if (isBanned) {
+        const timeLeft = banTime - Date.now();
+        const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        statusMessage += `🔴 Status: BANNED\n⏰ Time Left: ${hours}h ${minutes}m\n\nContact admin for unban.`;
+      } else {
+        statusMessage += `🟢 Status: ACTIVE\n📊 Protection: ENABLED\n\nUse carefully to avoid auto-ban!`;
+      }
+      
+      return api.sendMessage({ body: statusMessage }, threadID, messageID);
+    }
+
+    // 🔨 MANUAL BAN COMMAND (ADMIN ONLY)
+    if (command === "ban" && args[1]) {
+      // Check admin permissions
+      if (!premiumUsers.has(senderID.toString())) {
+        return api.sendMessage({
+          body: "❌ Permission Denied! Only premium users can use this command."
+        }, threadID, messageID);
+      }
+
+      const targetUID = args[1];
+      const banDuration = parseInt(args[2]) || 24; // Default 24 hours
+      const reason = args.slice(3).join(" ") || "Manual ban by admin";
+      
+      userBanned.set(targetUID, Date.now() + (banDuration * 60 * 60 * 1000));
+      
+      // Add to ban history
+      banHistory.set(targetUID, {
+        reason: reason,
+        bannedBy: senderID,
+        bannedAt: Date.now(),
+        duration: banDuration
+      });
+      
+      return api.sendMessage({
+        body: `✅ User ${targetUID} has been manually banned for ${banDuration} hours.\n📝 Reason: ${reason}`
+      }, threadID, messageID);
+    }
+
+    // 🔓 UNBAN COMMAND (ADMIN ONLY)
+    if (command === "unban" && args[1]) {
+      // Check admin permissions
+      if (!premiumUsers.has(senderID.toString())) {
+        return api.sendMessage({
+          body: "❌ Permission Denied! Only premium users can unban users."
+        }, threadID, messageID);
+      }
+
+      const targetUID = args[1];
+      
+      // Check if user is actually banned
+      if (!userBanned.has(targetUID)) {
+        return api.sendMessage({
+          body: `❌ User ${targetUID} is not currently banned.`
+        }, threadID, messageID);
+      }
+
+      // Get user info for card
+      let userName = "Unknown User";
+      try {
+        const userInfo = await api.getUserInfo(targetUID);
+        userName = userInfo[targetUID]?.name || "Unknown User";
+      } catch (e) {
+        userName = "User";
+      }
+
+      // Get admin name
+      let adminName = "Admin";
+      try {
+        const adminInfo = await api.getUserInfo(senderID);
+        adminName = adminInfo[senderID]?.name || "Admin";
+      } catch (e) {
+        adminName = "Admin";
+      }
+
+      // Unban the user
+      userBanned.delete(targetUID);
+      userWarnings.set(targetUID, 0); // Reset warnings
+      
+      // Create unban card
+      const unbanCard = await createUnbanCard(userName, targetUID, adminName);
+      const cardPath = path.join(CACHE_DIR, `unban_${targetUID}.png`);
+      fs.writeFileSync(cardPath, unbanCard);
+      
+      return api.sendMessage({
+        body: `✅ SUCCESS! User ${userName} (${targetUID}) has been unbanned.`,
+        attachment: fs.createReadStream(cardPath)
+      }, threadID, messageID);
+    }
+
+    // 📋 BANNED LIST COMMAND
+    if (command === "list" || command === "banned") {
+      // Check admin permissions for detailed list
+      if (!premiumUsers.has(senderID.toString())) {
+        return api.sendMessage({
+          body: "❌ Permission Denied! Only premium users can view banned list."
+        }, threadID, messageID);
+      }
+
+      const bannedUsers = [];
+      
+      // Get all currently banned users
+      for (const [uid, banTime] of userBanned.entries()) {
+        if (Date.now() < banTime) {
+          let userName = "Unknown";
+          try {
+            const userInfo = await api.getUserInfo(uid);
+            userName = userInfo[uid]?.name || "Unknown";
+          } catch (e) {
+            userName = "Unknown";
+          }
+          
+          bannedUsers.push({
+            id: uid,
+            name: userName.length > 15 ? userName.substring(0, 15) + "..." : userName,
+            banTime: banTime
+          });
+        } else {
+          // Remove expired bans
+          userBanned.delete(uid);
+        }
+      }
+      
+      if (bannedUsers.length === 0) {
+        return api.sendMessage({
+          body: "✅ No users are currently banned."
+        }, threadID, messageID);
+      }
+      
+      // Create banned list card
+      const listCard = await createBannedListCard(bannedUsers);
+      const cardPath = path.join(CACHE_DIR, `banned_list.png`);
+      fs.writeFileSync(cardPath, listCard);
+      
+      return api.sendMessage({
+        body: `📋 Currently Banned Users: ${bannedUsers.length}`,
+        attachment: fs.createReadStream(cardPath)
+      }, threadID, messageID);
+    }
+
+    // 🔄 AUTO UNBAN EXPIRED USERS
+    if (command === "clean") {
+      if (!premiumUsers.has(senderID.toString())) {
+        return api.sendMessage({
+          body: "❌ Permission Denied! Only premium users can clean expired bans."
+        }, threadID, messageID);
+      }
+
+      let expiredCount = 0;
+      for (const [uid, banTime] of userBanned.entries()) {
+        if (Date.now() >= banTime) {
+          userBanned.delete(uid);
+          expiredCount++;
+        }
+      }
+      
+      return api.sendMessage({
+        body: `🧹 Cleaned ${expiredCount} expired bans from the system.`
+      }, threadID, messageID);
+    }
+
+    // ℹ️ HELP COMMAND
+    return api.sendMessage({
+      body: `🛡️ USER PROTECTION SYSTEM v6.0\n\nCommands:\n• user status - Check your protection status\n• user ban [uid] [hours] [reason] - Ban user (admin)\n• user unban [uid] - Unban user (admin)\n• user list - View banned users (admin)\n• user clean - Clean expired bans (admin)\n\nAuto-protection is active for abusive language and spam.`
+    }, threadID, messageID);
+
+  } catch (error) {
+    console.error("Mirai Protection Error:", error);
+    api.sendMessage("❌ System error in protection module.", threadID, messageID);
   }
+};
 
-  // Mark as banned locally
-  global.data.userBanned.set(uid, true);
+// 🚨 MIRAI EVENT HANDLER FOR AUTO-PROTECTION
+module.exports.handleEvent = async function({ event, api }) {
+  try {
+    const { senderID, body, threadID } = event;
+    
+    // Skip if message is empty or from premium user
+    if (!body || premiumUsers.has(senderID.toString())) return;
+    
+    // Auto-clean expired bans first
+    for (const [uid, banTime] of userBanned.entries()) {
+      if (Date.now() >= banTime) {
+        userBanned.delete(uid);
+      }
+    }
+    
+    // Check if user is banned
+    const banTime = userBanned.get(senderID);
+    if (banTime && Date.now() < banTime) {
+      const timeLeft = banTime - Date.now();
+      const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+      const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+      
+      api.sendMessage({
+        body: `❌ You are currently banned!\n⏰ Time Left: ${hours}h ${minutes}m\n📞 Contact admin for unban.`
+      }, threadID);
+      return;
+    }
 
-  // Send ban image
-  api.sendMessage({
-    body: `🚨 User ${userInfo.name} banned for abusive language!`,
-    attachment: fs.createReadStream(filePath)
-  }, event.threadID);
+    const message = body.toLowerCase();
+    
+    // Detect violations
+    let violation = null;
+    
+    // Check abusive words
+    const hasAbuse = abuseWords.some(word => message.includes(word));
+    if (hasAbuse) violation = "Abusive language";
+    
+    // Check protected names
+    const hasProtectedName = protectedNames.some(name => message.includes(name));
+    if (hasProtectedName) violation = "Protected name misuse";
+    
+    // Check spam
+    const userData = spamUsers.get(senderID) || { count: 0, lastTime: 0 };
+    const now = Date.now();
+    if (now - userData.lastTime < 3000) { // 3 seconds
+      userData.count++;
+      if (userData.count > 3) violation = "Spam detection";
+    } else {
+      userData.count = 1;
+    }
+    userData.lastTime = now;
+    spamUsers.set(senderID, userData);
+    
+    // Handle violation
+    if (violation) {
+      const currentWarnings = userWarnings.get(senderID) || 0;
+      const newWarnings = currentWarnings + 1;
+      userWarnings.set(senderID, newWarnings);
+      
+      if (newWarnings >= 3) {
+        // BAN USER
+        const userInfo = await api.getUserInfo(senderID);
+        const userName = userInfo[senderID]?.name || "User";
+        
+        // 24 hour ban
+        userBanned.set(senderID, Date.now() + 24 * 60 * 60 * 1000);
+        userWarnings.set(senderID, 0); // Reset warnings
+        
+        // Add to ban history
+        banHistory.set(senderID, {
+          reason: violation,
+          bannedBy: "AUTO-SYSTEM",
+          bannedAt: Date.now(),
+          duration: 24
+        });
+        
+        api.sendMessage({
+          body: `🚨 USER BANNED!\n📛 Name: ${userName}\n⏰ Duration: 24 hours\n🔨 Reason: ${violation}\n\nAdmin can unban using: user unban ${senderID}`
+        }, threadID);
+        
+      } else {
+        // WARNING
+        api.sendMessage({
+          body: `⚠️ WARNING ${newWarnings}/3\nReason: ${violation}\nNext violation will result in 24h ban!`
+        }, threadID);
+      }
+    }
+    
+  } catch (error) {
+    console.error("Mirai Auto-Protection Error:", error);
+  }
 };
