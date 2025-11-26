@@ -3,10 +3,10 @@ const { performance } = require("perf_hooks");
 
 module.exports.config = {
   name: "status",
-  version: "20.0",
+  version: "1.0.0",
   hasPermssion: 0,
-  credits: "ChatGPT Ultra Cosmic",
-  description: "Ultra Premium Futuristic Status Panel",
+  credits: "Developer",
+  description: "System Status Panel",
   commandCategory: "system",
   cooldowns: 5
 };
@@ -15,162 +15,102 @@ module.exports.run = async ({ api, event }) => {
   const { threadID, messageID } = event;
 
   try {
-    // 🔁 Ultra Loading Animation
+    // Loading Animation
     const frames = [
-      "⚡ Booting Ultra Status Pro…",
-      "⚡ Booting Ultra Status Pro… █",
-      "⚡ Booting Ultra Status Pro… ██",
-      "⚡ Booting Ultra Status Pro… ███",
-      "⚡ Booting Ultra Status Pro… ████",
-      "⚡ Booting Ultra Status Pro… █████",
-      "⚡ Booting Ultra Status Pro… ██████",
-      "⚡ Booting Ultra Status Pro… ███████",
-      "⚡ Booting Ultra Status Pro… █████████",
+      "🔄 𝐀𝐫𝐲𝐚𝐧 𝐛𝐨𝐭 Loading...",
+      "🔄 𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓 𝐎𝐅 𝐅𝐀𝐓𝐇𝐄𝐑 Loading... █",
+      "🔄 Aryan Status Loading... ██", 
+      "🔄 ARYAN BOT Loading... ███",
+      "🔄 ARYAN GROUP Loading... ████",
+      "🔄 Aryan sytem Loading... █████"
     ];
 
     let loadMsg = await api.sendMessage(frames[0], threadID);
-    for (const f of frames) {
-      await new Promise(res => setTimeout(res, 120));
-      await api.editMessage(f, loadMsg.messageID);
+    
+    for (const frame of frames) {
+      await new Promise(resolve => setTimeout(resolve, 200));
+      await api.editMessage(frame, loadMsg.messageID, threadID);
     }
 
-    // 🧠 Collect Data
+    // System Data Collection
     const uptime = getUptime();
     const memory = getMemory();
-    const sys = await getSystem();
+    const systemInfo = getSystemInfo();
     const ping = await getPing(api, event);
     const speed = await getBotSpeed();
-    const bot = getBotInfo();
 
-    // █████ CPU GRAPH BAR
-    const cpuGraph = genGraph(sys.cpu);
+    // Status Card
+    const statusCard = `
+╔═══════════════════════════════╗
+║       💫𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓 𝐒𝐘𝐒𝐓𝐌💫         ║
+╠═══════════════════════════════╣
+║ 📊 UPTIME: ${uptime}
+║ 💾 MEMORY: ${memory.used} / ${memory.total}
+║ 🖥️  CPU: ${systemInfo.cpu}% | Cores: ${systemInfo.cores}
+║ 🌡️  TEMP: ${systemInfo.temp}°C
+║ 📡 PING: ${ping}ms
+║ ⚡ SPEED: ${speed}ms
+║ 🏗️  PLATFORM: ${systemInfo.platform}
+║ 🔧 NODE: ${systemInfo.node}
+╚═══════════════════════════════╝
+    `.trim();
 
-    // MAIN PANEL
-    const card = `
-╭━━━━━━━━━━━[ 🌌 𝗨𝗟𝗧𝗥𝗔 𝗦𝗧𝗔𝗧𝗨𝗦 𝗣𝗥𝗢 ]━━━━━━━━━━━━╮
-│ ✦ Futuristic Hologram Diagnostics Panel
-├────────────────────────────────────────────┤
+    await api.editMessage("✅ Status Ready!", loadMsg.messageID, threadID);
+    return api.sendMessage(statusCard, threadID, messageID);
 
-🕒 **U P T I M E**
-   ➤ ${uptime}
-
-🧠 **M E M O R Y**
-   • Used   : ${memory.used}
-   • Total  : ${memory.total}
-
-⚙️ **S Y S T E M 𝗖𝗢𝗥𝗘**
-   • CPU Load : ${sys.cpu}%  
-     ${cpuGraph}
-   • Cores    : ${sys.cores}
-   • Temp     : ${sys.temp}°C  🌡️
-   • Platform : ${sys.platform}
-   • Node     : ${sys.node}
-
-📡 **N E T W O R K**
-   • Ping   : ${ping}ms ⚡
-
-🚀 **B O T  S P E𝗘𝗗**
-   • Response: ${speed}ms ⚙️
-
-🤖 **B O T  D𝗔𝗧𝗔**
-   • Commands : ${bot.commands}
-   • Users    : ${bot.users}
-   • Threads  : ${bot.threads}
-
-╰━━━━━━━━━━━[ ✦ ULTRA MODE ACTIVE ✦ ]━━━━━━━━━━╯
-`.trim();
-
-    await api.editMessage("🌌 Ultra Status Pro Ready!", loadMsg.messageID);
-    return api.sendMessage(card, threadID, messageID);
-
-  } catch (e) {
-    console.log(e);
-    return api.sendMessage("❌ Ultra Status Error:\n" + e.message, threadID);
+  } catch (error) {
+    console.error("Status Error:", error);
+    return api.sendMessage(`❌ Error: ${error.message}`, threadID, messageID);
   }
 };
 
-
-/*━━━━━━━━━━━━━━━━━━*
- | Utility Functions |
- *━━━━━━━━━━━━━━━━━━*/
-
+// Utility Functions
 function getUptime() {
-  let s = process.uptime();
-  let d = Math.floor(s / 86400);
-  let h = Math.floor((s % 86400) / 3600);
-  let m = Math.floor((s % 3600) / 60);
-  let sec = Math.floor(s % 60);
-  return `${d}d ${h}h ${m}m ${sec}s`;
+  const seconds = process.uptime();
+  const days = Math.floor(seconds / 86400);
+  const hours = Math.floor((seconds % 86400) / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  
+  return `${days}d ${hours}h ${minutes}m ${secs}s`;
 }
 
 function getMemory() {
+  const used = (process.memoryUsage().rss / 1024 / 1024).toFixed(1);
+  const total = (os.totalmem() / 1024 / 1024 / 1024).toFixed(1);
+  
   return {
-    used: `${(process.memoryUsage().rss / 1024 / 1024).toFixed(1)} MB`,
-    total: `${(os.totalmem() / 1024 / 1024 / 1024).toFixed(1)} GB`
+    used: `${used} MB`,
+    total: `${total} GB`
   };
 }
 
-async function getSystem() {
+function getSystemInfo() {
+  const cpus = os.cpus();
+  const load = os.loadavg()[0] * 100 / cpus.length;
+  
   return {
-    cpu: (await getCPU()).toFixed(1),
-    cores: os.cpus().length,
-    temp: (Math.random() * (68 - 42) + 42).toFixed(1), // fake temp
-    platform: os.platform().toUpperCase(),
+    cpu: load.toFixed(1),
+    cores: cpus.length,
+    temp: "N/A", // Actual temperature requires additional packages
+    platform: os.platform(),
     node: process.version
   };
 }
 
-function genGraph(cpu) {
-  const bars = Math.round(cpu / 10);
-  return "   [" + "█".repeat(bars) + "░".repeat(10 - bars) + "]";
-}
-
-function getCPU() {
-  return new Promise(resolve => {
-    const start = cpuTime();
-    setTimeout(() => {
-      const end = cpuTime();
-      const idle = end.idle - start.idle;
-      const total = end.total - start.total;
-      resolve(100 - (idle / total) * 100);
-    }, 400);
-  });
-}
-
-function cpuTime() {
-  const cpus = os.cpus();
-  let idle = 0, total = 0;
-  cpus.forEach(cpu => {
-    for (let type in cpu.times) total += cpu.times[type];
-    idle += cpu.times.idle;
-  });
-  return { idle, total };
-}
-
 async function getPing(api, event) {
-  const t = performance.now();
+  const startTime = performance.now();
   await api.sendMessage("", event.threadID);
-  return (performance.now() - t).toFixed(1);
+  const endTime = performance.now();
+  return (endTime - startTime).toFixed(1);
 }
 
 async function getBotSpeed() {
-  const a = performance.now();
-  let b = 0; for (let i = 0; i < 500000; i++) b += i;
-  return (performance.now() - a).toFixed(1);
-}
-
-function safe(obj, path, fallback = "N/A") {
-  try {
-    return path.split(".").reduce((o, p) => o?.[p], obj) || fallback;
-  } catch {
-    return fallback;
+  const start = performance.now();
+  // Simple calculation to test speed
+  let result = 0;
+  for (let i = 0; i < 1000000; i++) {
+    result += i;
   }
-}
-
-function getBotInfo() {
-  return {
-    commands: safe(global, "client.commands.size"),
-    users: safe(global, "data.allUserID.length"),
-    threads: safe(global, "data.allThreadID.length")
-  };
+  return (performance.now() - start).toFixed(1);
 }
