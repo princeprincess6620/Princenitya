@@ -6,7 +6,7 @@ const { createCanvas, loadImage } = require("canvas");
 
 module.exports.config = {
   name: "user",
-  version: "3.0.1",
+  version: "3.0.2",
   hasPermssion: 1,
   credits: "Modified by ChatGPT for Aryan",
   description: "User protection: auto-ban & messenger-style ban screenshot",
@@ -19,9 +19,9 @@ global.data = global.data || {};
 global.data.userBanned = global.data.userBanned || new Map();
 
 const abuseWords = [
-  "bsdk", "bhosdk", "bhosdike", "madarchod", "bhenchod", "mc", "bc",
-  "chutiya", "gaand", "kutta", "suvar", "randi", "loda", "launde",
-  "btc", "sale", "saale", "fuck you", "motherfucker"
+  "bsdk","bhosdk","bhosdike","madarchod","bhenchod","mc","bc",
+  "chutiya","gaand","kutta","suvar","randi","loda","launde",
+  "btc","sale","saale","fuck you","motherfucker"
 ];
 
 const CACHE_DIR = path.join(__dirname, "..", "cache");
@@ -44,10 +44,8 @@ async function fetchUserInfo(api, uid) {
       if (info && info[uid]) return info[uid];
       if (info && info.name) return info;
     }
-  } catch (err) {
-    // ignore
-  }
-  return { id: uid, name: `User ${uid}` };
+  } catch (err) {}
+  return { id: uid, name: `User ${uid}`, avatarUrl: null };
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -90,7 +88,6 @@ async function createBanImage({ name, uid, reason, dpBuffer }) {
   ctx.fillStyle = "#f0f2f5";
   ctx.fillRect(0, 0, width, height);
 
-  // Panel
   const panelX = 18, panelY = 18, panelW = width - 36, panelH = height - 36;
   ctx.fillStyle = "#ffffff";
   roundRect(ctx, panelX, panelY, panelW, panelH, 14);
@@ -100,7 +97,6 @@ async function createBanImage({ name, uid, reason, dpBuffer }) {
   ctx.fillStyle = "#0084ff";
   roundRect(ctx, panelX, panelY, panelW, 72, 14);
   ctx.fill();
-
   ctx.fillStyle = "#ffffff";
   ctx.font = "bold 28px Sans";
   ctx.fillText("🚨 BABU TU BAN HAI RE 🚫", panelX + 20, panelY + 45);
@@ -131,7 +127,7 @@ async function createBanImage({ name, uid, reason, dpBuffer }) {
     ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
   }
 
-  // Info text
+  // Info
   const infoX = avatarX + avatarSize + 30;
   const infoY = avatarY;
   ctx.fillStyle = "#111827";
@@ -191,9 +187,17 @@ module.exports.run = async function({ api, event, args }) {
   const filePath = path.join(CACHE_DIR, `ban_${uid}.png`);
   fs.writeFileSync(filePath, banImg);
 
-  // Mark as banned
+  // ---------------- Actual Ban ----------------
+  try {
+    await api.removeUserFromGroup(uid, event.threadID); // remove user from group
+  } catch (err) {
+    console.log("Ban failed:", err.message);
+  }
+
+  // Mark as banned locally
   global.data.userBanned.set(uid, true);
 
+  // Send ban image
   api.sendMessage({
     body: `🚨 User ${userInfo.name} banned for abusive language!`,
     attachment: fs.createReadStream(filePath)
