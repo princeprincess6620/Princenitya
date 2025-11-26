@@ -1,156 +1,170 @@
+// commands/user.js
+const axios = require("axios");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
 const { createCanvas, loadImage } = require("canvas");
 
 module.exports.config = {
   name: "user",
-  version: "15.1.0",
-  hasPermssion: 2,
-  credits: "ChatGPT Ultra Premium | Aryan System",
-  description: "Premium Auto Ban System with DP + Emoji Card + Logs",
+  version: "3.0.0",
+  hasPermssion: 1,
+  credits: "Modified By ChatGPT for Aryan",
+  description: "User protection: auto-ban & messenger-style ban screenshot",
   commandCategory: "System",
-  usages: "[ban/unban/banlist/whitelist/unwhitelist/logs] @tag",
-  cooldowns: 0
+  cooldowns: 1
 };
 
-// storage
+// runtime storage
+const spamUsers = new Map();
+const whitelist = new Set();
+global.data = global.data || {};
 global.data.userBanned = global.data.userBanned || new Map();
-global.data.userWhitelist = global.data.userWhitelist || new Map();
-global.data.userLogs = global.data.userLogs || [];
 
-// admins
-const admins = ["10001234567890","61550703367376"]; // change to your UID
-const badWords = ["bsdk","madarchod","bahanchod","gandu","chutiya","lund","bitch","randi","bhosdike","madrchod","motherfucker","gaand"];
+// protected names & abusive keywords
+const protectedNames = ["aryan", "bot", "aryan bot", "aryan babu"];
+const abuseWords = [
+  "bsdk", "bhosdk", "bhosdike", "madarchod", "bhenchod", "mc", "bc",
+  "chutiya", "chutiya", "gaand", "kutta", "suvar", "randi", "loda", "launde",
+  "btc", "sale", "saale", "fuck you", "motherfucker"
+];
 
-// MAIN RUN
-module.exports.run = async function({ api, event, args }) {
-  const { threadID, mentions } = event;
-  const cmd = args[0];
-  const id = Object.keys(mentions || {})[0];
+// ensure cache dir
+const CACHE_DIR = path.join(__dirname, "..", "cache");
+if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
 
-  if(cmd === "ban") {
-    if(!id) return api.sendMessage("⚠ Tag someone to ban.", threadID);
-    if(admins.includes(id)) return api.sendMessage("⚠ Cannot ban admin!", threadID);
-    global.data.userBanned.set(id, Date.now());
-    const imgBuffer = await createUserCard(id, api, "🚫 BANNED ❌", "#ff1744");
-    const filePath = path.join(__dirname, `ban_${Date.now()}.png`);
-    fs.writeFileSync(filePath,imgBuffer);
-    addLog("BAN", id);
-    return api.sendMessage({body:`🚫 User Banned!`,attachment:fs.createReadStream(filePath)}, threadID, ()=>fs.unlinkSync(filePath));
+// helper: download image (returns buffer)
+async function downloadImageBuffer(url) {
+  try {
+    const resp = await axios.get(url, { responseType: "arraybuffer", timeout: 10000 });
+    return Buffer.from(resp.data, "binary");
+  } catch (e) {
+    return null;
   }
+}
 
-  if(cmd === "unban") {
-    if(!id) return api.sendMessage("⚠ Tag someone to unban.", threadID);
-    global.data.userBanned.delete(id);
-    const imgBuffer = await createUserCard(id, api, "🟢 UNBANNED ✅", "#00e676");
-    const filePath = path.join(__dirname, `unban_${Date.now()}.png`);
-    fs.writeFileSync(filePath,imgBuffer);
-    addLog("UNBAN", id);
-    return api.sendMessage({body:`🟢 User Unbanned!`,attachment:fs.createReadStream(filePath)}, threadID, ()=>fs.unlinkSync(filePath));
+// helper: fetch user name via api.getUserInfo (mirai typical) else fallback
+async function fetchUserInfo(api, uid) {
+  try {
+    if (typeof api.getUserInfo === "function") {
+      const info = await api.getUserInfo(uid);
+      // api.getUserInfo often returns object keyed by id
+      if (info && info[uid]) return info[uid];
+      if (info && info.name) return info;
+    }
+  } catch (err) {
+    // ignore
   }
+  // fallback minimal
+  return { id: uid, name: `User ${uid}` };
+}
 
-  if(cmd === "banlist") {
-    const list = Array.from(global.data.userBanned.entries());
-    if(list.length===0) return api.sendMessage("✨ No banned users.", threadID);
-    const imgBuffer = await createBanlistImage(list, api);
-    const filePath = path.join(__dirname, `banlist_${Date.now()}.png`);
-    fs.writeFileSync(filePath,imgBuffer);
-    return api.sendMessage({body:`🚫 Banlist (${list.length})`,attachment:fs.createReadStream(filePath)}, threadID, ()=>fs.unlinkSync(filePath));
-  }
-
-  if(cmd === "whitelist") {
-    if(!id) return api.sendMessage("⚠ Tag someone.", threadID);
-    global.data.userWhitelist.set(id,true);
-    return api.sendMessage(`⭐ User ${id} added to Whitelist`, threadID);
-  }
-
-  if(cmd === "unwhitelist") {
-    if(!id) return api.sendMessage("⚠ Tag someone.", threadID);
-    global.data.userWhitelist.delete(id);
-    return api.sendMessage(`🗑 User ${id} removed from Whitelist`, threadID);
-  }
-
-  if(cmd === "logs") {
-    return api.sendMessage(createLogText(), threadID);
-  }
-
-  api.sendMessage("Commands: ban, unban, banlist, whitelist, unwhitelist, logs", threadID);
-};
-
-// AUTO-BAN EVENT
-module.exports.handleEvent = async function({ api, event }) {
-  const { senderID, threadID, body } = event;
-  if(!body || admins.includes(senderID) || global.data.userWhitelist.has(senderID)) return;
-
-  const lower = body.toLowerCase();
-  if(badWords.some(w => lower.includes(w))){
-    global.data.userBanned.set(senderID, Date.now());
-    const imgBuffer = await createUserCard(senderID, api, "⚠ AUTO-BANNED 🚨", "#ff3d00");
-    const filePath = path.join(__dirname, `autoban_${Date.now()}.png`);
-    fs.writeFileSync(filePath,imgBuffer);
-    addLog("AUTO-BAN", senderID);
-    return api.sendMessage({body:`⚠ Auto Ban Triggered!`,attachment:fs.createReadStream(filePath)}, threadID, ()=>fs.unlinkSync(filePath));
-  }
-};
-
-// CREATE USER CARD
-async function createUserCard(id, api, title, color){
-  let buffer=null;
-  try{ buffer=(await axios.get(`https://graph.facebook.com/${id}/picture?height=600&width=600`,{responseType:"arraybuffer"})).data; }catch(e){}
-  let name="Unknown";
-  try{ const info = await api.getUserInfo(id); name=info[id]?.name||name; }catch(e){}
-  const canvas = createCanvas(900,500);
+// helper: create messenger style ban image
+async function createBanImage({ name, uid, reason, dpBuffer }) {
+  // Canvas size — messenger-like panel
+  const width = 900;
+  const height = 360;
+  const canvas = createCanvas(width, height);
   const ctx = canvas.getContext("2d");
-  // bg gradient
-  const grad = ctx.createLinearGradient(0,0,900,0);
-  grad.addColorStop(0,color); grad.addColorStop(1,"#000");
-  ctx.fillStyle=grad; ctx.fillRect(0,0,900,500);
-  ctx.shadowColor="#fff"; ctx.shadowBlur=25;
-  // DP
-  if(buffer){
-    const img = await loadImage(buffer);
-    ctx.save(); ctx.beginPath(); ctx.arc(450,200,140,0,Math.PI*2); ctx.clip();
-    ctx.drawImage(img,310,60,280,280); ctx.restore();
-  }else{
-    ctx.fillStyle="#888"; ctx.beginPath(); ctx.arc(450,200,140,0,Math.PI*2); ctx.fill();
+
+  // Background — light messenger-like
+  ctx.fillStyle = "#f0f2f5";
+  ctx.fillRect(0, 0, width, height);
+
+  // Left card (avatar)
+  ctx.fillStyle = "#ffffff";
+  const panelX = 18, panelY = 18, panelW = width - 36, panelH = height - 36;
+  roundRect(ctx, panelX, panelY, panelW, panelH, 14);
+  ctx.fill();
+
+  // Draw header bar
+  ctx.fillStyle = "#0084ff"; // messenger blue
+  roundRect(ctx, panelX, panelY, panelW, 72, 14);
+  ctx.fill();
+
+  // Title text
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "bold 28px Sans";
+  ctx.fillText("🚨BABU TU 🚧 BAN HAI RE🚫", panelX + 20, panelY + 45);
+
+  // Draw avatar circle
+  const avatarX = panelX + 20;
+  const avatarY = panelY + 100;
+  const avatarSize = 140;
+
+  // white circle background
+  ctx.beginPath();
+  ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 + 6, 0, Math.PI * 2);
+  ctx.fillStyle = "#f0f2f5";
+  ctx.fill();
+
+  // load dp image
+  if (dpBuffer) {
+    try {
+      const img = await loadImage(dpBuffer);
+      ctx.save();
+      // clip circle
+      ctx.beginPath();
+      ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(img, avatarX, avatarY, avatarSize, avatarSize);
+      ctx.restore();
+    } catch (e) {
+      // fallback plain avatar
+      ctx.fillStyle = "#d0d0d0";
+      ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
+    }
+  } else {
+    ctx.fillStyle = "#d0d0d0";
+    ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
   }
-  ctx.fillStyle="#fff"; ctx.font="bold 48px Sans"; ctx.fillText(title,180,380);
-  ctx.font="bold 36px Sans"; ctx.fillText(name,300,440);
-  ctx.font="24px Sans"; ctx.fillText(`UID: ${id}`,360,470);
+
+  // Right side: info text
+  const infoX = avatarX + avatarSize + 30;
+  const infoY = avatarY;
+
+  ctx.fillStyle = "#111827";
+  ctx.font = "bold 26px Sans";
+  ctx.fillText(name, infoX, infoY + 30);
+
+  ctx.font = "16px Sans";
+  ctx.fillStyle = "#374151";
+  ctx.fillText(`UID: ${uid}`, infoX, infoY + 68);
+
+  // Reason box
+  ctx.fillStyle = "#fff5f5";
+  roundRect(ctx, infoX, infoY + 86, panelW - infoX - 40, 72, 8);
+  ctx.fill();
+
+  ctx.fillStyle = "#b91c1c";
+  ctx.font = "bold 18px Sans";
+  ctx.fillText("Reason:", infoX + 12, infoY + 112);
+
+  ctx.fillStyle = "#991b1b";
+  ctx.font = "16px Sans";
+  // wrap reason if long
+  wrapText(ctx, reason, infoX + 90, infoY + 112, panelW - infoX - 120, 20);
+
+  // footer: action and time
+  const timeStr = new Date().toLocaleString("en-GB", { timeZone: "Asia/Kolkata" });
+  ctx.fillStyle = "#374151";
+  ctx.font = "14px Sans";
+  ctx.fillText(`Action: 24 hours ban`, panelX + 22, panelY + panelH - 30);
+  ctx.fillText(`Time: ${timeStr}`, panelX + 220, panelY + panelH - 30);
+
+  // small warning icon
+  ctx.fillStyle = "#ff4d4f";
+  ctx.beginPath();
+  ctx.moveTo(panelW + panelX - 110, panelY + 36);
+  ctx.arc(panelW + panelX - 130, panelY + 36, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  // return buffer
   return canvas.toBuffer("image/png");
 }
 
-// BANLIST IMAGE
-async function createBanlistImage(list, api){
-  const width=900,rowHeight=120,height=list.length*rowHeight+120;
-  const canvas=createCanvas(width,height); const ctx=canvas.getContext("2d");
-  ctx.fillStyle="#0f172a"; ctx.fillRect(0,0,width,height);
-  ctx.fillStyle="#fff"; ctx.font="bold 45px Sans"; ctx.fillText("🚫 BAN LIST",320,70);
-  let y=140;
-  for(const [uid,time] of list){
-    const remain=86400000-(Date.now()-time);
-    const hrs=Math.floor(remain/3600000); const mins=Math.floor((remain%3600000)/60000);
-    let buffer=null;
-    try{ buffer=(await axios.get(`https://graph.facebook.com/${uid}/picture?height=200&width=200`,{responseType:"arraybuffer"})).data; }catch(e){}
-    if(buffer){ const img=await loadImage(buffer); ctx.save(); ctx.beginPath(); ctx.arc(80,y-20,50,0,Math.PI*2); ctx.clip(); ctx.drawImage(img,30,y-70,100,100); ctx.restore();}
-    let name="Unknown"; try{ name=(await api.getUserInfo(uid))[uid].name; }catch(e){}
-    ctx.fillStyle="#fff"; ctx.font="bold 30px Sans"; ctx.fillText(name,160,y);
-    ctx.font="20px Sans"; ctx.fillText(`UID: ${uid}`,160,y+30); ctx.fillText(`⏳ Left: ${hrs}h ${mins}m`,160,y+60);
-    y+=rowHeight;
-  }
-  return canvas.toBuffer("image/png");
-}
-
-// LOGS
-function addLog(type,id){
-  global.data.userLogs.unshift({type,id,time:new Date().toLocaleString("en-GB",{timeZone:"Asia/Kolkata"})});
-  if(global.data.userLogs.length>10) global.data.userLogs.pop();
-}
-
-function createLogText(){
-  if(global.data.userLogs.length===0) return "📜 No recent actions.";
-  let text="📜 Recent Actions:\n";
-  global.data.userLogs.forEach(log=>{ text+=`• [${log.type}] UID: ${log.id} at ${log.time}\n`; });
-  return text;
-}
+// small helpers
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.a
