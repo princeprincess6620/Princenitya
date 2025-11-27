@@ -4,10 +4,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "owner",
-  version: "30.0.0 NEXT LEVEL",
+  version: "31.0.0 NEXT LEVEL FIXED",
   hasPermssion: 0,
   credits: "ARYAN XD | ULTRA NEXT GEN",
-  description: "LEGENDARY OWNER CARD GLOW DESIGN",
+  description: "LEGENDARY OWNER CARD GLOW DESIGN FIXED",
   commandCategory: "System",
   usages: "owner",
   cooldowns: 3,
@@ -15,8 +15,8 @@ module.exports.config = {
 
 const cooldown = new Map();
 
-// 🖼 SINGLE PREMIUM ImgBB LINK (Ultra 4K Gold Frame Owner Card)
-const premiumImage = "https://i.ibb.co/7zTzc6J/ultra-royal-gold.jpg";
+// ⚡ NEW Working Ultra ImgBB Link
+const premiumImage = "https://i.ibb.co/2329JM2X/IMG-20251127-184500.png";
 
 async function sendRoyalCard(api, event, isCommand = false) {
   const user = event.senderID;
@@ -33,58 +33,60 @@ async function sendRoyalCard(api, event, isCommand = false) {
   cooldown.set(user, now);
 
   const cacheDir = path.join(__dirname, "cache");
-  const imgPath = path.join(cacheDir, `royal_${Date.now()}.png`);
   if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-  try {
-    const response = await axios.get(premiumImage, { responseType: "arraybuffer" });
-    fs.writeFileSync(imgPath, Buffer.from(response.data));
+  const imgPath = path.join(cacheDir, `royal_${Date.now()}.jpg`);
 
-    const msg = {
+  try {
+    const { data } = await axios.get(premiumImage, {
+      responseType: "arraybuffer",
+      timeout: 8000
+    });
+
+    fs.writeFileSync(imgPath, Buffer.from(data));
+
+    const message = {
       body:
 `╭━━━━━━━━━━━━━━✦⚜✦━━━━━━━━━━━━━━╮
-              👑 *ROYAL OWNER CARD*
+        👑 *ROYAL OWNER CARD*
 ╰━━━━━━━━━━━━━━✦⚜✦━━━━━━━━━━━━━━╯
 
 ✨ *Owner:* 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔
 🤖 *Bot:* 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗨𝗟𝗧𝗥𝗔 𝗡𝗘𝗫𝗧 𝗚𝗘𝗡
 💠 *Rank:* 𝗚𝗢𝗗 𝗟𝗘𝗩𝗘𝗟 𝗣𝗢𝗪𝗘𝗥
 ⚡ *Core:* Quantum AI Boost Engine
-🛡 *Mode:* Royal Protection Security
-💎 *Support:* Lifetime VIP Premium
+💎 *Support:* Lifetime VIP
 
-🌍 *Network:* Global Ultra Fast Server
-✈️ Telegram: t.me/Aryanchat4322
+✈ Telegram: t.me/Aryanchat4322
 💻 GitHub: Aryan1435
-
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-🔥 *Respect The Owner • Love The System* 🔥
-💫 *Power Starts Here*
-`,
-      attachment: fs.createReadStream(imgPath),
+⚡ Respect The Owner • Love The System ⚡`,
+      attachment: fs.createReadStream(imgPath)
     };
 
-    const sent = await api.sendMessage(msg, event.threadID);
+    const sent = await api.sendMessage(message, event.threadID);
 
-    // Animated Reaction Effect (wave style)
-    const reactionWave = ["👑", "⚡", "💎", "🔥", "✨", "🔱", "🚀"];
-    for (let r of reactionWave) {
-      await new Promise((res) => setTimeout(res, 320));
+    const animated = ["👑", "🔥", "💎", "⚡", "✨", "🚀"];
+    for (const r of animated) {
+      await new Promise(res => setTimeout(res, 300));
       await api.setMessageReaction(r, sent.messageID, () => {}, true);
     }
 
-    setTimeout(() => fs.existsSync(imgPath) && fs.unlinkSync(imgPath), 6000);
+    setTimeout(() => {
+      if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+    }, 6000);
 
-  } catch (err) {
-    api.sendMessage("❌ Royal Card Load Error! Try again.", event.threadID);
+  } catch (error) {
+    api.sendMessage(`⚠️ Image Load Failed.\nTry: !owner again`, event.threadID);
+    console.log("Royal Card Error:", error);
   }
 }
 
 module.exports.handleEvent = async ({ api, event }) => {
   const text = event.body?.toLowerCase() || "";
-  const keys = ["owner", "arya", "aryan", "vip", "premium", "king", "boss"];
+  const keys = ["owner", "malik", "vip", "premium", "boss"];
 
-  if (keys.some((k) => text.includes(k))) {
+  if (keys.some(k => text.includes(k))) {
     sendRoyalCard(api, event, false);
   }
 };
