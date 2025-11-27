@@ -4,121 +4,91 @@ const path = require("path");
 
 module.exports.config = {
   name: "owner",
-  version: "10.0.0",
+  version: "30.0.0 NEXT LEVEL",
   hasPermssion: 0,
-  credits: "ARUN + ULTRA PREMIUM",
-  description: "ULTRA OWNER CARD",
-  commandCategory: "system",
+  credits: "ARYAN XD | ULTRA NEXT GEN",
+  description: "LEGENDARY OWNER CARD GLOW DESIGN",
+  commandCategory: "System",
   usages: "owner",
-  cooldowns: 2
+  cooldowns: 3,
 };
 
-const userCooldowns = new Map();
+const cooldown = new Map();
 
-// ImgBB Links - Fast loading
-const premiumImages = [
-  "https://i.ibb.co/8gYwM6n/owner.jpg",
-  "https://i.ibb.co/0jW1kzL/owner-card.png", 
-  "https://i.ibb.co/7QyZyC7/premium-bot.jpg",
-  "https://i.ibb.co/4T3yQh2/ai-robot.jpg"
-];
+// 🖼 SINGLE PREMIUM ImgBB LINK (Ultra 4K Gold Frame Owner Card)
+const premiumImage = "https://i.ibb.co/7zTzc6J/ultra-royal-gold.jpg";
 
-async function sendOwnerCard(api, event, isCommand = false) {
+async function sendRoyalCard(api, event, isCommand = false) {
+  const user = event.senderID;
   const now = Date.now();
-  const userKey = event.senderID;
-  
-  if (userCooldowns.has(userKey) && (now - userCooldowns.get(userKey) < 10000)) {
+
+  if (cooldown.has(user) && now - cooldown.get(user) < 7000) {
     if (isCommand) {
-      const remaining = Math.ceil((10000 - (now - userCooldowns.get(userKey))) / 1000);
-      api.sendMessage(`⏳ Wait ${remaining}s`, event.threadID);
+      const wait = Math.ceil((7000 - (now - cooldown.get(user))) / 1000);
+      api.sendMessage(`⏳ *Royal Access Wait:* ${wait}s`, event.threadID);
     }
     return;
   }
 
-  userCooldowns.set(userKey, now);
+  cooldown.set(user, now);
+
   const cacheDir = path.join(__dirname, "cache");
-  const imgPath = path.join(cacheDir, `owner_${Date.now()}.jpg`);
+  const imgPath = path.join(cacheDir, `royal_${Date.now()}.png`);
+  if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
   try {
-    if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir, { recursive: true });
-
-    // Direct image download without loading message
-    const imgURL = premiumImages[Math.floor(Math.random() * premiumImages.length)];
-    const response = await axios({
-      method: 'GET',
-      url: imgURL,
-      responseType: 'arraybuffer',
-      timeout: 5000
-    });
-
+    const response = await axios.get(premiumImage, { responseType: "arraybuffer" });
     fs.writeFileSync(imgPath, Buffer.from(response.data));
 
-    const premiumMessage = {
-      body: `┏━━━━━━━━━━━━━━┓
-   🤖 ULTRA OWNER CARD
-┗━━━━━━━━━━━━━━┛
+    const msg = {
+      body:
+`╭━━━━━━━━━━━━━━✦⚜✦━━━━━━━━━━━━━━╮
+              👑 *ROYAL OWNER CARD*
+╰━━━━━━━━━━━━━━✦⚜✦━━━━━━━━━━━━━━╯
 
-👑 Owner: ARYAN XD NITYA
-🤖 Bot: ARYAN BOT ULTRA
-⭐ Status: Permanent Active
-💫 Level: Maximum Premium
+✨ *Owner:* 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔
+🤖 *Bot:* 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗨𝗟𝗧𝗥𝗔 𝗡𝗘𝗫𝗧 𝗚𝗘𝗡
+💠 *Rank:* 𝗚𝗢𝗗 𝗟𝗘𝗩𝗘𝗟 𝗣𝗢𝗪𝗘𝗥
+⚡ *Core:* Quantum AI Boost Engine
+🛡 *Mode:* Royal Protection Security
+💎 *Support:* Lifetime VIP Premium
 
-📱 WhatsApp: Connected ✅
+🌍 *Network:* Global Ultra Fast Server
 ✈️ Telegram: t.me/Aryanchat4322
 💻 GitHub: Aryan1435
-🔧 Support: 24/7 Available
 
-🎯 Aryan Me Premium Forever!`,
-      attachment: fs.createReadStream(imgPath)
+━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔥 *Respect The Owner • Love The System* 🔥
+💫 *Power Starts Here*
+`,
+      attachment: fs.createReadStream(imgPath),
     };
 
-    const messageInfo = await api.sendMessage(premiumMessage, event.threadID);
+    const sent = await api.sendMessage(msg, event.threadID);
 
-    // Fast reactions
-    const reactions = ["🤖", "👑", "⭐", "💎"];
-    for (let reaction of reactions) {
-      await api.setMessageReaction(reaction, messageInfo.messageID, () => {}, true);
+    // Animated Reaction Effect (wave style)
+    const reactionWave = ["👑", "⚡", "💎", "🔥", "✨", "🔱", "🚀"];
+    for (let r of reactionWave) {
+      await new Promise((res) => setTimeout(res, 320));
+      await api.setMessageReaction(r, sent.messageID, () => {}, true);
     }
 
-    setTimeout(() => {
-      if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-    }, 8000);
+    setTimeout(() => fs.existsSync(imgPath) && fs.unlinkSync(imgPath), 6000);
 
-  } catch (error) {
-    // Fast fallback without image
-    const fallbackMsg = `🤖 ARYAN BOT OWNER
-
-👑 Owner: ARYAN XD NITYA
-🤖 Bot: Aryan Bot Ultra  
-⭐ Status: Permanent Active
-📱 Telegram: t.me/Aryanchat4322
-💻 GitHub: Aryan1435
-
-🔧 24/7 Premium Support`;
-    
-    await api.sendMessage(fallbackMsg, event.threadID, event.messageID);
+  } catch (err) {
+    api.sendMessage("❌ Royal Card Load Error! Try again.", event.threadID);
   }
 }
 
-module.exports.handleEvent = async function({ api, event }) {
-  if (event.type !== "message" || event.senderID === api.getCurrentUserID()) return;
-
+module.exports.handleEvent = async ({ api, event }) => {
   const text = event.body?.toLowerCase() || "";
-  const triggers = ["owner", "aryan", "vip", "premium"];
-  
-  if (triggers.some(word => text.includes(word))) {
-    await sendOwnerCard(api, event, false);
+  const keys = ["owner", "arya", "aryan", "vip", "premium", "king", "boss"];
+
+  if (keys.some((k) => text.includes(k))) {
+    sendRoyalCard(api, event, false);
   }
 };
 
-module.exports.run = async function({ api, event, args }) {
-  if (args[0] === "help") {
-    return api.sendMessage(`🤖 OWNER HELP
-
-!owner - Show owner card
-Auto-trigger: owner, aryan, vip
-Cooldown: 10s`, event.threadID);
-  }
-  
-  await sendOwnerCard(api, event, true);
+module.exports.run = async ({ api, event }) => {
+  sendRoyalCard(api, event, true);
 };
