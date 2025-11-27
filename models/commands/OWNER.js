@@ -10,52 +10,72 @@ module.exports.config = {
   description: "Ultimate Premium Owner Info Card - Mirai Bot",
   commandCategory: "system",
   usages: "owner",
-  cooldowns: 1
+  cooldowns: 5
 };
 
-module.exports.handleEvent = async function({ api, event }) {
-  // Check if message is from a user and not the bot itself
-  if (event.type !== "message" || event.senderID === api.getCurrentUserID()) {
-    return;
+// Cooldown tracking
+const userCooldowns = new Map();
+
+async function sendOwnerCard(api, event, isCommand = false) {
+  const now = Date.now();
+  const cooldownTime = 10 * 1000; // 10 seconds cooldown
+  const userKey = event.senderID;
+  
+  // Check cooldown
+  if (userCooldowns.has(userKey)) {
+    const lastUsed = userCooldowns.get(userKey);
+    if (now - lastUsed < cooldownTime) {
+      if (isCommand) {
+        const remaining = Math.ceil((cooldownTime - (now - lastUsed)) / 1000);
+        api.sendMessage(`⏰ Please wait ${remaining} seconds before using this command again.`, event.threadID, event.messageID);
+      }
+      return;
+    }
   }
   
-  const text = event.body?.toLowerCase() || "";
-  const triggerWords = ["owner", "prefix", "king", "vip", "boss", "admin", "developer", "creator", "mirai", "aryan"];
+  // Set cooldown
+  userCooldowns.set(userKey, now);
+
+  // Working Premium Images (tested URLs)
+  const premiumImages = [
+    "https://i.ibb.co/0Q8Kz1M/hero-img.png", // High quality bot image
+    "https://i.ibb.co/4T3yQh2/ai-robot.jpg", // Robot image
+    "https://i.ibb.co/7QyZyC7/premium-bot.jpg", // Premium bot
+    "https://i.ibb.co/0jW1kzL/owner-card.png" // Owner card template
+  ];
   
-  if (triggerWords.some(word => text.includes(word))) {
-    // Add delay to prevent spam
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  let imgURL = premiumImages[Math.floor(Math.random() * premiumImages.length)];
+  const cacheDir = path.join(__dirname, "cache");
+  const imgPath = path.join(cacheDir, `owner_${event.senderID}_${Date.now()}.jpg`);
+  
+  try {
+    // Create cache directory if not exists
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir, { recursive: true });
+    }
+
+    console.log("📥 Downloading image from:", imgURL);
     
-    // Premium Images
-    const premiumImages = [
-      "https://i.imgur.com/5z5QmYy.jpeg",
-      "https://i.imgur.com/8K3mQ2a.jpg", 
-      "https://i.imgur.com/Lp7mR4z.png",
-      "https://i.imgur.com/9M2k5Rb.jpg"
-    ];
-    
-    let imgURL = premiumImages[Math.floor(Math.random() * premiumImages.length)];
-    const cacheDir = path.join(__dirname, "cache");
-    const imgPath = path.join(cacheDir, `VIP_OWNER_CARD_${Date.now()}.jpg`);
-    
-    try {
-      // Create cache directory if not exists
-      if (!fs.existsSync(cacheDir)) {
-        fs.mkdirSync(cacheDir, { recursive: true });
+    // Download image with timeout and better error handling
+    const response = await axios({
+      method: 'GET',
+      url: imgURL,
+      responseType: 'arraybuffer',
+      timeout: 15000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
+    });
+    
+    if (response.status !== 200) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    fs.writeFileSync(imgPath, Buffer.from(response.data));
+    console.log("✅ Image downloaded successfully");
 
-      // Download image with timeout
-      const response = await axios({
-        method: 'GET',
-        url: imgURL,
-        responseType: 'arraybuffer',
-        timeout: 10000
-      });
-      
-      fs.writeFileSync(imgPath, Buffer.from(response.data));
-
-      const premiumMessage = {
-        body: `╔═════⋆✦⋆══════╗
+    const premiumMessage = {
+      body: `╔═════⋆✦⋆══════╗
    🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗖𝗔𝗥𝗗  🤖
 ╚══════⋆✦⋆══════╝
 
@@ -94,52 +114,99 @@ module.exports.handleEvent = async function({ api, event }) {
 
 🎯 *Motto:* "Aryan Me Premium Forever!"
 ━━━━━━━━━━━━━━━`,
-        attachment: fs.createReadStream(imgPath)
-      };
+      attachment: fs.createReadStream(imgPath)
+    };
 
-      // Send message
-      await api.sendMessage(premiumMessage, event.threadID, (err, info) => {
-        if (!err) {
-          // Add reactions to the sent message
-          const premiumReactions = ["🤖", "👑", "⭐", "💎"];
-          let reactionIndex = 0;
-          
-          const addReaction = () => {
-            if (reactionIndex < premiumReactions.length) {
-              api.setMessageReaction(premiumReactions[reactionIndex], info.messageID, () => {}, true);
-              reactionIndex++;
-              setTimeout(addReaction, 500);
-            }
-          };
-          addReaction();
-        }
-        
-        // Clean up image file after sending
-        setTimeout(() => {
-          if (fs.existsSync(imgPath)) {
-            try {
-              fs.unlinkSync(imgPath);
-            } catch (e) {
-              console.log("Cleanup error:", e);
-            }
-          }
-        }, 5000);
-      });
+    // Send message
+    const messageInfo = await api.sendMessage(premiumMessage, event.threadID);
+    console.log("✅ Message sent successfully");
 
-    } catch (error) {
-      console.error("Mirai Owner Card Error:", error);
-      // Fallback text message without image
-      const fallbackMessage = `🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢:\n\n👑 𝗕𝗼𝘁 𝗢𝘄𝗻𝗲𝗿: 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔\n🤖 𝗕𝗼𝘁 𝗧𝘆𝗽𝗲: Aryan Bot\n⭐ 𝗦𝘁𝗮𝘁𝘂𝘀: Permanent Active\n📱 𝗧𝗲𝗹𝗲𝗴𝗿𝗮𝗺: https://t.me/Aryanchat4322\n💻 𝗚𝗶𝘁𝗛𝘂𝗯: https://github.com/Aryan1435\n\n🔧 𝗔𝗿𝘆𝗮𝗻 𝗕𝗼𝘁 𝗖𝗼𝗺𝗽𝗮𝘁𝗶𝗯𝗹𝗲`;
-      api.sendMessage(fallbackMessage, event.threadID, event.messageID);
+    // Add reactions
+    try {
+      const premiumReactions = ["🤖", "👑", "⭐", "💎"];
+      for (let i = 0; i < premiumReactions.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        await api.setMessageReaction(premiumReactions[i], messageInfo.messageID, () => {}, true);
+      }
+    } catch (reactionError) {
+      console.log("⚠️ Reactions failed, but message sent");
     }
+
+    // Clean up image file after sending
+    setTimeout(() => {
+      if (fs.existsSync(imgPath)) {
+        try {
+          fs.unlinkSync(imgPath);
+          console.log("🧹 Cache cleaned");
+        } catch (e) {
+          console.log("Cleanup error:", e);
+        }
+      }
+    }, 8000);
+
+  } catch (error) {
+    console.error("❌ Image download failed:", error.message);
+    
+    // Fallback text message without image
+    const fallbackMessage = `🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢:
+
+👑 𝗕𝗼𝘁 𝗢𝘄𝗻𝗲𝗿: 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔
+🤖 𝗕𝗼𝘁 𝗧𝘆𝗽𝗲: Aryan Bot  
+⭐ 𝗦𝘁𝗮𝘁𝘂𝘀: Permanent Active
+💫 𝗟𝗲𝘃𝗲𝗹: Maximum Premium
+
+━━━━━━━━━━━━━━━
+🌐 𝗖𝗢𝗡𝗧𝗔𝗖𝗧𝗦
+━━━━━━━━━━━━━━━
+📱 WhatsApp: ARYAN Connected ✅
+✈️ Telegram: https://t.me/Aryanchat4322
+💻 GitHub: https://github.com/Aryan1435
+🔧 Support: 24/7 Available
+
+🎯 "Aryan Me Premium Forever!"`;
+    
+    await api.sendMessage(fallbackMessage, event.threadID, event.messageID);
+  }
+}
+
+module.exports.handleEvent = async function({ api, event }) {
+  // Check if message is from a user and not the bot itself
+  if (event.type !== "message" || event.senderID === api.getCurrentUserID()) {
+    return;
+  }
+  
+  const text = event.body?.toLowerCase() || "";
+  const triggerWords = ["owner", "king", "vip", "boss", "admin", "developer", "creator", "mirai", "aryan", "premium"];
+  
+  // Check if message contains exactly trigger words (not just parts of other words)
+  const shouldTrigger = triggerWords.some(word => {
+    if (text === word) return true; // exact match
+    if (text.includes(` ${word} `)) return true; // word with spaces around
+    if (text.startsWith(`${word} `)) return true; // word at start
+    if (text.endsWith(` ${word}`)) return true; // word at end
+    return false;
+  });
+  
+  if (shouldTrigger) {
+    console.log(`🔔 Triggered by: "${event.body}"`);
+    await sendOwnerCard(api, event, false);
   }
 };
 
 module.exports.run = async function({ api, event, args }) {
   if (args[0] === "help") {
-    return api.sendMessage(`🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗛𝗘𝗟𝗣:\n\n📌 Usage: owner, vip, king, boss, developer, aryan\n\n🔧 Bot Type: Aryan Bot\n🎯 Version: Premium 5.0\n\n✨ Just type "owner" to see premium card!`, event.threadID);
+    return api.sendMessage(`🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗛𝗘𝗟𝗣:
+
+📌 Usage: !owner 
+📌 Auto-trigger: owner, vip, king, boss, aryan
+
+🔧 Bot Type: Aryan Bot
+🎯 Version: Premium 5.0
+⏰ Cooldown: 10 seconds
+
+✨ Just type "owner" to see premium card!`, event.threadID);
   }
   
-  // Trigger the handleEvent function manually when command is used
-  this.handleEvent({ api, event });
+  console.log(`🔔 Command triggered: !owner`);
+  await sendOwnerCard(api, event, true);
 };
