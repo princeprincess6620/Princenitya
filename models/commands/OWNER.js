@@ -14,12 +14,19 @@ module.exports.config = {
 };
 
 module.exports.handleEvent = async function({ api, event }) {
+  // Check if message is from a user and not the bot itself
+  if (event.type !== "message" || event.senderID === api.getCurrentUserID()) {
+    return;
+  }
+  
   const text = event.body?.toLowerCase() || "";
-  const triggerWords = ["owner", "prefix", "king", "viihan", "vip", "boss", "admin", "developer", "creator", "mirai"];
+  const triggerWords = ["owner", "prefix", "king", "vip", "boss", "admin", "developer", "creator", "mirai", "aryan"];
   
   if (triggerWords.some(word => text.includes(word))) {
-
-    // Mirai Bot Compatible Images
+    // Add delay to prevent spam
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Premium Images
     const premiumImages = [
       "https://i.imgur.com/5z5QmYy.jpeg",
       "https://i.imgur.com/8K3mQ2a.jpg", 
@@ -28,16 +35,24 @@ module.exports.handleEvent = async function({ api, event }) {
     ];
     
     let imgURL = premiumImages[Math.floor(Math.random() * premiumImages.length)];
-    const imgPath = path.resolve(__dirname, "cache", "VIP_OWNER_CARD.jpg");
+    const cacheDir = path.join(__dirname, "cache");
+    const imgPath = path.join(cacheDir, `VIP_OWNER_CARD_${Date.now()}.jpg`);
     
     try {
       // Create cache directory if not exists
-      if (!fs.existsSync(path.dirname(imgPath))) {
-        fs.mkdirSync(path.dirname(imgPath), { recursive: true });
+      if (!fs.existsSync(cacheDir)) {
+        fs.mkdirSync(cacheDir, { recursive: true });
       }
 
-      const getImage = (await axios.get(imgURL, { responseType: "arraybuffer" })).data;
-      fs.writeFileSync(imgPath, Buffer.from(getImage));
+      // Download image with timeout
+      const response = await axios({
+        method: 'GET',
+        url: imgURL,
+        responseType: 'arraybuffer',
+        timeout: 10000
+      });
+      
+      fs.writeFileSync(imgPath, Buffer.from(response.data));
 
       const premiumMessage = {
         body: `╔═════⋆✦⋆══════╗
@@ -79,38 +94,52 @@ module.exports.handleEvent = async function({ api, event }) {
 
 🎯 *Motto:* "Aryan Me Premium Forever!"
 ━━━━━━━━━━━━━━━`,
-
         attachment: fs.createReadStream(imgPath)
       };
 
-      await api.sendMessage(premiumMessage, event.threadID, event.messageID);
-
-      // Mirai compatible reactions
-      const premiumReactions = ["🤖", "👑", "⭐", "💎"];
-      for (let reaction of premiumReactions) {
-        await new Promise(resolve => setTimeout(resolve, 500));
-        await api.setMessageReaction(reaction, event.messageID, () => {}, true);
-      }
-
-      // Auto cleanup cache
-      setTimeout(() => {
-        if (fs.existsSync(imgPath)) {
-          fs.unlinkSync(imgPath);
+      // Send message
+      await api.sendMessage(premiumMessage, event.threadID, (err, info) => {
+        if (!err) {
+          // Add reactions to the sent message
+          const premiumReactions = ["🤖", "👑", "⭐", "💎"];
+          let reactionIndex = 0;
+          
+          const addReaction = () => {
+            if (reactionIndex < premiumReactions.length) {
+              api.setMessageReaction(premiumReactions[reactionIndex], info.messageID, () => {}, true);
+              reactionIndex++;
+              setTimeout(addReaction, 500);
+            }
+          };
+          addReaction();
         }
-      }, 10000);
+        
+        // Clean up image file after sending
+        setTimeout(() => {
+          if (fs.existsSync(imgPath)) {
+            try {
+              fs.unlinkSync(imgPath);
+            } catch (e) {
+              console.log("Cleanup error:", e);
+            }
+          }
+        }, 5000);
+      });
 
     } catch (error) {
       console.error("Mirai Owner Card Error:", error);
-      // Fallback text message
-      api.sendMessage(`🤖 𝗠𝗜𝗥𝗔𝗜 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢:\n\n👑 𝗕𝗼𝘁 𝗢𝘄𝗻𝗲𝗿: 𝗩𝗶𝗶𝗵𝗮𝗻 𝗥𝗗𝗫\n🤖 𝗕𝗼𝘁 𝗧𝘆𝗽𝗲: Mirai Bot\n⭐ 𝗦𝘁𝗮𝘁𝘂𝘀: Permanent Active\n📱 𝗧𝗲𝗹𝗲𝗴𝗿𝗮𝗺: @ViihanRdx\n\n🔧 𝗠𝗶𝗿𝗮𝗶 𝗕𝗼𝘁 𝗖𝗼𝗺𝗽𝗮𝘁𝗶𝗯𝗹𝗲`, event.threadID, event.messageID);
+      // Fallback text message without image
+      const fallbackMessage = `🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢:\n\n👑 𝗕𝗼𝘁 𝗢𝘄𝗻𝗲𝗿: 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔\n🤖 𝗕𝗼𝘁 𝗧𝘆𝗽𝗲: Aryan Bot\n⭐ 𝗦𝘁𝗮𝘁𝘂𝘀: Permanent Active\n📱 𝗧𝗲𝗹𝗲𝗴𝗿𝗮𝗺: https://t.me/Aryanchat4322\n💻 𝗚𝗶𝘁𝗛𝘂𝗯: https://github.com/Aryan1435\n\n🔧 𝗔𝗿𝘆𝗮𝗻 𝗕𝗼𝘁 𝗖𝗼𝗺𝗽𝗮𝘁𝗶𝗯𝗹𝗲`;
+      api.sendMessage(fallbackMessage, event.threadID, event.messageID);
     }
   }
 };
 
 module.exports.run = async function({ api, event, args }) {
   if (args[0] === "help") {
-    return api.sendMessage(`🤖 𝗠𝗜𝗥𝗔𝗜 𝗢𝗪𝗡𝗘𝗥 𝗛𝗘𝗟𝗣:\n\n📌 Usage: owner, vip, king, boss, developer\n\n🔧 Bot Type: Mirai Bot\n🎯 Version: Premium 5.0\n\n✨ Just type "owner" to see premium card!`, event.threadID);
+    return api.sendMessage(`🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗛𝗘𝗟𝗣:\n\n📌 Usage: owner, vip, king, boss, developer, aryan\n\n🔧 Bot Type: Aryan Bot\n🎯 Version: Premium 5.0\n\n✨ Just type "owner" to see premium card!`, event.threadID);
   }
   
-  api.sendMessage(`🤖 𝗠𝗜𝗥𝗔𝗜 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗢𝗪𝗡𝗘𝗥\n\nType "owner" to see premium owner card!\n\n🔧 Mirai Bot Compatible\n🎯 Permanent Version 5.0`, event.threadID, event.messageID);
+  // Trigger the handleEvent function manually when command is used
+  this.handleEvent({ api, event });
 };
