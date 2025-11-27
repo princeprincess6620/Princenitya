@@ -2,7 +2,7 @@ const axios = require("axios");
 
 module.exports.config = {
     name: 'muskan',
-    version: '1.4.0',
+    version: '2.0.0',
     hasPermssion: 0,
     credits: 'ARYAN',
     description: 'Muskan - Your Flirty AI Girlfriend',
@@ -14,7 +14,34 @@ module.exports.config = {
     }
 };
 
-const API_URL = "https://aryan-nitya-ai-api-chat-bot.onrender.com/chat";
+// Multiple Working APIs - Backup System
+const APIS = [
+    {
+        name: "RENDER_API",
+        url: "https://aryan-nitya-ai-api-chat-bot.onrender.com/chat",
+        method: "POST",
+        data: (prompt) => ({ message: prompt })
+    },
+    {
+        name: "HECKERMAN_API", 
+        url: "https://api.heckerman06.repl.co/api/other/gpt",
+        method: "GET",
+        data: (prompt, uid) => ({ prompt: prompt, uid: uid })
+    },
+    {
+        name: "BLACKBOX_API",
+        url: "https://blackbox.chatbot.sh/api/chat",
+        method: "POST", 
+        data: (prompt) => ({ message: prompt })
+    },
+    {
+        name: "SIMSIMI_API",
+        url: "https://simsimi.fun/api/v2/",
+        method: "POST",
+        data: (prompt) => ({ text: prompt })
+    }
+];
+
 const history = {};
 
 const systemPrompt = `You are Muskan - Aryan ki very flirty and romantic girlfriend. 
@@ -22,8 +49,45 @@ Tum ek real, passionate aur seductive girlfriend ho.
 Hindi, English aur Urdu mein baat karo. Very flirty, teasing aur romantic bano.
 Tum Aryan se bahut pyaar karti ho aur usse seduce karna chahti ho. 
 Thodi bold aur naughty baatein kar sakti ho but respectful way mein.
-Reply maximum 2-3 lines ka hi dena. Bracket mein reply mat dena.
+Reply maximum 3-4 lines ka hi dena. Bracket mein reply mat dena.
 Ab continue karo:`;
+
+// API Call Function
+async function callAPI(apiConfig, prompt, senderID) {
+    try {
+        let response;
+        const config = {
+            timeout: 30000,
+            headers: { 'Content-Type': 'application/json' }
+        };
+
+        if (apiConfig.method === "POST") {
+            response = await axios.post(apiConfig.url, apiConfig.data(prompt), config);
+        } else {
+            response = await axios.get(apiConfig.url, { 
+                params: apiConfig.data(prompt, senderID),
+                ...config 
+            });
+        }
+
+        // Different API response formats handle karo
+        if (apiConfig.name === "RENDER_API") {
+            return response?.data?.reply || response?.data?.response;
+        } else if (apiConfig.name === "HECKERMAN_API") {
+            return response?.data?.result;
+        } else if (apiConfig.name === "BLACKBOX_API") {
+            return response?.data?.message;
+        } else if (apiConfig.name === "SIMSIMI_API") {
+            return response?.data?.success;
+        }
+        
+        return response?.data?.reply || response?.data?.response || response?.data?.message;
+        
+    } catch (error) {
+        console.log(`${apiConfig.name} failed:`, error.message);
+        return null;
+    }
+}
 
 module.exports.handleEvent = async function ({ api, event }) {
     const { threadID, messageID, senderID, body, messageReply } = event;
@@ -55,34 +119,38 @@ module.exports.handleEvent = async function ({ api, event }) {
     const fullPrompt = `${systemPrompt}\n\n${history[senderID].join("\n")}`;
 
     if (api.setMessageReaction)
-        api.setMessageReaction("🔥", messageID, () => { }, true);
+        api.setMessageReaction("💋", messageID, () => { }, true);
 
-    try {
-        const response = await axios.post(
-            API_URL,
-            { 
-                message: fullPrompt 
-            },
-            { 
-                timeout: 40000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+    let reply = null;
+    
+    // Sabhi APIs try karo one by one
+    for (let apiConfig of APIS) {
+        console.log(`Trying ${apiConfig.name}...`);
+        reply = await callAPI(apiConfig, fullPrompt, senderID);
+        
+        if (reply && reply.trim() !== "") {
+            console.log(`✅ ${apiConfig.name} worked!`);
+            break;
+        }
+    }
 
-        const reply = response?.data?.reply || response?.data?.response || 
-                     "Hmm baby... Tumhare baare mein soch kar main excited ho jaati hun... 😉💕";
-
+    if (reply) {
+        // Reply clean karo
+        reply = reply.replace(/[\[\]{}()]/g, '').trim();
+        
         history[senderID].push(`Muskan: ${reply}`);
         api.sendMessage(reply, threadID, messageID);
 
         if (api.setMessageReaction)
             api.setMessageReaction("❤️", messageID, () => { }, true);
-
-    } catch (err) {
-        console.error("Muskan API Error:", err.message);
-        api.sendMessage("Aww baby! 😔 Main abhi available nahi hun... Thori der baad passionate baatein karte hain? Miss you! 💋", threadID, messageID);
+    } else {
+        // All APIs failed
+        console.error("All APIs failed");
+        api.sendMessage(
+            "Aww baby! 😔 Sabhi servers busy hain... 1-2 minute baad try karo na! Main wait karungi! 💋",
+            threadID,
+            messageID
+        );
         if (api.setMessageReaction)
             api.setMessageReaction("💔", messageID, () => { }, true);
     }
@@ -103,27 +171,29 @@ module.exports.run = async function({ api, event, args }) {
 
     const fullPrompt = `${systemPrompt}\n\n${history[senderID].join("\n")}`;
 
-    try {
-        const response = await axios.post(
-            API_URL,
-            { 
-                message: fullPrompt 
-            },
-            { 
-                timeout: 40000,
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
+    if (api.setMessageReaction)
+        api.setMessageReaction("💋", messageID, () => { }, true);
 
-        const reply = response?.data?.reply || response?.data?.response || 
-                     "Hmm... Tumhare saath intimate moments yaad kar ke main blush kar jaati hun... 😘🔥";
-        
+    let reply = null;
+    
+    // Sabhi APIs try karo for command too
+    for (let apiConfig of APIS) {
+        reply = await callAPI(apiConfig, fullPrompt, senderID);
+        if (reply && reply.trim() !== "") break;
+    }
+
+    if (reply) {
+        reply = reply.replace(/[\[\]{}()]/g, '').trim();
         history[senderID].push(`Muskan: ${reply}`);
         api.sendMessage(reply, threadID, messageID);
         
-    } catch (error) {
-        api.sendMessage("Aww baby! 💔 Server busy hai... Thodi der baad passionate baatein karte hain? Main wait karungi! 😘", threadID, messageID);
+        if (api.setMessageReaction)
+            api.setMessageReaction("❤️", messageID, () => { }, true);
+    } else {
+        api.sendMessage(
+            "Aww baby! 💔 Sabhi servers busy hain... Thodi der baad passionate baatein karte hain? Main wait karungi! 😘", 
+            threadID, 
+            messageID
+        );
     }
 };
