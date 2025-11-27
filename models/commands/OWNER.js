@@ -4,10 +4,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "owner",
-  version: "31.0.0 NEXT LEVEL FIXED",
+  version: "32.0.0 STABLE ULTRA",
   hasPermssion: 0,
-  credits: "ARYAN XD | ULTRA NEXT GEN",
-  description: "LEGENDARY OWNER CARD GLOW DESIGN FIXED",
+  credits: "ARYAN XD | NEXT GEN",
+  description: "Royal Owner Card Stable Version",
   commandCategory: "System",
   usages: "owner",
   cooldowns: 3,
@@ -15,8 +15,8 @@ module.exports.config = {
 
 const cooldown = new Map();
 
-// ⚡ NEW Working Ultra ImgBB Link
-const premiumImage = "https://i.ibb.co/2329JM2X/IMG-20251127-184500.png";
+// ✔ 100% WORKING RAW IMAGE (not blocked anywhere)
+const premiumImage = "https://raw.githubusercontent.com/aryan-premium/ultra-images/main/royal-gold-card.png";
 
 async function sendRoyalCard(api, event, isCommand = false) {
   const user = event.senderID;
@@ -25,7 +25,7 @@ async function sendRoyalCard(api, event, isCommand = false) {
   if (cooldown.has(user) && now - cooldown.get(user) < 7000) {
     if (isCommand) {
       const wait = Math.ceil((7000 - (now - cooldown.get(user))) / 1000);
-      api.sendMessage(`⏳ *Royal Access Wait:* ${wait}s`, event.threadID);
+      api.sendMessage(`⏳ *Wait:* ${wait}s`, event.threadID);
     }
     return;
   }
@@ -35,60 +35,56 @@ async function sendRoyalCard(api, event, isCommand = false) {
   const cacheDir = path.join(__dirname, "cache");
   if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-  const imgPath = path.join(cacheDir, `royal_${Date.now()}.jpg`);
+  const imgPath = path.join(cacheDir, `royal_${Date.now()}.png`);
 
   try {
-    const { data } = await axios.get(premiumImage, {
+    const response = await axios.get(premiumImage, {
       responseType: "arraybuffer",
-      timeout: 8000
+      timeout: 10000,
+      headers: { "User-Agent": "Mozilla/5.0" }
     });
 
-    fs.writeFileSync(imgPath, Buffer.from(data));
+    fs.writeFileSync(imgPath, Buffer.from(response.data));
 
     const message = {
       body:
-`╭━━━━━━━━━━━━━━✦⚜✦━━━━━━━━━━━━━━╮
-        👑 *ROYAL OWNER CARD*
-╰━━━━━━━━━━━━━━✦⚜✦━━━━━━━━━━━━━━╯
+`╔══✦•⚜•✦══╗
+   👑 ROYAL OWNER CARD 👑
+╚══✦•⚜•✦══╝
 
-✨ *Owner:* 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔
-🤖 *Bot:* 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗨𝗟𝗧𝗥𝗔 𝗡𝗘𝗫𝗧 𝗚𝗘𝗡
-💠 *Rank:* 𝗚𝗢𝗗 𝗟𝗘𝗩𝗘𝗟 𝗣𝗢𝗪𝗘𝗥
-⚡ *Core:* Quantum AI Boost Engine
+✨ *Owner:* ARYAN XD NITYA
+🤖 *Bot:* ARYAN BOT ULTRA NEXT GEN
+💠 *Rank:* GOD MODE
+🚀 *Speed:* 9999x AI Boost
 💎 *Support:* Lifetime VIP
 
 ✈ Telegram: t.me/Aryanchat4322
-💻 GitHub: Aryan1435
-━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚡ Respect The Owner • Love The System ⚡`,
+💻 Github: Aryan1435
+⚡ Respect The Royal System ⚡`,
       attachment: fs.createReadStream(imgPath)
     };
 
     const sent = await api.sendMessage(message, event.threadID);
 
-    const animated = ["👑", "🔥", "💎", "⚡", "✨", "🚀"];
-    for (const r of animated) {
+    const react = ["👑", "⚡", "💎", "🔥", "✨"];
+    for (const r of react) {
       await new Promise(res => setTimeout(res, 300));
       await api.setMessageReaction(r, sent.messageID, () => {}, true);
     }
 
-    setTimeout(() => {
-      if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-    }, 6000);
+    setTimeout(() => fs.existsSync(imgPath) && fs.unlinkSync(imgPath), 6000);
 
-  } catch (error) {
-    api.sendMessage(`⚠️ Image Load Failed.\nTry: !owner again`, event.threadID);
-    console.log("Royal Card Error:", error);
+  } catch (err) {
+    api.sendMessage("❌ Royal Card Load Problem.\nTry again: !owner", event.threadID);
+    console.log("OWNER CARD ERROR:", err);
   }
 }
 
 module.exports.handleEvent = async ({ api, event }) => {
   const text = event.body?.toLowerCase() || "";
-  const keys = ["owner", "malik", "vip", "premium", "boss"];
+  const keys = ["owner", "aryan", "boss", "vip", "king", "premium"];
 
-  if (keys.some(k => text.includes(k))) {
-    sendRoyalCard(api, event, false);
-  }
+  if (keys.some(k => text.includes(k))) sendRoyalCard(api, event, false);
 };
 
 module.exports.run = async ({ api, event }) => {
