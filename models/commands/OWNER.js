@@ -4,209 +4,296 @@ const path = require("path");
 
 module.exports.config = {
   name: "owner",
-  version: "5.0.0", 
+  version: "7.0.0", 
   hasPermssion: 0,
-  credits: "ARUN + VIP Premium Mirai Edition",
-  description: "Ultimate Premium Owner Info Card - Mirai Bot",
+  credits: "ARUN + VIP ULTRA PREMIUM",
+  description: "ULTIMATE OP OWNER CARD - NEXT LEVEL",
   commandCategory: "system",
   usages: "owner",
-  cooldowns: 5
+  cooldowns: 3
 };
 
-// Cooldown tracking
+// Advanced cooldown system
 const userCooldowns = new Map();
+const chatCooldowns = new Map();
+
+// Ultra Premium Imgur Images
+const premiumImages = [
+  "https://i.imgur.com/5z5QmYy.jpeg", // Premium Bot
+  "https://i.imgur.com/8K3mQ2a.jpg",   // Owner Card
+  "https://i.imgur.com/Lp7mR4z.png",   // VIP Badge
+  "https://i.imgur.com/9M2k5Rb.jpg",   // Aryan Special
+  "https://i.imgur.com/Dor2K26.jpeg",  // Ultra Premium
+  "https://i.imgur.com/XyZ123A.jpg",   // Next Level
+  "https://i.imgur.com/AbC456B.png",   // OP Design
+  "https://i.imgur.com/DeF789C.jpg"    // Ultimate VIP
+];
+
+// Animation frames for loading effect
+const loadingFrames = ["🔄", "⚡", "🌟", "💫", "✨", "🎯", "🔥", "💎"];
 
 async function sendOwnerCard(api, event, isCommand = false) {
   const now = Date.now();
-  const cooldownTime = 10 * 1000; // 10 seconds cooldown
   const userKey = event.senderID;
+  const chatKey = event.threadID;
   
-  // Check cooldown
-  if (userCooldowns.has(userKey)) {
-    const lastUsed = userCooldowns.get(userKey);
-    if (now - lastUsed < cooldownTime) {
-      if (isCommand) {
-        const remaining = Math.ceil((cooldownTime - (now - lastUsed)) / 1000);
-        api.sendMessage(`⏰ Please wait ${remaining} seconds before using this command again.`, event.threadID, event.messageID);
-      }
-      return;
+  // Advanced cooldown check
+  if (userCooldowns.has(userKey) && (now - userCooldowns.get(userKey) < 15000)) {
+    if (isCommand) {
+      const remaining = Math.ceil((15000 - (now - userCooldowns.get(userKey))) / 1000);
+      api.sendMessage(`⏳ *Cooldown Active* - Please wait ${remaining}s`, event.threadID, event.messageID);
     }
+    return;
   }
-  
-  // Set cooldown
-  userCooldowns.set(userKey, now);
 
-  // Working Premium Images (tested URLs)
-  const premiumImages = [
-    "https://i.ibb.co/0Q8Kz1M/hero-img.png", // High quality bot image
-    "https://i.ibb.co/4T3yQh2/ai-robot.jpg", // Robot image
-    "https://i.ibb.co/7QyZyC7/premium-bot.jpg", // Premium bot
-    "https://i.ibb.co/0jW1kzL/owner-card.png" // Owner card template
-  ];
-  
-  let imgURL = premiumImages[Math.floor(Math.random() * premiumImages.length)];
+  // Chat cooldown to prevent spam
+  if (chatCooldowns.has(chatKey) && (now - chatCooldowns.get(chatKey) < 5000)) {
+    return;
+  }
+
+  userCooldowns.set(userKey, now);
+  chatCooldowns.set(chatKey, now);
+
   const cacheDir = path.join(__dirname, "cache");
-  const imgPath = path.join(cacheDir, `owner_${event.senderID}_${Date.now()}.jpg`);
+  const imgPath = path.join(cacheDir, `ULTRA_OWNER_${Date.now()}.jpg`);
   
   try {
-    // Create cache directory if not exists
     if (!fs.existsSync(cacheDir)) {
       fs.mkdirSync(cacheDir, { recursive: true });
     }
 
-    console.log("📥 Downloading image from:", imgURL);
+    // Send loading message
+    let loadingMsg;
+    if (isCommand) {
+      let loadingIndex = 0;
+      loadingMsg = await api.sendMessage(`🎮 *Loading ULTRA PREMIUM Owner Card...* ${loadingFrames[loadingIndex]}`, event.threadID);
+      
+      // Animate loading
+      const loadingInterval = setInterval(async () => {
+        loadingIndex = (loadingIndex + 1) % loadingFrames.length;
+        try {
+          await api.editMessage(`${loadingFrames[loadingIndex]} *Initializing VIP System...* ${loadingFrames[loadingIndex]}`, loadingMsg.messageID);
+        } catch (e) {}
+      }, 500);
+      
+      // Stop animation after 3 seconds
+      setTimeout(() => clearInterval(loadingInterval), 3000);
+    }
+
+    console.log("🚀 Starting ULTRA PREMIUM Owner Card...");
     
-    // Download image with timeout and better error handling
+    // Select random premium image
+    const imgURL = premiumImages[Math.floor(Math.random() * premiumImages.length)];
+    console.log(`📸 Selected Image: ${imgURL}`);
+
+    // Download image with enhanced error handling
     const response = await axios({
       method: 'GET',
       url: imgURL,
       responseType: 'arraybuffer',
-      timeout: 15000,
+      timeout: 10000,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Accept': 'image/*',
+        'Referer': 'https://imgur.com'
       }
     });
-    
-    if (response.status !== 200) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+
+    if (response.status !== 200) throw new Error(`HTTP ${response.status}`);
     
     fs.writeFileSync(imgPath, Buffer.from(response.data));
-    console.log("✅ Image downloaded successfully");
+    console.log("✅ Premium Image Downloaded");
 
-    const premiumMessage = {
-      body: `╔═════⋆✦⋆══════╗
-   🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗖𝗔𝗥𝗗  🤖
-╚══════⋆✦⋆══════╝
+    // Ultra Premium Message Design
+    const ultraMessage = {
+      body: `┏━━━━━━━━━━━━━━━━━━━┓
+         🚀 *ULTRA PREMIUM OWNER CARD* 🚀
+┗━━━━━━━━━━━━━━━━━━━┛
 
-✨ *𝗔𝗥𝗬𝗔𝗡 𝗣𝗥𝗘𝗠𝗜𝗨𝗠 𝗩𝗘𝗥𝗦𝗜𝗢𝗡* ✨
+╔═══════════════════════════╗
+         👑 *ARYAN XD NITYA* 👑
+╚═══════════════════════════╝
 
-👑 *Bot Owner:* 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔
-🤖 *Bot Type:* Aryan Bot
-⭐ *Status:* Permanent Active
-💫 *Level:* Maximum Premium
-🎯 *Specialty:* Aryan Bot Development
+✦ *Bot System:* 🤖 ARYAN BOT ULTRA
+✦ *Status:* 🟢 PERMANENT ACTIVE  
+✦ *Level:* 💎 MAXIMUM PREMIUM
+✦ *Version:* 🚀 7.0 ULTRA EDITION
+✦ *Framework:* ⚡ ARYAN AI FRAMEWORK
 
-━━━━━━━━━━━━━━━
-🌐 𝗔𝗥𝗬𝗔𝗡 𝗖𝗢𝗡𝗧𝗔𝗖𝗧𝗦
-━━━━━━━━━━━━━━━
-📱 *WhatsApp:* ARYAN Connected ✅
+┌─────────────────────────┐
+    🌐 *CONTACT NETWORK* 🌐
+└─────────────────────────┘
+
+📱 *WhatsApp:* 🔗 DIRECT CONNECTED
 ✈️ *Telegram:* https://t.me/Aryanchat4322
 💻 *GitHub:* https://github.com/Aryan1435
-🔧 *Support:* 24/7 Available
+🎮 *Support:* 24/7 ULTRA PREMIUM
 
-━━━━━━━━━━━━━━━
-🛡️ 𝗔𝗥𝗬𝗔𝗡 𝗦𝗧𝗔𝗧𝗨𝗦
-━━━━━━━━━━━━━━━
-✅ Bot System: Aryan Framework
-🔒 Version: Premium 5.0
-📅 Framework: Aryan Bot
-⚡ Performance: Optimized
+┌─────────────────────────┐
+    ⚡ *SYSTEM STATUS* ⚡  
+└─────────────────────────┘
 
-━━━━━━━━━━━━━━━
-💎 𝗔𝗥𝗬𝗔𝗡 𝗙𝗘𝗔𝗧𝗨𝗥𝗘𝗦
-━━━━━━━━━━━━━━━
-• Aryan Bot Compatible
-• 24/7 Permanent Operation  
-• Premium Command Access
-• Exclusive VIP Features
-• Permanent Updates
+✅ *Bot Engine:* ARYAN AI CORE v7.0
+✅ *Security:* 🔒 ULTRA ENCRYPTED
+✅ *Performance:* 🚀 OPTIMIZED MAX
+✅ *Uptime:* ⏰ 100% PERMANENT
+✅ *Features:* 🌟 UNLIMITED ACCESS
 
-🎯 *Motto:* "Aryan Me Premium Forever!"
-━━━━━━━━━━━━━━━`,
-      attachment: fs.createReadStream(imgPath)
+┌─────────────────────────┐
+    💎 *PREMIUM FEATURES* 💎
+└─────────────────────────┘
+
+• 🎯 ARYAN BOT ULTRA COMPATIBLE
+• ⚡ 24/7 PERMANENT OPERATION
+• 🔥 EXCLUSIVE VIP COMMANDS  
+• 🌟 ADVANCED AI FEATURES
+• 💫 AUTO UPDATE SYSTEM
+• 🛡️ PREMIUM SECURITY
+• 🚀 HIGH SPEED PERFORMANCE
+• 🎨 CUSTOM THEMES
+
+┌─────────────────────────┐
+    🎯 *ACHIEVEMENTS* 🎯
+└─────────────────────────┘
+
+🏆 *Ultra Premium Activated*
+🏆 *VIP System Enabled* 
+🏆 *Maximum Level Reached*
+🏆 *Permanent Access Granted*
+
+🔮 *Motto:* "ARYAN ME ULTRA PREMIUM FOREVER!" 
+
+💫 *Power Level:* ██████████ 100%
+🎊 *User Rank:* 👑 ULTRA VIP MEMBER
+
+┏━━━━━━━━━━━━━━━━━━━┓
+   🔥 *WELCOME TO ULTRA* 🔥
+┗━━━━━━━━━━━━━━━━━━━┛`,
+      attachment: fs.createReadStream(imgPath),
+      mentions: [{
+        tag: "@Aryan XD Nitya",
+        id: event.senderID
+      }]
     };
 
-    // Send message
-    const messageInfo = await api.sendMessage(premiumMessage, event.threadID);
-    console.log("✅ Message sent successfully");
-
-    // Add reactions
-    try {
-      const premiumReactions = ["🤖", "👑", "⭐", "💎"];
-      for (let i = 0; i < premiumReactions.length; i++) {
-        await new Promise(resolve => setTimeout(resolve, 800));
-        await api.setMessageReaction(premiumReactions[i], messageInfo.messageID, () => {}, true);
-      }
-    } catch (reactionError) {
-      console.log("⚠️ Reactions failed, but message sent");
+    // Delete loading message if exists
+    if (loadingMsg) {
+      await api.unsendMessage(loadingMsg.messageID);
     }
 
-    // Clean up image file after sending
+    // Send main message
+    const messageInfo = await api.sendMessage(ultraMessage, event.threadID);
+    console.log("✅ ULTRA Message Sent");
+
+    // Advanced Reaction System
+    const ultraReactions = ["🚀", "👑", "💎", "⚡", "🌟", "🔥", "🎯", "💫"];
+    let reactionIndex = 0;
+    
+    const addUltraReaction = async () => {
+      if (reactionIndex < ultraReactions.length) {
+        try {
+          await api.setMessageReaction(ultraReactions[reactionIndex], messageInfo.messageID, () => {}, true);
+          reactionIndex++;
+          setTimeout(addUltraReaction, 600);
+        } catch (e) {}
+      }
+    };
+    addUltraReaction();
+
+    // Auto-cleanup with enhanced system
     setTimeout(() => {
       if (fs.existsSync(imgPath)) {
         try {
           fs.unlinkSync(imgPath);
-          console.log("🧹 Cache cleaned");
-        } catch (e) {
-          console.log("Cleanup error:", e);
-        }
+          console.log("🧹 Ultra Cache Cleaned");
+        } catch (e) {}
       }
-    }, 8000);
+    }, 10000);
+
+    // Auto unsend after 2 minutes (optional)
+    setTimeout(async () => {
+      try {
+        await api.unsendMessage(messageInfo.messageID);
+      } catch (e) {}
+    }, 120000);
 
   } catch (error) {
-    console.error("❌ Image download failed:", error.message);
+    console.error("❌ ULTRA System Error:", error);
     
-    // Fallback text message without image
-    const fallbackMessage = `🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗜𝗡𝗙𝗢:
+    // Ultra Fallback System
+    const fallbackMessages = [
+      `🚀 *ARYAN ULTRA PREMIUM*\n\n👑 Owner: ARYAN XD NITYA\n🤖 System: ARYAN BOT ULTRA\n⭐ Status: PERMANENT ACTIVE\n💎 Level: MAXIMUM PREMIUM\n\n📱 Telegram: @Aryanchat4322\n💻 GitHub: Aryan1435\n\n🔮 *ARYAN ME ULTRA!*`,
 
-👑 𝗕𝗼𝘁 𝗢𝘄𝗻𝗲𝗿: 𝗔𝗥𝗬𝗔𝗡 𝗫𝗗 𝗡𝗜𝗧𝗬𝗔
-🤖 𝗕𝗼𝘁 𝗧𝘆𝗽𝗲: Aryan Bot  
-⭐ 𝗦𝘁𝗮𝘁𝘂𝘀: Permanent Active
-💫 𝗟𝗲𝘃𝗲𝗹: Maximum Premium
+      `💎 *ULTRA VIP OWNER*\n\n👑 ARYAN XD NITYA\n⚡ BOT SYSTEM: ARYAN ULTRA\n🌟 VERSION: 7.0 PREMIUM\n🎯 STATUS: 24/7 ACTIVE\n\n🌐 Contact: @Aryanchat4322\n🔗 GitHub: Aryan1435\n\n🚀 *Maximum Power Activated*`,
 
-━━━━━━━━━━━━━━━
-🌐 𝗖𝗢𝗡𝗧𝗔𝗖𝗧𝗦
-━━━━━━━━━━━━━━━
-📱 WhatsApp: ARYAN Connected ✅
-✈️ Telegram: https://t.me/Aryanchat4322
-💻 GitHub: https://github.com/Aryan1435
-🔧 Support: 24/7 Available
+      `🔥 *ARYAN PREMIUM NETWORK*\n\n🤖 ULTRA BOT SYSTEM\n👑 OWNER: ARYAN XD NITYA\n💎 LEVEL: MAXIMUM VIP\n⚡ PERFORMANCE: OPTIMIZED\n\n📱 Connect: @Aryanchat4322\n💻 Code: Aryan1435\n\n🎯 *Ultra Mode: Activated*`
+    ];
 
-🎯 "Aryan Me Premium Forever!"`;
+    const randomFallback = fallbackMessages[Math.floor(Math.random() * fallbackMessages.length)];
     
-    await api.sendMessage(fallbackMessage, event.threadID, event.messageID);
+    if (loadingMsg) {
+      await api.unsendMessage(loadingMsg.messageID);
+    }
+    
+    await api.sendMessage(randomFallback, event.threadID, event.messageID);
   }
 }
 
 module.exports.handleEvent = async function({ api, event }) {
-  // Check if message is from a user and not the bot itself
-  if (event.type !== "message" || event.senderID === api.getCurrentUserID()) {
-    return;
-  }
-  
+  if (event.type !== "message" || event.senderID === api.getCurrentUserID()) return;
+
   const text = event.body?.toLowerCase() || "";
-  const triggerWords = ["owner", "king", "vip", "boss", "admin", "developer", "creator", "mirai", "aryan", "premium"];
-  
-  // Check if message contains exactly trigger words (not just parts of other words)
-  const shouldTrigger = triggerWords.some(word => {
-    if (text === word) return true; // exact match
-    if (text.includes(` ${word} `)) return true; // word with spaces around
-    if (text.startsWith(`${word} `)) return true; // word at start
-    if (text.endsWith(` ${word}`)) return true; // word at end
-    return false;
+  const ultraTriggers = [
+    "owner", "aryan", "vip", "premium", "ultra", "king", "boss", 
+    "admin", "developer", "creator", "mirai", "bot owner",
+    "xd", "nitya", "aryanxd", "aryan bot", "ultra premium"
+  ];
+
+  const shouldTrigger = ultraTriggers.some(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'i');
+    return regex.test(text);
   });
-  
+
   if (shouldTrigger) {
-    console.log(`🔔 Triggered by: "${event.body}"`);
-    await sendOwnerCard(api, event, false);
+    console.log(`🔔 ULTRA Trigger: "${event.body}"`);
+    // Random chance for auto-trigger (60%)
+    if (Math.random() < 0.6) {
+      await sendOwnerCard(api, event, false);
+    }
   }
 };
 
 module.exports.run = async function({ api, event, args }) {
   if (args[0] === "help") {
-    return api.sendMessage(`🤖 𝗔𝗥𝗬𝗔𝗡 𝗕𝗢𝗧 𝗢𝗪𝗡𝗘𝗥 𝗛𝗘𝗟𝗣:
+    const helpMsg = {
+      body: `🚀 *ARYAN ULTRA PREMIUM HELP* 🚀
 
-📌 Usage: !owner 
-📌 Auto-trigger: owner, vip, king, boss, aryan
+📌 *Command:* !owner
+📌 *Auto-Trigger:* owner, aryan, vip, premium, ultra
 
-🔧 Bot Type: Aryan Bot
-🎯 Version: Premium 5.0
-⏰ Cooldown: 10 seconds
+🎯 *Features:*
+• ULTRA PREMIUM Owner Card
+• Multiple High-Quality Images  
+• Advanced Reaction System
+• Loading Animation
+• Auto Cleanup
+• Smart Cooldown
 
-✨ Just type "owner" to see premium card!`, event.threadID);
+⚡ *System Info:*
+• Version: 7.0 ULTRA EDITION
+• Cooldown: 15 Seconds
+• Level: MAXIMUM PREMIUM
+• Status: PERMANENT ACTIVE
+
+💎 *Just type "owner" to experience ULTRA!*`
+    };
+    return api.sendMessage(helpMsg, event.threadID);
   }
-  
-  console.log(`🔔 Command triggered: !owner`);
+
+  if (args[0] === "info") {
+    return api.sendMessage(`🤖 *ARYAN BOT ULTRA SYSTEM*\n\n🚀 Version: 7.0 ULTRA\n💎 Level: Maximum Premium\n👑 Owner: Aryan XD Nitya\n⚡ Status: Permanent Active\n\n🔮 *Ultra Power Activated*`, event.threadID);
+  }
+
+  console.log(`🎮 ULTRA Command Activated by: ${event.senderID}`);
   await sendOwnerCard(api, event, true);
 };
