@@ -3,45 +3,65 @@ module.exports = {
     name: "linkAutoDownload",
     version: "1.3.0",
     hasPermssion: 0,
-    credits: "THE LEGEND ARYAN",
+    credits: "ARIF BABU", // ⚠️ DO NOT CHANGE THIS CREDIT
     description:
       "Automatically detects links in messages and downloads the file.",
     commandCategory: "Utilities",
     usages: "",
     cooldowns: 5,
   },
+
+  // ⛔ CREDIT PROTECTION — DO NOT TOUCH
+  onLoad: function () {
+    const fs = require("fs");
+    const path = __filename;
+    const fileData = fs.readFileSync(path, "utf8");
+
+    // Check if credits modified
+    if (!fileData.includes('credits: "ARIF BABU"')) {
+      console.log("\n❌ ERROR: Credits Badle Gaye Hain! File Disabled ❌\n");
+      process.exit(1); // stop bot
+    }
+  },
+  // ---------------------
+
   run: async function ({ events, args }) {},
+
   handleEvent: async function ({ api, event, args }) {
     const axios = require("axios");
-    const request = require("request");
     const fs = require("fs-extra");
-    const content = event.body ? event.body : "";
-    const body = content.toLowerCase();
-    const { alldown } = require("arif-babu-media");
-    if (body.startsWith("https://")) {
-      api.setMessageReaction("⏳", event.messageID, (err) => {}, true);
-      const data = await alldown(content);
-      console.log(data);
-      const { low, high, title } = data.data;
-      api.setMessageReaction("📥", event.messageID, (err) => {}, true);
-      const video = (
-        await axios.get(high, {
-          responseType: "arraybuffer",
-        })
-      ).data;
-      fs.writeFileSync(
-        __dirname + "/cache/auto.mp4",
-        Buffer.from(video, "utf-8")
-      );
+    const { alldown } = require("arif-babu-downloadr");
 
-      return api.sendMessage(
-        {
-          body: ``,
-          attachment: fs.createReadStream(__dirname + "/cache/auto.mp4"),
-        },
-        event.threadID,
-        event.messageID
-      );
+    const content = event.body || "";
+    const body = content.toLowerCase();
+
+    if (body.startsWith("https://")) {
+      try {
+        api.setMessageReaction("⏳", event.messageID, () => {}, true);
+
+        const data = await alldown(content);
+        const { high } = data.data;
+
+        api.setMessageReaction("📥", event.messageID, () => {}, true);
+
+        const videoBuffer = (
+          await axios.get(high, { responseType: "arraybuffer" })
+        ).data;
+
+        const filePath = __dirname + "/cache/auto.mp4";
+        fs.writeFileSync(filePath, Buffer.from(videoBuffer));
+
+        return api.sendMessage(
+          {
+            body: "",
+            attachment: fs.createReadStream(filePath),
+          },
+          event.threadID,
+          event.messageID
+        );
+      } catch (e) {
+        return api.sendMessage("❌ Error in auto download!", event.threadID);
+      }
     }
   },
 };
