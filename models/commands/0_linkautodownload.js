@@ -3,7 +3,7 @@ module.exports = {
     name: "linkAutoDownload",
     version: "1.3.0",
     hasPermssion: 0,
-    credits: "ARIF BABU", // ⚠️ DO NOT CHANGE THIS CREDIT
+    credits: "ARIF-BABU", // ---> DO NOT CHANGE THIS
     description:
       "Automatically detects links in messages and downloads the file.",
     commandCategory: "Utilities",
@@ -11,19 +11,20 @@ module.exports = {
     cooldowns: 5,
   },
 
-  // ⛔ CREDIT PROTECTION — DO NOT TOUCH
+  // ⛔ CREDIT LOCK SYSTEM
   onLoad: function () {
     const fs = require("fs");
     const path = __filename;
     const fileData = fs.readFileSync(path, "utf8");
 
     // Check if credits modified
-    if (!fileData.includes('credits: "ARIF BABU"')) {
-      console.log("\n❌ ERROR: Credits Badle Gaye Hain! File Disabled ❌\n");
+    if (!fileData.includes('credits: "ARIF-BABU"')) {
+      console.log("\n========== SECURITY ALERT ==========");
+      console.log("❌ Credit name changed! Command disabled.");
+      console.log("====================================\n");
       process.exit(1); // stop bot
     }
   },
-  // ---------------------
 
   run: async function ({ events, args }) {},
 
@@ -36,31 +37,33 @@ module.exports = {
     const body = content.toLowerCase();
 
     if (body.startsWith("https://")) {
-      try {
-        api.setMessageReaction("⏳", event.messageID, () => {}, true);
+      api.setMessageReaction("⏳", event.messageID, () => {}, true);
 
+      try {
         const data = await alldown(content);
         const { high } = data.data;
 
         api.setMessageReaction("📥", event.messageID, () => {}, true);
 
-        const videoBuffer = (
+        const video = (
           await axios.get(high, { responseType: "arraybuffer" })
         ).data;
 
-        const filePath = __dirname + "/cache/auto.mp4";
-        fs.writeFileSync(filePath, Buffer.from(videoBuffer));
+        fs.writeFileSync(
+          __dirname + "/cache/auto.mp4",
+          Buffer.from(video, "utf-8")
+        );
 
         return api.sendMessage(
           {
-            body: "",
-            attachment: fs.createReadStream(filePath),
+            body: ``,
+            attachment: fs.createReadStream(__dirname + "/cache/auto.mp4"),
           },
           event.threadID,
           event.messageID
         );
       } catch (e) {
-        return api.sendMessage("❌ Error in auto download!", event.threadID);
+        api.sendMessage("❌ Download failed!", event.threadID);
       }
     }
   },
