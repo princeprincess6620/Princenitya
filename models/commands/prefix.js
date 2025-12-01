@@ -4,7 +4,7 @@ const path = require("path");
 
 module.exports.config = {
   name: "prefix",
-  version: "1.0.0",
+  version: "1.0.2",
   hasPermssion: 0,
   credits: "Aryan",
   description: "Show bot information",
@@ -16,16 +16,17 @@ module.exports.config = {
 module.exports.run = async ({ api, event, Users }) => {
   const prefix = global.config.PREFIX;
 
+  // OWNER INFO
+  const OWNER_UID = "61580003810694";
   const ownerName = "ARYAN";
-  const ownerID = "61580003810694";
-  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720`;
-  const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
-  const inboxLink = `https://m.me/${ownerID}`;
+  const fbLink = `https://www.facebook.com/profile.php?id=${OWNER_UID}`;
+  const inboxLink = `https://m.me/${OWNER_UID}`;
 
+  // BOT DATA
   const totalUsers = global.data.allUserID.length;
   const totalThreads = global.data.allThreadID.length;
 
-  const message = `
+  const messageText = `
 ━━━━━━━━━━━━━━━━━━
 📍 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎𝐑𝐌𝐀𝐓𝐈𝐎𝐍 📍
 ━━━━━━━━━━━━━━━━━━
@@ -47,19 +48,25 @@ module.exports.run = async ({ api, event, Users }) => {
 💬 Message: ${inboxLink}
 
 ━━━━━━━━━━━━━━━━━━
+📞 Sending Owner Contact...
+━━━━━━━━━━━━━━━━━━
 `;
 
-  try {
-    const imgPath = path.join(__dirname, "/owner.jpg");
-    const imgData = await axios.get(avatarURL, { responseType: "arraybuffer" });
-    fs.writeFileSync(imgPath, Buffer.from(imgData.data, "utf-8"));
+  // 1️⃣ First send bot info text
+  api.sendMessage(messageText, event.threadID, async () => {
+    // 2️⃣ Then send owner contact card
+    return api.shareContact(
+      `📞 Contact Owner: ${ownerName}`,
+      OWNER_UID,
+      event.threadID,
+      async (err, info) => {
+        if (err) return console.log(err);
 
-    api.sendMessage({
-      body: message,
-      attachment: fs.createReadStream(imgPath)
-    }, event.threadID, () => fs.unlinkSync(imgPath));
-
-  } catch (e) {
-    api.sendMessage("❌ Error loading profile image.", event.threadID);
-  }
+        // 3️⃣ Auto Unsend the contact card after 5 seconds
+        setTimeout(() => {
+          api.unsendMessage(info.messageID);
+        }, 5000);
+      }
+    );
+  });
 };
