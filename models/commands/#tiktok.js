@@ -1,27 +1,55 @@
+const axios = require("axios");
+const fs = require("fs");
+const { exec } = require("child_process");
+
 module.exports.config = {
   name: "tiktok",
-  version: "1.0.0",
-  hasPermssi: 0,
-  credits: "ARIF BABU",
-  description: "MADE BY ARIF BABU VEDIO",
-  commandCategory: "ARIF BABU",
-  usages: "tiktok video",
-  cooldowns: 5,
-  dependencies: {
-    "request":"",
-    "fs-extra":"",
-    "axios":""
+  credits: "PRINCE MALHOTRA",
+  hasPermission: 0,
+  description: "TikTok से वीडियो डाउनलोड करें",
+  usages: "[कीवर्ड/लिंक]",
+  commandCategory: "media",
+  cooldowns: 5
+};
+
+module.exports.run = async ({ event, args, api }) => {
+  try {
+    if (args.length === 0) {
+      return api.sendMessage("कृपया कोई कीवर्ड या TikTok वीडियो लिंक दें!", event.threadID, event.messageID);
+    }
+
+    let query = args.join(" ");
+    let searchURL = `https://prince-sir-all-in-one-api.vercel.app/api/search/tiktoksearch?q=${encodeURIComponent(query)}`;
+
+    let searchResponse = await axios.get(searchURL);
+    if (!searchResponse.data.result || searchResponse.data.result.length === 0) {
+      return api.sendMessage("कोई वीडियो नहीं मिला!", event.threadID, event.messageID);
+    }
+
+    let videoData = searchResponse.data.result[0]; // पहला वीडियो चुनें
+    let videoURL = videoData.play; // बिना वॉटरमार्क वाला लिंक
+    let videoTitle = videoData.title || "TikTok Video";
+
+    let filePath = `./tiktok_${event.senderID}.mp4`;
+    let writer = fs.createWriteStream(filePath);
+
+    let videoStream = await axios({
+      url: videoURL,
+      method: "GET",
+      responseType: "stream"
+    });
+
+    videoStream.data.pipe(writer);
+
+    writer.on("finish", () => {
+      api.sendMessage({
+        body: `🎥 ${videoTitle}`,
+        attachment: fs.createReadStream(filePath)
+      }, event.threadID, () => fs.unlinkSync(filePath), event.messageID);
+    });
+
+  } catch (error) {
+    console.error(error);
+    api.sendMessage("⚠️ वीडियो डाउनलोड करने में समस्या हुई!", event.threadID, event.messageID);
   }
-}
-module.exports.run = async({api,event,args,client,Users,Threads,__GLOBAL,Currencies}) => {
-const axios = global.nodemodule["axios"];
-const request = global.nodemodule["request"];
-const fs = global.nodemodule["fs-extra"];
-   var hi = [""];
-  var know = hi[Math.floor(Math.random() * hi.length)];
-  var link =[
-"https://i.imgur.com/vjvuOKH.mp4",
-];
-     var callback = () => api.sendMessage({body:` ${know} `,attachment: fs.createReadStream(__dirname + "/cache/15.mp4")}, event.threadID, () => fs.unlinkSync(__dirname + "/cache/15.mp4"));    
-      return request(encodeURI(link[Math.floor(Math.random() * link.length)])).pipe(fs.createWriteStream(__dirname+"/cache/15.mp4")).on("close",() => callback());
-   };
+};
