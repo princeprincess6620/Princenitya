@@ -1,3 +1,4 @@
+// botinfo.js
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
@@ -5,119 +6,135 @@ const { createCanvas, loadImage } = require("canvas");
 
 module.exports.config = {
   name: "botinfo",
-  version: "1.2.0",
+  version: "1.0.0",
   hasPermssion: 0,
   credits: "ARYAN",
-  description: "Premium bot info card with owner avatar, UID and profile link",
-  usages: ".",
-  commandCategory: "system",
-  cooldowns: 3
+  description: "Show bot info card (with owner profile)",
+  usages: "",
+  commandCategory: "info",
+  cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event }) {
+// YOUR OWNER ID (Already Added)
+const ownerID = "61580003810694";
+
+module.exports.run = async ({ api, event, args }) => {
   try {
-    const botName = "MISTY QUEEN";
-    const prefix = ".";
-    const commandsCount = "14";
-    const totalUsers = "1784";
-    const totalThreads = "24";
-    const ownerName = "ARYAN";
-    const ownerID = "61580003810694";
+    const { senderID, threadID } = event;
 
-    const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=512&height=512`;
+    let senderName = "User";
+    let botID = api.getCurrentUserID();
+    let botName = "FB Bot";
+    let prefix = "."; // Change if different
 
-    const width = 760, height = 1280;
+    try {
+      const info = await new Promise((res, rej) =>
+        api.getUserInfo(senderID, (err, data) => err ? rej(err) : res(data))
+      );
+      senderName = info[senderID].name;
+    } catch {}
+
+    let commandsCount = "N/A";
+    try {
+      if (global.client && global.client.commands)
+        commandsCount = Object.keys(global.client.commands).length;
+    } catch {}
+
+    const ownerPicUrl = `https://graph.facebook.com/${ownerID}/picture?type=large`;
+    const senderPicUrl = `https://graph.facebook.com/${senderID}/picture?type=large`;
+
+    const [ownerImg, senderImg] = await Promise.all([
+      loadImage(ownerPicUrl).catch(() => null),
+      loadImage(senderPicUrl).catch(() => null)
+    ]);
+
+    const width = 900, height = 1200;
     const canvas = createCanvas(width, height);
     const ctx = canvas.getContext("2d");
 
-    // Background gradient
-    const gradient = ctx.createLinearGradient(0, 0, width, height);
-    gradient.addColorStop(0, "#1a1a2e");
-    gradient.addColorStop(1, "#162447");
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = "#2b2b2f";
     ctx.fillRect(0, 0, width, height);
 
-    // Card container
-    function roundRect(x, y, w, h, r, color) {
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + r, r);
-      ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-      ctx.arcTo(x, y + h, x, y + h - r, r);
-      ctx.arcTo(x, y, x + r, y, r);
-      ctx.closePath();
-      ctx.fill();
-    }
-    roundRect(60, 120, width - 120, 960, 28, "#eaf6f0");
+    ctx.fillStyle = "#1f2327";
+    roundRect(ctx, 60, 180, 780, 760, 30, true);
 
-    // Title
-    ctx.fillStyle = "#0f3057";
-    ctx.font = "bold 50px Arial";
-    ctx.fillText("BOT INFORMATION", 120, 200);
+    // Title Box
+    ctx.fillStyle = "#111214";
+    roundRect(ctx, 100, 120, 700, 70, 10, true);
+    ctx.font = "bold 32px Sans";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("BOT INFORMATION", 140, 165);
 
-    let y = 300, lh = 70;
-    function info(label, value, color = "#071117", bold = false) {
-      ctx.font = bold ? "bold 34px Arial" : "32px Arial";
-      ctx.fillStyle = color;
-      ctx.fillText(`${label} ${value}`, 120, y);
-      y += lh;
-    }
+    // Text Content
+    ctx.fillStyle = "#ffd98a";
+    ctx.font = "26px Sans";
+    ctx.fillText(`👋 Hi ${senderName}!`, 140, 230);
 
-    info("🤖 Bot Name:", botName, "#0f3057", true);
-    info("📌 Prefix:", prefix, "#0f3057", true);
-    info("📊 Commands:", commandsCount, "#ff6f61", true);
-    info("👥 Total Users:", totalUsers, "#ff6f61", true);
-    info("💬 Total Threads:", totalThreads, "#ff6f61", true);
-    info("👑 Owner:", ownerName, "#162447", true);
-    info("🆔 Owner UID:", ownerID, "#ff6f61", true);
-    info("🔗 Profile Link:", `https://www.facebook.com/profile.php?id=${ownerID}`, "#0f3057", true);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "22px Sans";
+    ctx.fillText(`🤖 Bot Name: ${botName}`, 140, 270);
+    ctx.fillText(`🆔 Bot ID: ${botID}`, 140, 310);
+    ctx.fillText(`📌 Prefix: ${prefix}`, 140, 350);
+    ctx.fillText(`📚 Commands: ${commandsCount}`, 140, 390);
+    ctx.fillText(`💡 Type "${prefix}help" to view commands`, 140, 430);
 
-    // Load avatar
-    let avatar = null;
+    // Owner Box
+    ctx.fillStyle = "#222427";
+    roundRect(ctx, 100, 520, 700, 220, 15, true);
+
+    drawCircleImage(ctx, ownerImg, 180, 620, 70);
+
+    let ownerName = "Owner";
     try {
-      const img = await axios.get(avatarURL, { responseType: "arraybuffer" });
-      avatar = await loadImage(Buffer.from(img.data, "binary"));
-    } catch { }
+      const info = await new Promise((res, rej) =>
+        api.getUserInfo(ownerID, (err, data) => err ? rej(err) : res(data))
+      );
+      ownerName = info[ownerID].name;
+    } catch {}
 
-    if (avatar) {
-      ctx.save();
-      // Circular avatar with border
-      const avatarX = 160;
-      const avatarY = height - 220;
-      const avatarRadius = 84;
-      ctx.beginPath();
-      ctx.arc(avatarX, avatarY, avatarRadius + 6, 0, Math.PI * 2, true);
-      ctx.fillStyle = "#ff6f61"; // border color
-      ctx.fill();
-      ctx.closePath();
+    ctx.fillStyle = "#ffd98a";
+    ctx.font = "26px Sans";
+    ctx.fillText(ownerName, 340, 600);
 
-      ctx.beginPath();
-      ctx.arc(avatarX, avatarY, avatarRadius, 0, Math.PI * 2, true);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(avatar, avatarX - avatarRadius, avatarY - avatarRadius, avatarRadius * 2, avatarRadius * 2);
-      ctx.restore();
-    }
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "22px Sans";
+    ctx.fillText("BOT OWNER", 340, 640);
 
-    ctx.font = "bold 32px Arial";
-    ctx.fillStyle = "#0f3057";
-    ctx.fillText(ownerName, 260, height - 250);
+    roundRect(ctx, 340, 670, 150, 50, 10, true);
+    roundRect(ctx, 510, 670, 150, 50, 10, true);
+    ctx.fillText("Profile", 380, 705);
+    ctx.fillText("Message", 540, 705);
 
     const filePath = path.join(__dirname, `botinfo_${Date.now()}.png`);
     fs.writeFileSync(filePath, canvas.toBuffer("image/png"));
 
     return api.sendMessage(
-      {
-        body: `🌟 ${botName} Information`,
-        attachment: fs.createReadStream(filePath)
-      },
-      event.threadID,
+      { body: "", attachment: fs.createReadStream(filePath) },
+      threadID,
       () => fs.unlinkSync(filePath)
     );
 
-  } catch (e) {
-    console.log(e);
-    return api.sendMessage("❌ Error generating premium card.", event.threadID);
+  } catch (err) {
+    console.log(err);
+    return api.sendMessage("❌ Error generating BOT card!", event.threadID);
   }
 };
+
+function roundRect(ctx, x, y, w, h, r, fill) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  if (fill) ctx.fill();
+}
+
+function drawCircleImage(ctx, img, cx, cy, radius) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.clip();
+  if (img) ctx.drawImage(img, cx - radius, cy - radius, radius * 2, radius * 2);
+  ctx.restore();
+}
