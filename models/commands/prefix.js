@@ -3,10 +3,10 @@ const fs = require("fs");
 
 module.exports.config = {
   name: "prefix",
-  version: "1.0.5",
+  version: "1.0.9",
   hasPermssion: 0,
-  credits: "ARYAN",
-  description: "Show bot information summary",
+  credits: "Aryan",
+  description: "Show bot info only typing prefix",
   commandCategory: "system",
   usages: "prefix",
   cooldowns: 3
@@ -16,60 +16,51 @@ module.exports.run = async ({ api, event, Users }) => {
 
   const prefix = global.config.PREFIX;
 
-  // OWNER DATA
-  const OWNER_UID = "61580003810694"; // change if needed
-  const ownerName = "ARYAN";
+  // Owner Info
+  const OWNER_UID = "61580003810694"; // Your ID
+  const ownerName = "ARYAN";          // Your Name
+  const fbLink = `https://www.facebook.com/profile.php?id=${OWNER_UID}`;
+  const messageLink = `https://m.me/${OWNER_UID}`;
 
-  const fbProfile = `https://www.facebook.com/profile.php?id=${OWNER_UID}`;
-  const inbox = `https://m.me/${OWNER_UID}`;
-
-  // BOT DATA
+  // Bot Data
   const totalUsers = global.data.allUserID.length;
   const totalThreads = global.data.allThreadID.length;
   const cmds = global.client.commands.size;
 
-  const msg = `
-╔══════✦❘༻ 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎 ༺❘✦══════╗
+  const text = `
+╔═══❖•🌟 BOT INFORMATION 🌟•❖═══╗
 
 👋 Hi ${await Users.getNameUser(event.senderID)}!
 
-🤖 𝘽𝙤𝙩 𝙉𝙖𝙢𝙚: ${global.config.BOTNAME}
-🆔 𝘽𝙤𝙩 𝙄𝘿: ${api.getCurrentUserID()}
+🤖 Bot Name: ${global.config.BOTNAME}
+🆔 Bot ID: ${api.getCurrentUserID()}
+🔧 Prefix: ${prefix}
+📚 Commands: ${cmds}
 
-🔧 𝙋𝙧𝙚𝙛𝙞𝙭: ${prefix}
-📦 𝘾𝙤𝙢𝙢𝙖𝙣𝙙𝙨: ${cmds}
-👥 𝙏𝙤𝙩𝙖𝙡 𝙐𝙨𝙚𝙧𝙨: ${totalUsers}
-💬 𝙏𝙤𝙩𝙖𝙡 𝙏𝙝𝙧𝙚𝙖𝙙𝙨: ${totalThreads}
+👥 Total Users: ${totalUsers}
+💬 Total Threads: ${totalThreads}
 
-👑 𝘽𝙤𝙩 𝙊𝙬𝙣𝙚𝙧: ${ownerName}
-🆔 𝙐𝙄𝘿: ${OWNER_UID}
+👑 Owner: ${ownerName}
+🆔 UID: ${OWNER_UID}
 
-╚══════════════════════╝
-📨 Buttons below to contact owner
-`;
+🌐 Facebook: ${fbLink}
+💬 Message: ${messageLink}
 
-  api.sendMessage({
-    body: msg,
-    attachment: null,
-    mentions: [{
-      tag: ownerName,
-      id: OWNER_UID
-    }],
-    messageReply: event.messageID,
-    augmentations: {
-      attachments: [
-        {
-          type: "template",
-          payload: {
-            template_type: "button",
-            text: `👑 Owner: ${ownerName}`,
-            buttons: [
-              { type: "web_url", url: fbProfile, title: "🌐 Profile" },
-              { type: "web_url", url: inbox, title: "💬 Message" }
-            ]
-          }
-        }
-      ]
-    }
-  }, event.threadID);
+╚════════════════════╝
+📞 Sending contact...`;
+
+  api.sendMessage(text, event.threadID, async () => {
+    api.shareContact(
+      `👑 Owner: ${ownerName}`,
+      OWNER_UID,
+      event.threadID,
+      (err, res) => {
+        if (err) return console.log(err);
+
+        setTimeout(() => {
+          api.unsendMessage(res.messageID);
+        }, 5000);
+      }
+    );
+  });
 };
