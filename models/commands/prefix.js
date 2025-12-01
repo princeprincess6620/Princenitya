@@ -1,63 +1,75 @@
-/**
- * 🔱 ULTRA PREMIUM PREFIX DETECTOR 🔱
- * ⚡ Fast • Clean • Aesthetic • Mirai Optimized
- */
+const axios = require("axios");
+const fs = require("fs");
+const path = require("path");
 
 module.exports.config = {
   name: "prefix",
-  version: "5.5.0",
+  version: "1.0.3",
   hasPermssion: 0,
-  credits: "👑 Priyansh Rajput",
-  description: "Show bot prefix when someone asks",
-  commandCategory: "System",
+  credits: "Aryan",
+  description: "Show bot information card",
+  commandCategory: "system",
   usages: "",
-  cooldowns: 3,
+  cooldowns: 3
 };
 
-module.exports.handleEvent = async ({ event, api, Threads }) => {
-  const { threadID, messageID, body } = event;
-  if (!body) return;
+module.exports.run = async ({ api, event }) => {
+  const prefix = global.config.PREFIX;
+  const threadInfo = await api.getThreadInfo(event.threadID);
+  const userCount = threadInfo.participantIDs.length;
 
-  // 🔐 CREDIT PROTECTION (unicode)
-  const realCredit = "👑 Priyansh Rajput";
-  if (this.config.credits !== realCredit) {
-    return api.sendMessage(
-      "❌ Credit Modify Mat Karo!\n✔ Original Credit: 👑 Priyansh Rajput",
-      threadID,
-      messageID
-    );
-  }
+  // OWNER DETAILS (Your FB Profile)
+  const ownerName = "ARYAN";
+  const fbID = "61580003810694";  
+  const fbProfileLink = `https://www.facebook.com/profile.php?id=${fbID}`;
+  const avatarURL = `https://graph.facebook.com/${fbID}/picture?width=720&height=720`;
 
-  // 🌟 Keywords that trigger prefix response
-  const triggers = [
-    "prefix", "mprefix", "mpre", "bot prefix", "perfix", "prefx", "preefix",
-    "what prefix", "bot ka prefix", "bot not working", "dau lenh",
-    "*", "/", ".", "?"
-  ];
+  const msg = `
+━━━━━━━━━━━━━━━━━━
+   🔱  𝐁𝐎𝐓 𝐈𝐍𝐅𝐎𝐑𝐌𝐀𝐓𝐈𝐎𝐍  🔱
+━━━━━━━━━━━━━━━━━━
 
-  if (!triggers.includes(body.toLowerCase())) return;
+👋 Hi User!
 
-  const threadData = await Threads.getData(threadID);
-  const threadSetting = global.data.threadData.get(parseInt(threadID)) || {};
-  const prefix = threadSetting.PREFIX || global.config.PREFIX;
+🤖 Bot Name: ${global.config.BOTNAME}
+🆔 Bot ID: ${api.getCurrentUserID()}
+🔧 Prefix: ${prefix}
 
-  // 🌈 ULTRA UNIQUE MESSAGE OUTPUT
-  const msg =
-`╔══ 🔱 𝐁𝐎𝐓 𝐏𝐑𝐄𝐅𝐈𝐗 🔱 ══╗  
-   ➥  ${ ➥. }
-╚════════════════════╝
+📚 Commands: ${global.client.commands.size}
+👤 Total Users: ${global.data.allUserID.length}
+💬 Total Threads: ${global.data.allThreadID.length}
 
-🌸 𝐖𝐞𝐥𝐜𝐨𝐦𝐞 𝐓𝐨 𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓 🌸
+💡 Try: ${prefix}help
+🪄 Powered By: ${ownerName}
 
-👑 𝐁𝐎𝐓 𝐎𝐖𝐍𝐄𝐑:  𝐀𝐑𝐘𝐀𝐍  
-📌 𝐎𝐰𝐧𝐞𝐫 𝐅𝐁 𝐋𝐢𝐧𝐤:
-https://www.facebook.com/profile.php?id=100092750349098
-
-💬 𝐊𝐨𝐢 𝐏𝐫𝐨𝐛𝐥𝐞𝐦? → Boss Aryan Ko Msg Kare 😊
+━━━━━━━━━━━━━━━━━━
+👑 𝐁𝐎𝐓 𝐎𝐖𝐍𝐄𝐑
 `;
 
-  api.sendMessage(msg, threadID, messageID);
-};
+  try {
+    const imgPath = path.join(__dirname, 'owner.jpg');
+    const imgData = (await axios.get(avatarURL, { responseType: "arraybuffer" })).data;
+    fs.writeFileSync(imgPath, Buffer.from(imgData, "utf-8"));
 
-module.exports.run = ({ event, api }) =>
-  api.sendMessage("⚠ Prefix command is for event only.", event.threadID);
+    api.sendMessage({
+      body: msg,
+      attachment: fs.createReadStream(imgPath),
+      mentions: [{ id: event.senderID, tag: ownerName }],
+      buttons: [
+        {
+          type: "web_url",
+          url: fbProfileLink,
+          title: "🌐 Profile"
+        },
+        {
+          type: "web_url",
+          url: `https://m.me/${fbID}`,
+          title: "💬 Message"
+        }
+      ]
+    }, event.threadID, () => fs.unlinkSync(imgPath));
+
+  } catch (e) {
+    api.sendMessage("❌ Error loading profile image", event.threadID);
+  }
+};
