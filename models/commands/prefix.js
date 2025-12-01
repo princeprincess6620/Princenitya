@@ -6,52 +6,69 @@ module.exports.config = {
   name: "prefix",
   version: "1.0.0",
   hasPermssion: 0,
-  credits: "Aryan",
-  description: "Show bot information",
+  credits: "ARYAN",
+  description: "Show bot Information",
   commandCategory: "system",
-  usages: "",
+  usages: "prefix",
   cooldowns: 3
 };
 
-module.exports.run = async ({ api, event }) => {
-
+module.exports.run = async ({ api, event, Users, Threads }) => {
   const prefix = global.config.PREFIX;
 
   const ownerName = "ARYAN";
-  const fbID = "61580003810694";
-  const fbProfileLink = `https://www.facebook.com/profile.php?id=${fbID}`;
-  const avatarURL = `https://graph.facebook.com/${fbID}/picture?width=720&height=720`;
+  const ownerID = "61580003810694";
+  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720`;
+  const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
+
+  const totalUsers = global.data.allUserID.length;
+  const totalThreads = global.data.allThreadID.length;
 
   const msg = `
 ━━━━━━━━━━━━━━━━━━
-🔱  𝐁𝐎𝐓 𝐈𝐍𝐅𝐎  🔱
+📍 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎𝐑𝐌𝐀𝐓𝐈𝐎𝐍 📍
 ━━━━━━━━━━━━━━━━━━
+
+👋 Hi ${await Users.getNameUser(event.senderID)}!
 
 🤖 Bot Name: ${global.config.BOTNAME}
 🆔 Bot ID: ${api.getCurrentUserID()}
+
 🔧 Prefix: ${prefix}
-
 📚 Commands: ${global.client.commands.size}
-👤 Users: ${global.data.allUserID.length}
-💬 Threads: ${global.data.allThreadID.length}
 
-👑 Owner: ${ownerName}
+👤 Total Users: ${totalUsers}
+💬 Total Threads: ${totalThreads}
 
-🔗 Facebook: ${fbProfileLink}
+💡 Try typing "/help" to see available commands!
+
+👑 Bot Owner:
+${ownerName}
+${fbLink}
 ━━━━━━━━━━━━━━━━━━`;
 
   try {
     const imgPath = path.join(__dirname, "owner.jpg");
-    const imgData = (await axios.get(avatarURL, { responseType: "arraybuffer" })).data;
-
-    fs.writeFileSync(imgPath, Buffer.from(imgData, "utf-8"));
+    const img = (await axios.get(avatarURL, { responseType: "arraybuffer" })).data;
+    fs.writeFileSync(imgPath, Buffer.from(img, "utf-8"));
 
     api.sendMessage({
       body: msg,
-      attachment: fs.createReadStream(imgPath)
+      attachment: fs.createReadStream(imgPath),
+      buttons: [
+        {
+          type: "web_url",
+          url: fbLink,
+          title: "Profile"
+        },
+        {
+          type: "web_url",
+          url: `https://m.me/${ownerID}`,
+          title: "Message"
+        }
+      ]
     }, event.threadID, () => fs.unlinkSync(imgPath));
-
-  } catch (e) {
-    api.sendMessage("❌ Profile Image Load Error", event.threadID);
+  } catch (error) {
+    api.sendMessage("❌ Profile load error! Try again.", event.threadID);
   }
 };
