@@ -7,76 +7,39 @@ module.exports.config = {
   version: "5.0.0",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Show Premium Owner Card",
+  description: "Premium Profile Card",
   commandCategory: "system",
   usages: "",
   cooldowns: 0
 };
 
-const triggerWords = ["prefix", "Prefix", "PREFIX"];
+module.exports.run = async ({ api, event, Users }) => {
+  const uid = "61580003810694"; // <---- Yaha apna UID
+  const fbName = "『 🖤 𝑨𝒓𝒚𝒂𝒏 𝑩𝒂𝒃𝒚 💛 』"; // <---- Apna Name
+  const bio =
+    "𝑻𝒓𝒖𝒔𝒕 𝑴𝒆 𝑩𝒂𝒃𝒚 »» 𝑰 𝑾𝒊𝒍𝒍 𝑩𝒓𝒆𝒂𝒌 𝒀𝒐𝒖𝒓 𝑯𝒆𝒂𝒓𝒕 ✨"; // Stylish line
 
-module.exports.handleEvent = async ({ api, event, Users }) => {
-  const { body, threadID, senderID } = event;
-  if (!body || !triggerWords.includes(body.trim())) return;
+  const avatar = `https://graph.facebook.com/${uid}/picture?width=720&height=720`;
+  const fbProfile = `https://www.facebook.com/profile.php?id=${uid}`;
+  const fbInbox = `https://m.me/${uid}`;
 
-  const prefix = global.config.PREFIX;
+  const imgPath = path.join(__dirname, "pfp.jpg");
+  const getImg = await axios.get(avatar, { responseType: "arraybuffer" });
+  fs.writeFileSync(imgPath, Buffer.from(getImg.data));
 
-  // OWNER INFO
-  const ownerName = "ARYAN 💛";
-  const ownerID = "61580003810694";
-  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=800&height=800`;
-  const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
-  const inboxLink = `https://m.me/${ownerID}`;
-
-  // BOT STATS
-  const totalUsers = global.data.allUserID.length;
-  const totalThreads = global.data.allThreadID.length;
-
-  const message = `『 BOT INFORMATION 』
-
-👋 Hi Facebook users!
-
-🤖 Bot Name: ${global.config.BOTNAME}
-🆔 Bot ID: ${api.getCurrentUserID()}
-
-🔧 Prefix: ${prefix}
-📚 Commands: ${global.client.commands.size}
-
-🧍 Total Users: ${totalUsers}
-💬 Total Threads: ${totalThreads}
-
-👑 Bot Owner:
-━━━━━━━━━━━━━━━━━━`;
-
-  try {
-    const imgPath = path.join(__dirname, "owner.jpg");
-    const imgData = await axios.get(avatarURL, { responseType: "arraybuffer" });
-    fs.writeFileSync(imgPath, Buffer.from(imgData.data));
-
-    // First message with bot info
-    api.sendMessage(message, threadID, async () => {
-
-      // Second message with DP + buttons like screenshot
-      api.sendMessage({
-        body: `✨ ${ownerName}\nFacebook`,
-        attachment: fs.createReadStream(imgPath),
-        buttons: [
-          {
-            url: fbLink,
-            title: "🌐 Profile"
-          },
-          {
-            url: inboxLink,
-            title: "💬 Message"
-          }
-        ]
-      }, threadID, () => fs.unlinkSync(imgPath));
-
-    });
-
-  } catch (err) {
-    api.sendMessage("❌ Error loading owner profile image.", threadID);
-  }
+  api.sendMessage(
+    {
+      body:
+        "『 BOT INFORMATION 』\n\n" +
+        "👑 Bot Owner:\n\n" +
+        `${fbName}\n${bio}\nFacebook`,
+      attachment: fs.createReadStream(imgPath),
+      buttons: [
+        { url: fbProfile, title: "Profile" },
+        { url: fbInbox, title: "Message" }
+      ]
+    },
+    event.threadID,
+    () => fs.unlinkSync(imgPath)
+  );
 };
-
-module.exports.run = () => {};
