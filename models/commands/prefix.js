@@ -2,10 +2,10 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "prefix",
-  version: "3.5",
+  version: "4.0",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Bot information with FB contact card",
+  description: "Beautiful bot info + FB profile preview card",
   commandCategory: "system",
   usages: "prefix",
   cooldowns: 3
@@ -14,8 +14,7 @@ module.exports.config = {
 module.exports.run = async ({ api, event, Users }) => {
 
   const prefix = global.config.PREFIX;
-
-  const OWNER_UID = "61580003810694";
+  const OWNER_UID = "61580003810694"; // Your UID
   const ownerName = "🌹『 𝑨𝑹𝒀𝑨𝑵 』🌹";
 
   const totalUsers = global.data.allUserID.length;
@@ -23,7 +22,7 @@ module.exports.run = async ({ api, event, Users }) => {
   const cmds = global.client.commands.size;
 
   const text = `
-┏━━━━━━━🌟 BOT INFORMATION 🌟━━━━━━┓
+┏━━━━━━━━━🌟 BOT INFORMATION 🌟━━━━━━━━━┓
 
 👋 Hi ${await Users.getNameUser(event.senderID)}!
 
@@ -36,29 +35,32 @@ module.exports.run = async ({ api, event, Users }) => {
 👥 Total Users: ${totalUsers}
 💬 Total Threads: ${totalThreads}
 
+💡 Try "/help" to view available commands!
+
 👑 Bot Owner:
 `;
 
   api.sendMessage(text, event.threadID, () => {
 
-    // Contact preview link
-    api.sendMessage({
-      body: `✨ ${ownerName}\n📍 Facebook`,
-      attachment: null,
-      url: `https://www.facebook.com/profile.php?id=${OWNER_UID}` // for card preview
-    }, event.threadID, () => {
-
-      // Contact card generator
-      api.shareContact(
-        ownerName,
-        OWNER_UID,
-        event.threadID,
-        (err, info) => {
-          if (err) return console.log(err);
-
-          setTimeout(() => api.unsendMessage(info.messageID), 20000);
-        }
-      );
-    });
+    // This creates preview like screenshot
+    api.sendMessage(
+      {
+        body: `${ownerName}\n📍 Facebook Profile`,
+        attachment: null,
+        url: `https://www.facebook.com/profile.php?id=${OWNER_UID}` // preview card auto show
+      },
+      event.threadID,
+      () => {
+        api.shareContact(
+          ownerName,
+          OWNER_UID,
+          event.threadID,
+          (err, info) => {
+            if (err) return console.log(err);
+            setTimeout(() => api.unsendMessage(info.messageID), 20000);
+          }
+        );
+      }
+    );
   });
 };
