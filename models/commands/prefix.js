@@ -7,32 +7,33 @@ module.exports.config = {
   version: "5.0.0",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Premium Profile Card",
+  description: "Owner Facebook Display Card",
   commandCategory: "system",
   usages: "",
   cooldowns: 0
 };
 
 module.exports.run = async ({ api, event, Users }) => {
-  const uid = "61580003810694"; // <---- Yaha apna UID
-  const fbName = "『 🖤 𝑨𝒓𝒚𝒂𝒏 𝑩𝒂𝒃𝒚 💛 』"; // <---- Apna Name
-  const bio =
-    "𝑻𝒓𝒖𝒔𝒕 𝑴𝒆 𝑩𝒂𝒃𝒚 »» 𝑰 𝑾𝒊𝒍𝒍 𝑩𝒓𝒆𝒂𝒌 𝒀𝒐𝒖𝒓 𝑯𝒆𝒂𝒓𝒕 ✨"; // Stylish line
 
-  const avatar = `https://graph.facebook.com/${uid}/picture?width=720&height=720`;
-  const fbProfile = `https://www.facebook.com/profile.php?id=${uid}`;
-  const fbInbox = `https://m.me/${uid}`;
+  const ownerID = "61580003810694"; // <-- Apna UID
+  const ownerName = "『 💛 ARYAN 💛 』"; // <-- Apna fancy name
+  const ownerBio =
+    "𝑻𝒓𝒖𝒔𝒕 𝑴𝒆 𝑩𝒂𝒃𝒚 »» 𝑰 𝑾𝒊𝒍𝒍 𝑩𝒓𝒆𝒂𝒌 𝒀𝒐𝒖𝒓 𝑯𝒆𝒂𝒓𝒕 ✨";
 
-  const imgPath = path.join(__dirname, "pfp.jpg");
-  const getImg = await axios.get(avatar, { responseType: "arraybuffer" });
-  fs.writeFileSync(imgPath, Buffer.from(getImg.data));
+  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720`;
+  const fbProfile = `https://www.facebook.com/profile.php?id=${ownerID}`;
+  const fbInbox = `https://m.me/${ownerID}`;
+
+  const imgPath = path.join(__dirname, "owner.jpg");
+  const imgData = await axios.get(avatarURL, { responseType: "arraybuffer" });
+  fs.writeFileSync(imgPath, Buffer.from(imgData.data));
 
   api.sendMessage(
     {
       body:
         "『 BOT INFORMATION 』\n\n" +
         "👑 Bot Owner:\n\n" +
-        `${fbName}\n${bio}\nFacebook`,
+        `${ownerName}\n${ownerBio}\nFacebook`,
       attachment: fs.createReadStream(imgPath),
       buttons: [
         { url: fbProfile, title: "Profile" },
