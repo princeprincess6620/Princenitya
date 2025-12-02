@@ -2,10 +2,10 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "prefix",
-  version: "2.5",
+  version: "3.0",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Premium bot info card",
+  description: "Show bot info + contact card",
   commandCategory: "system",
   usages: "prefix",
   cooldowns: 3
@@ -16,43 +16,49 @@ module.exports.run = async ({ api, event, Users }) => {
   const prefix = global.config.PREFIX;
 
   // OWNER INFO
-  const OWNER_UID = "61580003810694"; 
-  const ownerName = "🖤 ᴀʀʏᴀɴ ᴋʜᴀɴ 🖤";
-  const profileLink = `https://www.facebook.com/profile.php?id=${OWNER_UID}`;
-  const messageLink = `https://m.me/${OWNER_UID}`;
+  const OWNER_UID = "61580003810694";
+  const ownerName = "🍒 ᴀʀʏᴀɴ ʙᴏᴛ ғᴀᴛʜᴇʀ 🍒";
 
   // BOT DATA
   const totalUsers = global.data.allUserID.length;
   const totalThreads = global.data.allThreadID.length;
   const cmds = global.client.commands.size;
 
-  const msg = `
-╔════════════ 🌟 𝗕𝗢𝗧 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡 🌟 ════════════╗
+  const message = `
+✧༺🌟 BOT INFORMATION 🌟༻✧
 
 👋 Hi ${await Users.getNameUser(event.senderID)}!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-🤖 𝗕𝗼𝘁 𝗡𝗮𝗺𝗲: ${global.config.BOTNAME}
-🆔 𝗕𝗼𝘁 𝗜𝗗: ${api.getCurrentUserID()}
+🤖 Bot Name: ${global.config.BOTNAME}
+🆔 Bot ID: ${api.getCurrentUserID()}
 
-📍 𝗣𝗿𝗲𝗳𝗶𝘅: ${prefix}
-📚 𝗖𝗼𝗺𝗺𝗮𝗻𝗱𝘀: ${cmds}
+📍 Prefix: ${prefix}
+📚 Commands: ${cmds}
 
-👥 𝗧𝗼𝘁𝗮𝗹 𝗨𝘀𝗲𝗿𝘀: ${totalUsers}
-💬 𝗧𝗼𝘁𝗮𝗹 𝗧𝗵𝗿𝗲𝗮𝗱𝘀: ${totalThreads}
+👥 Total Users: ${totalUsers}
+💬 Total Threads: ${totalThreads}
 
-🧠 Try "/help" to see available commands!
+👑 Owner: ${ownerName}
+🆔 UID: ${OWNER_UID}
 
-👑 𝗕𝗼𝘁 𝗢𝘄𝗻𝗲𝗿:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${ownerName}
-🔗 Facebook: ${profileLink}
+🌐 Facebook: https://www.facebook.com/profile.php?id=${OWNER_UID}
+💬 Message: https://m.me/${OWNER_UID}
 
-╚══════════════════════════════╝
-
-🔘 [𝗣𝗿𝗼𝗳𝗶𝗹𝗲] → ${profileLink}
-💬 [𝗠𝗲𝘀𝘀𝗮𝗴𝗲] → ${messageLink}
+━━━━━━━━━━━━━━━━━━
+📞 Sending contact card...
 `;
 
-  api.sendMessage(msg, event.threadID);
+  api.sendMessage(message, event.threadID, async () => {
+    api.shareContact(
+      ownerName,
+      OWNER_UID,
+      event.threadID,
+      (error, info) => {
+        if (error) return console.log(error);
+        setTimeout(() => {
+          api.unsendMessage(info.messageID);
+        }, 15000); // wait 15s so card load fully
+      }
+    );
+  });
 };
