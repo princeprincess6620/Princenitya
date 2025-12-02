@@ -7,110 +7,144 @@ module.exports.config = {
   version: "2.0.0",
   hasPermssion: 0,
   credits: "ARIF BABU",
-  description: "Show bot and live account info",
+  description: "Show bot owner info",
   commandCategory: "system",
   usages: "",
   cooldowns: 0
 };
 
-// Auto Trigger Words
-const triggerWords = ["prefix", "Prefix", "PREFIX", "bot", "Bot", "info"];
+// Auto Trigger Words - More words add kiye hain
+const triggerWords = ["prefix", "Prefix", "PREFIX", "owner", "Owner", "OWNER", "admin", "Admin", "info", "Info"];
 
 module.exports.handleEvent = async ({ api, event, Users }) => {
   const { body, threadID, senderID } = event;
 
-  // Only trigger when body contains trigger text
+  // Check if message contains any trigger word
   if (!body || !triggerWords.some(word => body.toLowerCase().includes(word.toLowerCase()))) return;
 
   const prefix = global.config.PREFIX;
 
-  // OWNER DETAILS
-  const ownerName = "ARIF BABU";
-  const ownerID = "61572909482910"; // Apna UID yahan daalein
+  // APNE FACEBOOK ACCOUNT KI DETAILS YAHAN DALEN
+  const ownerName = "Tüst Me Bağlı, I Will İşde Bıçak Yolu Heti";
+  const ownerID = "1000238906"; // Your Facebook UID from image
+  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
   
-  // LIVE ACCOUNT DETAILS (Apne live account ki details daalein)
-  const liveAccountName = "ARIF BABU LIVE"; // Apne live account ka naam
-  const liveAccountID = "61572909482910"; // Live account ka UID (same ho sakta hai agar ek hi account hai)
-  const liveAccountLink = "https://www.facebook.com/your_live_account_username";
-  
-  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720`;
-  
-  // Live account ka profile picture
-  const liveAvatarURL = `https://graph.facebook.com/${liveAccountID}/picture?width=720&height=720`;
-  
+  // Facebook links
   const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
   const inboxLink = `https://m.me/${ownerID}`;
-  
-  // Live streaming link (agar aap regularly live karte hain)
-  const liveStreamLink = "https://www.facebook.com/your_page/live";
   
   const totalUsers = global.data.allUserID.length;
   const totalThreads = global.data.allThreadID.length;
 
   const message = `
-👋 Hi ${await Users.getNameUser(senderID)}!
+╔══════════════════╗
+     🤖 BOT OWNER INFO
+╚══════════════════╝
 
-🤖 Bot Information:
-╭───────────────
-│ 🤖 Bot Name: ${global.config.BOTNAME}
-│ 🆔 Bot ID: ${api.getCurrentUserID()}
-│ 🔧 Prefix: ${prefix}
-│ 📚 Commands: ${global.client.commands.size}
-│ 👤 Total Users: ${totalUsers}
-│ 💬 Total Threads: ${totalThreads}
-╰───────────────
+👤 OWNER NAME:
+┏━━━━━━━━━━━━━━━━━━┓
+${ownerName}
+┗━━━━━━━━━━━━━━━━━━┛
 
-👑 Owner Information:
-╭───────────────
-│ 👤 Name: ${ownerName}
-│ 🌐 Profile: ${fbLink}
-│ 💬 Message: ${inboxLink}
-╰───────────────
+📌 CONTACT LINKS:
+╭─────────────────
+├ 📱 Facebook Profile
+├ ➤ ${fbLink}
+├ 
+├ 💬 Message on Messenger
+├ ➤ ${inboxLink}
+╰─────────────────
 
-📺 Live Account:
-╭───────────────
-│ 📢 Live Account: ${liveAccountName}
-│ 🔗 Profile Link: ${liveAccountLink}
-│ 🎥 Live Stream: ${liveStreamLink}
-│ ⚡ Status: Currently Online
-╰───────────────
+🤖 BOT INFORMATION:
+╭─────────────────
+├ 🔧 Prefix: ${prefix}
+├ 📚 Commands: ${global.client.commands.size}
+├ 👥 Users: ${totalUsers}
+├ 💭 Threads: ${totalThreads}
+╰─────────────────
 
-📞 Contact for Live Shows/Support:
-• Messenger: ${inboxLink}
-• Live Account: ${liveAccountLink}
+✨ Quote: "J + F + > Facebook"
+    
+⚠️ Note: Agar koi problem hai to direct message karein!
 
 ━━━━━━━━━━━━━━━━━━
-Note: Bot owner ke live shows follow karne ke liye upar diye link par click karein!
+💡 Hint: ${prefix}help - All commands dekhein
 `;
 
   try {
-    const imgPath = path.join(__dirname, "/owner.jpg");
-    const liveImgPath = path.join(__dirname, "/live_account.jpg");
+    // Profile picture download karein
+    const imgPath = path.join(__dirname, "/cache/owner_profile.jpg");
     
-    // Download owner profile picture
-    const imgData = await axios.get(avatarURL, { responseType: "arraybuffer" });
-    fs.writeFileSync(imgPath, Buffer.from(imgData.data));
+    // Ensure cache directory exists
+    if (!fs.existsSync(path.dirname(imgPath))) {
+      fs.mkdirSync(path.dirname(imgPath), { recursive: true });
+    }
     
-    // Download live account profile picture
-    const liveImgData = await axios.get(liveAvatarURL, { responseType: "arraybuffer" });
-    fs.writeFileSync(liveImgPath, Buffer.from(liveImgData.data));
+    const response = await axios({
+      method: 'GET',
+      url: avatarURL,
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0'
+      }
+    });
+    
+    fs.writeFileSync(imgPath, Buffer.from(response.data));
 
+    // Message send karein with profile picture
     api.sendMessage({
       body: message,
-      attachment: [
-        fs.createReadStream(imgPath),
-        fs.createReadStream(liveImgPath)
-      ]
-    }, threadID, () => {
-      // Clean up files
-      fs.unlinkSync(imgPath);
-      fs.unlinkSync(liveImgPath);
+      attachment: fs.createReadStream(imgPath)
+    }, threadID, (err) => {
+      if (err) {
+        console.error("Error sending message:", err);
+        api.sendMessage(message, threadID); // Text only send karein agar image error de
+      }
+      // Clean up
+      if (fs.existsSync(imgPath)) {
+        fs.unlinkSync(imgPath);
+      }
     });
 
-  } catch (e) {
-    console.error(e);
-    api.sendMessage("❌ Error loading profile images.", threadID);
+  } catch (error) {
+    console.error("Error:", error);
+    
+    // Agar profile picture nahi load ho paaye to text message bhejein
+    const fallbackMessage = `
+${ownerName}
+
+📌 Profile: ${fbLink}
+💬 Message: ${inboxLink}
+
+Bot Prefix: ${prefix}
+Total Users: ${totalUsers}
+
+${error.message ? `Error: ${error.message}` : ''}
+`;
+    
+    api.sendMessage(fallbackMessage, threadID);
   }
 };
 
-module.exports.run = () => {}; // run empty because it's auto-triggered
+module.exports.run = async ({ api, event }) => {
+  // Manual trigger ke liye bhi
+  const prefix = global.config.PREFIX;
+  const ownerName = "Tüst Me Bağlı, I Will İşde Bıçak Yolu Heti";
+  const ownerID = "1000238906";
+  const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
+  const inboxLink = `https://m.me/${ownerID}`;
+  
+  api.sendMessage(`
+🤖 Bot Owner Information:
+
+👤 ${ownerName}
+
+🔗 Links:
+• Profile: ${fbLink}
+• Message: ${inboxLink}
+
+Prefix: ${prefix}
+
+Type "owner" or "prefix" anytime to see this info!
+  `, event.threadID);
+};
