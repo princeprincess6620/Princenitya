@@ -7,7 +7,7 @@ module.exports.config = {
   version: "4.0.0",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Bot info card with owner profile",
+  description: "Bot Info Card",
   commandCategory: "system",
   usages: "",
   cooldowns: 0
@@ -16,54 +16,52 @@ module.exports.config = {
 const triggerWords = ["prefix", "Prefix", "PREFIX"];
 
 module.exports.handleEvent = async ({ api, event }) => {
-  const { body, threadID, senderID } = event;
-  if (!body || !triggerWords.includes(body.trim())) return;
+  try {
+    const { body, threadID } = event;
+    if (!body || !triggerWords.includes(body.trim())) return;
 
-  // CONFIG
-  const prefix = global.config.PREFIX;
-  const ownerID = "61580003810694"; // Your FB ID
-  const ownerName = "ᴀʀʏᴀɴ 💛";
-  const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
-  const inboxLink = `https://m.me/${ownerID}`;
-  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720`;
+    const prefix = global.config.PREFIX;
 
-  // Download Owner Avatar
-  const imgPath = path.join(__dirname, "ownerAvatar.png");
-  const getImage = (await axios.get(avatarURL, { responseType: "arraybuffer" })).data;
-  fs.writeFileSync(imgPath, Buffer.from(getImage, "utf-8"));
+    // Your Facebook Info
+    const ownerID = "61580003810694"; 
+    const ownerName = "ᴀʀʏᴀɴ 💛";
+    const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
+    const inboxLink = `https://m.me/${ownerID}`;
+    const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720`;
 
-  // BOT CARD MESSAGE
-  const messageText =
-    "╭─━━━━━【 *BOT INFORMATION* 】━━━━─╮\n" +
-    `👋 Hi User!\n\n` +
-    `🤖 *Bot Prefix:* ${prefix}\n` +
-    `🧾 *Commands:* ${global.client.commands.size}\n\n` +
-    `👑 *Bot Owner:*\n` +
-    `${ownerName}\n` +
-    `FB PROFILE ↓\n${fbLink}\n` +
-    "╰─━━━━━━━━━━━━━━━━━━━━━━─╯";
+    // Download Avatar
+    const imgPath = path.join(__dirname, "ownerAvatar.png");
+    const img = (await axios.get(avatarURL, { responseType: "arraybuffer" })).data;
+    fs.writeFileSync(imgPath, Buffer.from(img, "utf-8"));
 
-  // BUTTONS
-  const buttons = [
-    {
-      type: "web_url",
-      url: fbLink,
-      title: "🌐 Profile"
-    },
-    {
-      type: "web_url",
-      url: inboxLink,
-      title: "💬 Message"
-    }
-  ];
+    const card =
+      "╭─━━━━━【 *BOT INFORMATION* 】━━━━─╮\n" +
+      `👋 Hi User!\n\n` +
+      `🤖 *Bot Prefix:* ${prefix}\n` +
+      `📦 *Commands:* ${global.client.commands.size}\n\n` +
+      `👑 *Bot Owner:*\n` +
+      `${ownerName}\n` +
+      `📎 FB Profile:\n${fbLink}\n` +
+      "╰─━━━━━━━━━━━━━━━━━━━━━━─╯";
 
-  // SEND
-  api.sendMessage({
-    body: messageText,
-    attachment: fs.createReadStream(imgPath),
-    mentions: [{ tag: ownerName, id: ownerID }],
-    buttons
-  }, threadID, () => fs.unlinkSync(imgPath)); // Auto delete avatar cache
+    api.sendMessage(
+      {
+        body: card,
+        attachment: fs.createReadStream(imgPath),
+        mentions: [{ tag: ownerName, id: ownerID }],
+        buttons: [
+          { type: "web_url", url: fbLink, title: "🌐 Profile" },
+          { type: "web_url", url: inboxLink, title: "💬 Message" }
+        ]
+      },
+      threadID,
+      () => fs.unlinkSync(imgPath)
+    );
+
+  } catch (error) {
+    console.log(error);
+  }
 };
 
+// Required to enable handleEvent in Mirai
 module.exports.run = async () => {};
