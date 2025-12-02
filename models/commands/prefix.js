@@ -4,10 +4,10 @@ const path = require("path");
 
 module.exports.config = {
   name: "prefix",
-  version: "3.0.0",
+  version: "5.0.0",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Premium Bot Info Card",
+  description: "Show Premium Owner Card",
   commandCategory: "system",
   usages: "",
   cooldowns: 0
@@ -22,21 +22,19 @@ module.exports.handleEvent = async ({ api, event, Users }) => {
   const prefix = global.config.PREFIX;
 
   // OWNER INFO
-  const ownerName = "ARYAN 💛";          // apna naam daalo
-  const ownerID = "61580003810694";      // apna UID daalo
-  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=720&height=720`;
+  const ownerName = "ARYAN 💛";
+  const ownerID = "61580003810694";
+  const avatarURL = `https://graph.facebook.com/${ownerID}/picture?width=800&height=800`;
   const fbLink = `https://www.facebook.com/profile.php?id=${ownerID}`;
   const inboxLink = `https://m.me/${ownerID}`;
 
-  // BOT DATA
+  // BOT STATS
   const totalUsers = global.data.allUserID.length;
   const totalThreads = global.data.allThreadID.length;
 
-  const msg = `╭───────────────╮
-      『 BOT INFORMATION 』
-╰───────────────╯
+  const message = `『 BOT INFORMATION 』
 
-👋 Hi ${await Users.getNameUser(senderID)}!
+👋 Hi Facebook users!
 
 🤖 Bot Name: ${global.config.BOTNAME}
 🆔 Bot ID: ${api.getCurrentUserID()}
@@ -44,28 +42,24 @@ module.exports.handleEvent = async ({ api, event, Users }) => {
 🔧 Prefix: ${prefix}
 📚 Commands: ${global.client.commands.size}
 
-👤 Total Users: ${totalUsers}
+🧍 Total Users: ${totalUsers}
 💬 Total Threads: ${totalThreads}
 
-👑 Bot Owner: ${ownerName}
-`;
+👑 Bot Owner:
+━━━━━━━━━━━━━━━━━━`;
 
   try {
-    const imgPath = path.join(__dirname, "/owner.jpg");
+    const imgPath = path.join(__dirname, "owner.jpg");
     const imgData = await axios.get(avatarURL, { responseType: "arraybuffer" });
     fs.writeFileSync(imgPath, Buffer.from(imgData.data));
 
-    api.sendMessage({
-      body: msg,
-      attachment: fs.createReadStream(imgPath),
-      mentions: [{ tag: ownerName, id: ownerID }]
-    }, threadID, async (err, info) => {
-      if (err) return;
+    // First message with bot info
+    api.sendMessage(message, threadID, async () => {
 
-      // BUTTON STYLE
+      // Second message with DP + buttons like screenshot
       api.sendMessage({
-        body: "👇 Tap Button",
-        attachment: null,
+        body: `✨ ${ownerName}\nFacebook`,
+        attachment: fs.createReadStream(imgPath),
         buttons: [
           {
             url: fbLink,
@@ -76,13 +70,12 @@ module.exports.handleEvent = async ({ api, event, Users }) => {
             title: "💬 Message"
           }
         ]
-      }, threadID);
+      }, threadID, () => fs.unlinkSync(imgPath));
 
-      fs.unlinkSync(imgPath);
     });
 
-  } catch (e) {
-    api.sendMessage("❌ Error loading owner profile.", threadID);
+  } catch (err) {
+    api.sendMessage("❌ Error loading owner profile image.", threadID);
   }
 };
 
