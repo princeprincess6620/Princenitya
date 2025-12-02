@@ -1,42 +1,103 @@
+const axios = require("axios");
 const fs = require("fs");
+const path = require("path");
 
 module.exports.config = {
   name: "prefix",
-  version: "1.0.1",
+  version: "1.0.3",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Show Bot Information With FB Owner Card",
-  commandCategory: "System",
+  description: "Bot information with owner contact",
+  commandCategory: "system",
   usages: "prefix",
   cooldowns: 3
 };
 
-module.exports.run = async ({ api, event, args, Users }) => {
-  const fbUrl = "https://www.facebook.com/profile.php?id=61580003810694"; // your profile
+module.exports.run = async ({ api, event, Users }) => {
+  const prefix = global.config.PREFIX;
 
-  const msg = `
-━━━━━━━━━━━━━━━━━━━━━━
-🤖 𝗕𝗢𝗧 𝗜𝗡𝗙𝗢𝗥𝗠𝗔𝗧𝗜𝗢𝗡
-━━━━━━━━━━━━━━━━━━━━━━
+  // ✅ IMPROVED OWNER INFO
+  const OWNER_UID = "61580003810694";
+  const ownerName = "ARYAN";
+  
+  // ✅ MULTIPLE CONTACT OPTIONS
+  const contactOptions = `
+📞 𝐂𝐎𝐍𝐓𝐀𝐂𝐓 𝐎𝐏𝐓𝐈𝐎𝐍𝐒:
 
-👋 Hi, Welcome To 𝑨𝑹𝒀𝑨𝑵 𝗕𝗼𝘁 ✨
+1️⃣ 📱 Profile Link: 
+   https://www.facebook.com/profile.php?id=${OWNER_UID}
 
-🤖 Bot Name: FB Bot
-🆔 Bot ID: ${api.getCurrentUserID()}
+2️⃣ 💬 Direct Message: 
+   https://m.me/${OWNER_UID}
 
-📍 Prefix: .
-📚 Commands: 141
+3️⃣ 👤 Share Contact Card:
+   (Bot will share contact below)
 
-👥 Total Users: 7067
-💬 Total Threads: 56
-
-💡 Type: .help for all commands
-
-👑 Bot Owner:
-👇 Tap below to view profile
+🔹 𝐓𝐈𝐏: Agar profile visible nahi hai, toh "Message" button use karein
 `;
 
-  api.sendMessage(msg, event.threadID, () => {
-    api.sendMessage({ url: fbUrl }, event.threadID); // URL PREVIEW AUTO CARD
+  // BOT DATA
+  const totalUsers = global.data.allUserID.length;
+  const totalThreads = global.data.allThreadID.length;
+
+  const messageText = `
+━━━━━━━━━━━━━━━━━━
+📍 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎𝐑𝐌𝐀𝐓𝐈𝐎𝐍 📍
+━━━━━━━━━━━━━━━━━━
+
+👋 Hi ${await Users.getNameUser(event.senderID)}!
+
+🤖 Bot Name: ${global.config.BOTNAME}
+🆔 Bot ID: ${api.getCurrentUserID()}
+
+🔧 Prefix: ${prefix}
+📚 Commands: ${global.client.commands.size}
+
+👤 Total Users: ${totalUsers}
+💬 Total Threads: ${totalThreads}
+
+👑 Bot Owner: ${ownerName}
+
+${contactOptions}
+
+━━━━━━━━━━━━━━━━━━
+`;
+
+  // 1️⃣ First send bot info with contact options
+  api.sendMessage(messageText, event.threadID, async () => {
+    // 2️⃣ Then send owner contact card
+    return api.shareContact(
+      `📇 Owner Contact: ${ownerName}`,
+      OWNER_UID,
+      event.threadID,
+      async (err, info) => {
+        if (err) return console.log("Contact share error:", err);
+
+        // 3️⃣ Additional message for visibility help
+        const visibilityMsg = `
+✅ 𝐏𝐑𝐎𝐅𝐈𝐋𝐄 𝐕𝐈𝐒𝐈𝐁𝐈𝐋𝐈𝐓𝐘 𝐓𝐈𝐏𝐒:
+
+1. Profile public rakhne ke liye:
+   • Settings → Privacy → Profile Visibility → Public
+
+2. Messenger me message receive karne ke liye:
+   • Settings → Privacy → Message Delivery → Everyone
+
+3. Agar profile dikhayi na de, toh m.me link use karein:
+   https://m.me/${OWNER_UID}
+
+📧 Response time: 24-48 hours
+`;
+
+        setTimeout(() => {
+          api.sendMessage(visibilityMsg, event.threadID);
+        }, 2000);
+
+        // 4️⃣ Auto Unsend contact after 10 seconds (optional)
+        setTimeout(() => {
+          api.unsendMessage(info.messageID);
+        }, 10000);
+      }
+    );
   });
 };
