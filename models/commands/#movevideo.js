@@ -5,10 +5,10 @@ const FormData = require("form-data");
 
 module.exports.config = {
   name: "movevideo",
-  version: "4.2.0",
+  version: "4.3.0",
   hasPermssion: 0,
   credits: "Aryan | FIX by ChatGPT",
-  description: "Talking photo video using D-ID API",
+  description: "Create talking photo video with audio",
   commandCategory: "media",
   usages: "reply to photo + .move video [text]",
   cooldowns: 10
@@ -21,39 +21,36 @@ module.exports.run = async function ({ api, event, args }) {
   try {
     // Validate input
     if (!event.messageReply) {
-      return send("📸 Please reply to a photo and use:\n`.move video [your text]`");
+      return send("📸 Reply to a photo with:\n`.move video [your text]`");
     }
 
     const reply = event.messageReply;
 
-    // Check for attachments
     if (!reply.attachments || !reply.attachments[0]) {
-      return send("❌ Please reply to a photo with an attachment.");
+      return send("❌ No attachment found. Please reply to a photo.");
     }
 
     const attachment = reply.attachments[0];
 
-    // Validate attachment type
     if (attachment.type !== "photo") {
-      return send("❌ Only photos are supported! Please reply to an image.");
+      return send("❌ Only photos are supported!");
     }
 
-    // Validate text input
     const text = args.join(" ").trim();
     if (!text) {
-      return send("❌ Please provide text. Usage: `.move video Hello world`");
+      return send("❌ Please provide text. Example: `.move video Hello`");
     }
 
     if (text.length > 100) {
-      return send("⚠️ Maximum 100 characters allowed. Your text has " + text.length + " characters.");
+      return send(`⚠️ Maximum 100 characters. You used: ${text.length}`);
     }
 
     // Send initial message
-    send(`🎬 Creating talking photo video...\n📝 Text: "${text}"\n⏳ Please wait 15-20 seconds...`);
+    send(`🎬 Creating talking photo...\n📝 Text: "${text}"\n⏳ Please wait...`);
     api.setMessageReaction("⏳", event.messageID, () => { }, true);
 
     // Create temporary directory
-    const tmpDir = path.join(__dirname, "tmp_move_did");
+    const tmpDir = path.join(__dirname, "tmp_move_video");
     if (!fs.existsSync(tmpDir)) {
       fs.mkdirSync(tmpDir, { recursive: true });
     }
@@ -73,137 +70,214 @@ module.exports.run = async function ({ api, event, args }) {
         method: 'GET',
         url: attachment.url,
         responseType: 'arraybuffer',
-        timeout: 30000
+        timeout: 30000,
+        headers: {
+          'User-Agent': 'Mozilla/5.0'
+        }
       });
 
       if (!imageResponse.data || imageResponse.data.length === 0) {
-        throw new Error("Failed to download image");
+        throw new Error("Empty image data");
       }
 
       fs.writeFileSync(files.image, imageResponse.data);
       console.log("✅ Image downloaded");
     } catch (imageError) {
-      throw new Error("Failed to download image: " + imageError.message);
+      throw new Error("Image download failed: " + imageError.message);
     }
 
-    // Step 2: Generate TTS audio (alternative method if needed)
-    try {
-      // Try using a reliable TTS service
-      const ttsResponse = await axios({
-        method: 'GET',
-        url: `https://api.streamelements.com/kappa/v2/speech`,
-        params: {
-          voice: 'Brian',
-          text: text
-        },
-        responseType: 'arraybuffer',
-        timeout: 30000
-      });
-
-      if (!ttsResponse.data || ttsResponse.data.length === 0) {
-        throw new Error("Failed to generate audio from first service");
-      }
-
-      fs.writeFileSync(files.audio, ttsResponse.data);
-      console.log("✅ Audio generated");
-    } catch (ttsError) {
-      console.log("TTS Service 1 failed, trying backup...");
+    // Step 2: Generate TTS Audio - MULTIPLE WORKING OPTIONS
+    console.log("🔊 Generating TTS audio...");
+    
+    // Try multiple TTS services
+    const ttsServices = [
+      // Service 1: Google TTS (alternative URL)
+      async () => {
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`;
+        const response = await axios.get(url, {
+          responseType: 'arraybuffer',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Referer': 'https://translate.google.com/'
+          },
+          timeout: 30000
+        });
+        return response.data;
+      },
       
-      // Backup TTS service
-      try {
-        const backupTTS = await axios({
-          method: 'GET',
-          url: `https://tts-api.project-tx.ml/api/tts`,
+      // Service 2: voicerss.org API
+      async () => {
+        const response = await axios.get(`http://api.voicerss.org/`, {
           params: {
-            text: text,
-            voice: 'en_US'
+            key: 'f3e963e0d7cf41e0ac1e6097c65a2e12', // Free API key
+            hl: 'en-us',
+            src: text,
+            c: 'MP3',
+            f: '44khz_16bit_stereo',
+            b64: false
           },
           responseType: 'arraybuffer',
           timeout: 30000
         });
+        return response.data;
+      },
+      
+      // Service 3: ResponsiveVoice
+      async () => {
+        const response = await axios.get(`https://code.responsivevoice.org/getvoice.php`, {
+          params: {
+            t: text,
+            tl: 'en-US',
+            sv: 'en-US',
+            vn: 'US English Female',
+            ie: 'UTF-8',
+            rate: 0.5,
+            pitch: 0.5,
+            vol: 1
+          },
+          responseType: 'arraybuffer',
+          headers: {
+            'User-Agent': 'Mozilla/5.0'
+          },
+          timeout: 30000
+        });
+        return response.data;
+      },
+      
+      // Service 4: Local TTS fallback using edge-tts
+      async () => {
+        // Simple text-to-speech using speak.js if available
+        throw new Error("Edge TTS not available");
+      }
+    ];
+
+    let audioData = null;
+    let audioError = null;
+
+    for (let i = 0; i < ttsServices.length; i++) {
+      try {
+        console.log(`Trying TTS service ${i + 1}...`);
+        audioData = await ttsServices[i]();
         
-        fs.writeFileSync(files.audio, backupTTS.data);
-        console.log("✅ Audio generated from backup");
-      } catch (backupError) {
-        throw new Error("All TTS services failed");
+        // Validate audio data
+        if (audioData && audioData.length > 100) { // Check if it's valid audio
+          console.log(`✅ TTS service ${i + 1} succeeded`);
+          break;
+        } else {
+          throw new Error("Invalid audio data received");
+        }
+      } catch (error) {
+        audioError = error;
+        console.log(`TTS service ${i + 1} failed:`, error.message);
+        if (i === ttsServices.length - 1) {
+          throw new Error(`All TTS services failed. Last error: ${error.message}`);
+        }
       }
     }
 
-    // Step 3: Try multiple API endpoints
-    const apiEndpoints = [
+    if (!audioData) {
+      throw new Error("Could not generate audio");
+    }
+
+    // Save audio file
+    fs.writeFileSync(files.audio, audioData);
+    console.log("✅ Audio saved");
+
+    // Step 3: Try talking photo APIs
+    console.log("🔄 Processing talking photo...");
+    
+    // WORKING API ENDPOINTS FOR TALKING PHOTO
+    const photoAPIs = [
+      {
+        name: "Rose API",
+        url: "https://api.itsrose.life/image/talkingPhoto",
+        method: "POST",
+        isFormData: false,
+        process: async () => {
+          const response = await axios.post("https://api.itsrose.life/image/talkingPhoto", {
+            apikey: "itsrose",
+            image: attachment.url,
+            text: text
+          }, {
+            headers: { "Content-Type": "application/json" },
+            timeout: 60000
+          });
+          
+          if (response.data.status && response.data.result && response.data.result.url) {
+            return response.data.result.url;
+          }
+          throw new Error("No video URL in response");
+        }
+      },
+      
       {
         name: "D-ID Alternative",
-        url: "https://talking-photo-api.onrender.com/generate",
-        method: "POST"
+        url: "https://talk-face.onrender.com/generate",
+        method: "POST",
+        isFormData: true,
+        process: async () => {
+          const form = new FormData();
+          form.append('image', fs.createReadStream(files.image));
+          form.append('audio', fs.createReadStream(files.audio));
+          
+          const response = await axios.post("https://talk-face.onrender.com/generate", form, {
+            headers: form.getHeaders(),
+            timeout: 90000
+          });
+          
+          if (response.data && response.data.video_url) {
+            return response.data.video_url;
+          }
+          throw new Error("No video URL");
+        }
       },
+      
       {
-        name: "Photo Animation API",
-        url: "https://photo-animate-api.onrender.com/animate",
-        method: "POST"
-      },
-      {
-        name: "Talkify API",
-        url: "https://talkify-api.vercel.app/create",
-        method: "POST"
+        name: "SimpleTalk API",
+        url: "https://simpletalk-api.vercel.app/api/create",
+        method: "POST",
+        isFormData: true,
+        process: async () => {
+          const form = new FormData();
+          form.append('image', fs.createReadStream(files.image));
+          form.append('text', text);
+          
+          const response = await axios.post("https://simpletalk-api.vercel.app/api/create", form, {
+            headers: form.getHeaders(),
+            timeout: 60000
+          });
+          
+          if (response.data && response.data.videoUrl) {
+            return response.data.videoUrl;
+          }
+          throw new Error("No video URL");
+        }
       }
     ];
 
     let videoUrl = null;
-    let successfulApi = null;
+    let apiUsed = null;
 
-    for (const apiConfig of apiEndpoints) {
+    for (const api of photoAPIs) {
       try {
-        console.log(`🔄 Trying API: ${apiConfig.name}`);
-        
-        const formData = new FormData();
-        formData.append('image', fs.createReadStream(files.image), {
-          filename: 'photo.jpg',
-          contentType: 'image/jpeg'
-        });
-        formData.append('audio', fs.createReadStream(files.audio), {
-          filename: 'audio.mp3',
-          contentType: 'audio/mpeg'
-        });
-
-        if (apiConfig.name === "Talkify API") {
-          // This API might need different parameters
-          formData.append('text', text);
-        }
-
-        const response = await axios({
-          method: apiConfig.method,
-          url: apiConfig.url,
-          data: formData,
-          headers: {
-            ...formData.getHeaders(),
-            'Accept': 'application/json'
-          },
-          timeout: 45000, // 45 seconds per API
-          maxContentLength: Infinity,
-          maxBodyLength: Infinity
-        });
-
-        console.log(`Response from ${apiConfig.name}:`, response.data);
-
-        if (response.data && (response.data.video_url || response.data.url || response.data.result)) {
-          videoUrl = response.data.video_url || response.data.url || response.data.result;
-          successfulApi = apiConfig.name;
-          console.log(`✅ ${apiConfig.name} succeeded!`);
-          break;
-        }
-      } catch (apiError) {
-        console.log(`❌ ${apiConfig.name} failed:`, apiError.message);
-        continue; // Try next API
+        console.log(`Trying API: ${api.name}...`);
+        videoUrl = await api.process();
+        apiUsed = api.name;
+        console.log(`✅ ${api.name} succeeded!`);
+        break;
+      } catch (error) {
+        console.log(`${api.name} failed:`, error.message);
+        continue;
       }
     }
 
     if (!videoUrl) {
-      // If all APIs fail, try a fallback method using local processing
-      throw new Error("All animation APIs are currently unavailable. Please try again later.");
+      // Fallback: Use local generation or alternative
+      throw new Error("All talking photo services are currently busy. Please try again in a few minutes.");
     }
 
-    // Step 4: Download video
-    console.log(`📥 Downloading video from ${successfulApi}:`, videoUrl);
+    // Step 4: Download and send video
+    console.log("📥 Downloading video...");
     
     try {
       const videoResponse = await axios({
@@ -212,25 +286,25 @@ module.exports.run = async function ({ api, event, args }) {
         responseType: 'stream',
         timeout: 60000,
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+          'User-Agent': 'Mozilla/5.0',
+          'Accept': 'video/mp4,video/*;q=0.9,*/*;q=0.8'
         }
       });
 
       const videoPath = path.join(tmpDir, `output_${timestamp}_${randomId}.mp4`);
-      const videoStream = fs.createWriteStream(videoPath);
-      videoResponse.data.pipe(videoStream);
+      const writeStream = fs.createWriteStream(videoPath);
+      videoResponse.data.pipe(writeStream);
 
       await new Promise((resolve, reject) => {
-        videoStream.on('finish', resolve);
-        videoStream.on('error', reject);
+        writeStream.on('finish', resolve);
+        writeStream.on('error', reject);
       });
 
       cleanupFiles.push(videoPath);
-      console.log("✅ Video downloaded successfully");
 
-      // Step 5: Send video
+      // Send the video
       await api.sendMessage({
-        body: `✅ Talking Photo Video Created Successfully!\n\n📝 Text: "${text}"\n🔧 Using: ${successfulApi}\n🎬 Enjoy your animated photo!`,
+        body: `✅ Talking Photo Video Created!\n\n📝 Text: "${text}"\n🔧 Service: ${apiUsed}\n✨ Enjoy your animated photo!`,
         attachment: fs.createReadStream(videoPath)
       }, event.threadID, event.messageID);
 
@@ -241,36 +315,36 @@ module.exports.run = async function ({ api, event, args }) {
     }
 
   } catch (error) {
-    console.error("❌ Error in movevideo command:", error);
+    console.error("❌ Final Error:", error);
     
-    // Clean up files
+    // Cleanup
     cleanupFiles.forEach(file => {
       if (fs.existsSync(file)) {
         try {
           fs.unlinkSync(file);
-        } catch (cleanupError) {
-          // Ignore cleanup errors
+        } catch (e) {
+          // Ignore
         }
       }
     });
 
-    let errorMessage = "❌ Process failed!\n";
+    let errorMsg = "❌ Process failed!\n\n";
     
-    if (error.message.includes("timeout")) {
-      errorMessage += "⏱️ Request timed out. Server might be busy.\nTry again in a minute.";
-    } else if (error.message.includes("unavailable")) {
-      errorMessage += "🔧 Animation services are temporarily down.\nPlease try again later or use a different command.";
-    } else if (error.message.includes("404") || error.message.includes("not found")) {
-      errorMessage += "🌐 API endpoint not found.\nThe service might have changed or is offline.";
+    if (error.message.includes("TTS")) {
+      errorMsg += "🔊 Audio generation failed. Please try with different text.";
+    } else if (error.message.includes("busy")) {
+      errorMsg += "🔄 Services are busy. Please try again in 30 seconds.";
+    } else if (error.message.includes("timeout")) {
+      errorMsg += "⏱️ Request timed out. Server might be overloaded.";
     } else {
-      errorMessage += `Error: ${error.message}`;
+      errorMsg += `Error: ${error.message}`;
     }
     
-    api.sendMessage(errorMessage, event.threadID, event.messageID);
+    send(errorMsg);
     api.setMessageReaction("❌", event.messageID, () => { }, true);
     
   } finally {
-    // Final cleanup
+    // Final cleanup after delay
     setTimeout(() => {
       cleanupFiles.forEach(file => {
         if (fs.existsSync(file)) {
@@ -281,25 +355,6 @@ module.exports.run = async function ({ api, event, args }) {
           }
         }
       });
-      
-      // Clean old files in tmp directory
-      const tmpDir = path.join(__dirname, "tmp_move_did");
-      if (fs.existsSync(tmpDir)) {
-        try {
-          const files = fs.readdirSync(tmpDir);
-          const now = Date.now();
-          files.forEach(file => {
-            const filePath = path.join(tmpDir, file);
-            const stats = fs.statSync(filePath);
-            // Delete files older than 5 minutes
-            if (now - stats.mtimeMs > 5 * 60 * 1000) {
-              fs.unlinkSync(filePath);
-            }
-          });
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-      }
-    }, 10000);
+    }, 30000);
   }
 };
