@@ -5,7 +5,7 @@ const FormData = require('form-data');
 
 module.exports.config = {
   name: "movevideo",
-  version: "1.1.0",
+  version: "1.1.1",
   hasPermssion: 0,
   credits: "Aryan",
   description: "Reply to a photo with .move video <text> to create an AI avatar video",
@@ -16,60 +16,61 @@ module.exports.config = {
 
 module.exports.run = async ({ api, event, args }) => {
   try {
-    const RENDER_API = process.env.DID_API_URL || 'https://api-aryan-d-id-video.onrender.com';
+    // 💥 Your Render backend API
+    const RENDER_API = "https://aryan-d-id-video-api.onrender.com";
+
     const tmpDir = path.join(__dirname, 'tmp_movevideo');
     if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
 
     const send = msg => api.sendMessage(msg, event.threadID);
 
     const fullText = args.join(" ").trim();
-    if (!event.messageReply || !event.messageReply.attachments || event.messageReply.attachments.length === 0) {
-      return send("❌ Photo par reply karke command use karein:\n.move video Namaste!");
-    }
+    if (!event.messageReply || !event.messageReply.attachments?.length)
+      return send("❌ Photo par reply karke command use karein:\n.move video Hello!");
 
     const attachment = event.messageReply.attachments.find(a =>
-      (a.type && a.type === "photo") ||
-      (a.url && a.url.match(/\.(jpg|jpeg|png|webp|bmp)$/i))
+      a.type === "photo" || (a.url && a.url.match(/\.(jpg|jpeg|png)$/i))
     );
 
     if (!attachment) return send("❌ Ye command sirf photo reply par chalti hai.");
     if (!fullText) return send("❌ Text missing! Example: .move video Namaste!");
 
     const imageUrl = attachment.url;
-    await send("⏳ Video banaya ja raha hai, thoda wait karein...");
 
-    // 🔥 Auto Reaction on Photo
+    await send("⏳ Video banaya ja raha hai, thoda wait karein...");
     api.setMessageReaction("😍", event.messageID, () => {}, true);
 
-    // Download Image
+    // Download image
     const imageFilename = path.join(tmpDir, `input_${Date.now()}.jpg`);
     const writer = fs.createWriteStream(imageFilename);
     const resp = await axios.get(imageUrl, { responseType: "stream" });
-    await new Promise((res, rej) => {
+
+    await new Promise((resolve, reject) => {
       resp.data.pipe(writer);
-      writer.on("error", rej);
-      writer.on("close", res);
+      writer.on("error", reject);
+      writer.on("close", resolve);
     });
 
-    // Upload
+    // Upload image to backend
     const form = new FormData();
     form.append("image", fs.createReadStream(imageFilename));
+
     const uploadResp = await axios.post(`${RENDER_API}/upload`, form, {
       headers: form.getHeaders(),
-      maxBodyLength: Infinity
+      maxBodyLength: Infinity,
     });
 
     const imageId = uploadResp.data.id;
 
-    // Create Video
+    // Create video
     const createResp = await axios.post(`${RENDER_API}/create`, {
       image_id: imageId,
       text: fullText,
-      voice: "hi-IN-MadhurNeural",
-      config: { fluent: true, pad_audio: 0.0 }
+      voice: "hi-IN-MadhurNeural"
     });
 
     const videoId = createResp.data.id;
+
     let videoUrl = null;
 
     for (let i = 0; i < 12; i++) {
@@ -81,22 +82,21 @@ module.exports.run = async ({ api, event, args }) => {
       await new Promise(r => setTimeout(r, 5000));
     }
 
-    if (!videoUrl) return send("❌ Video ready nahi hua, thodi der baad try karein.");
+    if (!videoUrl) return send("❌ Video ready nahi hua, baad me try karein.");
 
-    // Download video
     const output = path.join(tmpDir, `out_${Date.now()}.mp4`);
     const videoResp = await axios.get(videoUrl, { responseType: "stream" });
     const outWriter = fs.createWriteStream(output);
-    await new Promise((res, rej) => {
+
+    await new Promise((resolve, reject) => {
       videoResp.data.pipe(outWriter);
-      outWriter.on("error", rej);
-      outWriter.on("finish", res);
+      outWriter.on("error", reject);
+      outWriter.on("finish", resolve);
     });
 
-    // Send video
+    // Send video file
     await api.sendMessage({ attachment: fs.createReadStream(output) }, event.threadID);
 
-    // Reaction on success
     api.setMessageReaction("👍", event.messageID, () => {}, true);
 
     fs.unlinkSync(imageFilename);
