@@ -1,76 +1,73 @@
 const axios = require("axios");
 const fs = require("fs");
-const path = require("path");
+const FormData = require("form-data");
 
 module.exports.config = {
-    name: "movevideo",
-    version: "1.2.0",
-    hasPermssion: 0,
-    credits: "Aryan",
-    description: "Convert photo to animated talking video",
-    commandCategory: "media",
-    usages: ".move video [text]",
-    cooldowns: 5
+  name: "movevideo",
+  version: "1.1.0",
+  hasPermission: 0,
+  credits: "Aryan",
+  description: "Convert photo to talking video",
+  commandCategory: "media",
+  usages: "[text]",
+  cooldowns: 5
 };
 
-module.exports.run = async function ({ api, event, args }) {
-    try {
-        const text = args.join(" ") || "Hello, nice to meet you!";
-        const attachments = event.messageReply?.attachments || event.attachments;
+module.exports.run = async ({ api, event, args }) => {
+  try {
+    const text = args.join(" ");
+    const attachment = event.messageReply?.attachments[0];
 
-        if (!attachments || attachments.length === 0 || attachments[0].type !== "photo") {
-            return api.sendMessage("📸 Please reply to a photo and type .move video", event.threadID, event.messageID);
-        }
+    if (!attachment || attachment.type !== "photo")
+      return api.sendMessage("❌ Please reply to an image.", event.threadID);
 
-        const imageUrl = attachments[0].url;
+    api.sendMessage("⏳ Uploading image...", event.threadID);
 
-        api.sendMessage("⏳ Generating video... Please wait\n(Debug Mode Enabled)", event.threadID, event.messageID);
+    const imgPath = __dirname + "/temp.jpg";
+    const img = (await axios.get(attachment.url, { responseType: "arraybuffer" })).data;
+    fs.writeFileSync(imgPath, img);
 
-        console.log("=========================================");
-        console.log("🔍 DEBUG: Sending Request to API...");
-        console.log("🖼 IMAGE URL:", imageUrl);
-        console.log("📝 TEXT:", text);
-        console.log("=========================================");
+    const form = new FormData();
+    form.append("image", fs.createReadStream(imgPath));
 
-        // NEW FIXED ENDPOINT HERE ⬇
-        const response = await axios.post("https://aryan-d-id-video-api.onrender.com/create-video", {
-            image_url: imageUrl,
-            text: text
-        });
+    const uploadRes = await axios.post(
+      "https://aryan-d-id-video-api.onrender.com/upload",
+      form,
+      { headers: form.getHeaders() }
+    );
 
-        console.log("📥 API RESPONSE DATA:");
-        console.log(response.data);
+    api.sendMessage("🎤 Creating video...", event.threadID);
 
-        if (!response.data || !response.data.video_url) {
-            console.log("❌ ERROR: video_url missing in response");
-            return api.sendMessage("❌ API returned no video URL. Check console.", event.threadID, event.messageID);
-        }
+    const createRes = await axios.post(
+      "https://aryan-d-id-video-api.onrender.com/create",
+      {
+        image_id: uploadRes.data.id,
+        text: text || "Hello, welcome!"
+      }
+    );
 
-        const videoPath = path.join(__dirname, `/cache/${Date.now()}.mp4`);
+    const videoId = createRes.data.id;
 
-        console.log("⬇ Downloading video from URL:", response.data.video_url);
+    const interval = setInterval(async () => {
+      const status = await axios.get(
+        `https://aryan-d-id-video-api.onrender.com/video/${videoId}`
+      );
 
-        const videoStream = await axios.get(response.data.video_url, { responseType: "arraybuffer" });
-        fs.writeFileSync(videoPath, Buffer.from(videoStream.data));
+      if (status.data.url) {
+        clearInterval(interval);
 
-        console.log("🎉 Video saved at:", videoPath);
+        const videoBuffer = (await axios.get(status.data.url, { responseType: "arraybuffer" })).data;
+        fs.writeFileSync(__dirname + "/video.mp4", videoBuffer);
 
-        return api.sendMessage(
-            { body: "🎉 Video Generated Successfully!", attachment: fs.createReadStream(videoPath) },
-            event.threadID,
-            () => fs.unlinkSync(videoPath)
+        api.sendMessage(
+          { body: "🎉 Video Generated!", attachment: fs.createReadStream(__dirname + "/video.mp4") },
+          event.threadID
         );
+      }
+    }, 4000);
 
-    } catch (err) {
-        console.log("❌ ERROR OCCURRED:");
-        console.log("Status Code:", err.response?.status);
-        console.log("Error Data:", err.response?.data);
-        console.log("Details:", err.message);
-
-        return api.sendMessage(
-            `❌ Process failed.\nCheck console for more details.`,
-            event.threadID,
-            event.messageID
-        );
-    }
+  } catch (err) {
+    console.log(err);
+    api.sendMessage("❌ Process failed while generating video.", event.threadID);
+  }
 };
