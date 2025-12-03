@@ -2,7 +2,7 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "autoPhotoToVideoReact",
-  version: "1.0.5",
+  version: "1.0.6",
   hasPermssion: 0,
   credits: "Aryan",
   description: "Automatically convert photo to video and react with emoji",
@@ -13,29 +13,31 @@ module.exports.config = {
 
 module.exports.run = async ({ api, event, global }) => {
   try {
-    const attachments = event.message && event.message.attachments ? event.message.attachments : [];
+    // Extract attachments
+    const attachments = event.message?.attachments || [];
 
-    // Check if photo exists
+    // Find the first photo attachment
     const photoAttachment = attachments.find(a => a.type === "photo" || a.type === "image");
-    if (!photoAttachment) return; // Silently exit if no photo
+    if (!photoAttachment) return; // Exit silently if no photo is found
 
     const photoUrl = photoAttachment.url;
 
-    // React to the user's message with 🎬
+    // React to user's message with 🎬
     if (typeof api.setMessageReaction === "function") {
       try {
         await api.setMessageReaction("🎬", event.messageID, event.threadID, true);
       } catch (reactErr) {
-        console.error("Reaction failed:", reactErr);
+        console.error("Failed to add reaction:", reactErr);
       }
     }
 
-    // Call the D-ID video generation API
-    const response = await axios.post("https://aryan-d-id-video-generator.onrender.com/generate", {
-      imageUrl: photoUrl
+    // Call the updated API
+    const response = await axios.post("https://api-aryan-d-id-video.onrender.com/generate", {
+      image_url: photoUrl  // Make sure the API expects "image_url" as the key
     });
 
-    if (!response.data || !response.data.videoUrl) {
+    // Check if video URL exists
+    if (!response.data?.videoUrl) {
       return api.sendMessage("❌ Failed to generate video.", event.threadID, event.messageID);
     }
 
