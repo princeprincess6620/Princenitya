@@ -1,7 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const FormData = require("form-data"); // FIXED IMPORT
+const FormData = require("form-data");
 
 module.exports.config = {
   name: "movevideo",
@@ -16,80 +16,213 @@ module.exports.config = {
 
 module.exports.run = async function ({ api, event, args }) {
   const send = (msg) => api.sendMessage(msg, event.threadID, event.messageID);
+  const cleanupFiles = []; // Track files for cleanup
 
   try {
-    if (!event.messageReply)
-      return send("📸 Reply to photo & use:\n`.move video Hello`");
+    // Validate input
+    if (!event.messageReply) {
+      return send("📸 Please reply to a photo and use:\n`.move video [your text]`");
+    }
 
     const reply = event.messageReply;
 
-    if (!reply.attachments || reply.attachments.length === 0)
-      return send("❌ Please reply to a **photo**");
+    // Check for attachments
+    if (!reply.attachments || !reply.attachments[0]) {
+      return send("❌ Please reply to a photo with an attachment.");
+    }
 
-    const att = reply.attachments[0];
-    if (att.type !== "photo")
-      return send("❌ Only photo supported!");
+    const attachment = reply.attachments[0];
 
+    // Validate attachment type
+    if (attachment.type !== "photo") {
+      return send("❌ Only photos are supported! Please reply to an image.");
+    }
+
+    // Validate text input
     const text = args.join(" ").trim();
-    if (!text) return send("❌ Use: `.move video Hello`");
-    if (text.length > 100) return send("⚠ Max 100 characters allowed.");
+    if (!text) {
+      return send("❌ Please provide text. Usage: `.move video Hello world`");
+    }
 
-    send(`🎬 Creating talking photo video...\n📝 "${text}"\n⏳ Please wait...`);
-    api.setMessageReaction("⏳", event.messageID, () => {}, true);
+    if (text.length > 100) {
+      return send("⚠️ Maximum 100 characters allowed. Your text has " + text.length + " characters.");
+    }
 
-    const tmp = path.join(__dirname, "tmp_move_did");
-    if (!fs.existsSync(tmp)) fs.mkdirSync(tmp);
+    // Send initial message
+    send(`🎬 Creating talking photo video...\n📝 Text: "${text}"\n⏳ Please wait 15-20 seconds...`);
+    api.setMessageReaction("⏳", event.messageID, () => { }, true);
+
+    // Create temporary directory
+    const tmpDir = path.join(__dirname, "tmp_move_did");
+    if (!fs.existsSync(tmpDir)) {
+      fs.mkdirSync(tmpDir, { recursive: true });
+    }
 
     const timestamp = Date.now();
+    const randomId = Math.floor(Math.random() * 1000);
     const files = {
-      img: path.join(tmp, `img_${timestamp}.jpg`),
-      audio: path.join(tmp, `audio_${timestamp}.mp3`)
+      image: path.join(tmpDir, `input_${timestamp}_${randomId}.jpg`),
+      audio: path.join(tmpDir, `audio_${timestamp}_${randomId}.mp3`),
+      video: path.join(tmpDir, `output_${timestamp}_${randomId}.mp4`)
     };
 
-    // Download Image
-    const imgRes = await axios.get(att.url, { responseType: "arraybuffer" });
-    fs.writeFileSync(files.img, imgRes.data);
+    // Add to cleanup list
+    cleanupFiles.push(files.image, files.audio, files.video);
 
-    // Generate Audio TTS
-    const ttsURL = `https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q=${encodeURIComponent(text)}`;
-    const audioRes = await axios.get(ttsURL, {
-      responseType: "arraybuffer",
-      headers: { "User-Agent": "Mozilla/5.0" }
-    });
-    fs.writeFileSync(files.audio, audioRes.data);
+    // Step 1: Download image
+    try {
+      const imageResponse = await axios({
+        method: 'GET',
+        url: attachment.url,
+        responseType: 'arraybuffer',
+        timeout: 30000
+      });
 
-    // Prepare FormData
+      if (!imageResponse.data || imageResponse.data.length === 0) {
+        throw new Error("Failed to download image: Empty response");
+      }
+
+      fs.writeFileSync(files.image, imageResponse.data);
+      console.log("✅ Image downloaded:", files.image);
+    } catch (imageError) {
+      throw new Error("Failed to download image: " + imageError.message);
+    }
+
+    // Step 2: Generate TTS audio
+    try {
+      const ttsResponse = await axios({
+        method: 'GET',
+        url: `https://translate.google.com/translate_tts`,
+        params: {
+          ie: 'UTF-8',
+          client: 'tw-ob',
+          tl: 'en',
+          q: text,
+          total: 1,
+          idx: 0,
+          textlen: text.length
+        },
+        responseType: 'arraybuffer',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        },
+        timeout: 30000
+      });
+
+      if (!ttsResponse.data || ttsResponse.data.length === 0) {
+        throw new Error("Failed to generate audio: Empty response");
+      }
+
+      fs.writeFileSync(files.audio, ttsResponse.data);
+      console.log("✅ Audio generated:", files.audio);
+    } catch (ttsError) {
+      throw new Error("Failed to generate audio: " + ttsError.message);
+    }
+
+    // Step 3: Prepare form data for API
     const formData = new FormData();
-    formData.append("image", fs.createReadStream(files.img));
-    formData.append("audio", fs.createReadStream(files.audio));
+    formData.append('image', fs.createReadStream(files.image), {
+      filename: 'photo.jpg',
+      contentType: 'image/jpeg'
+    });
+    formData.append('audio', fs.createReadStream(files.audio), {
+      filename: 'audio.mp3',
+      contentType: 'audio/mpeg'
+    });
 
-    // API Call
-    const apiURL = "https://aryan-d-id-video-api.onrender.com/generate";
-
-    const response = await axios.post(apiURL, formData, {
+    // Step 4: Call D-ID API
+    console.log("🔄 Calling D-ID API...");
+    const response = await axios({
+      method: 'POST',
+      url: 'https://aryan-d-id-video-api.onrender.com/generate',
+      data: formData,
       headers: {
-        ...formData.getHeaders() // FIXED HEADERS
+        ...formData.getHeaders(),
+        'Accept': 'application/json'
       },
       maxContentLength: Infinity,
       maxBodyLength: Infinity,
-      timeout: 180000
+      timeout: 120000 // 2 minutes timeout
     });
 
-    if (!response.data.video_url)
-      throw new Error("Invalid response: video_url missing");
+    // Check API response
+    if (!response.data || !response.data.video_url) {
+      console.error("API Response:", response.data);
+      throw new Error("API didn't return a video URL. Please try again.");
+    }
 
-    const videoFile = await axios.get(response.data.video_url, { responseType: "stream" });
+    // Step 5: Download video
+    console.log("📥 Downloading video from:", response.data.video_url);
+    const videoResponse = await axios({
+      method: 'GET',
+      url: response.data.video_url,
+      responseType: 'stream',
+      timeout: 60000
+    });
 
+    // Save video temporarily
+    const videoStream = fs.createWriteStream(files.video);
+    videoResponse.data.pipe(videoStream);
+
+    // Wait for download to complete
+    await new Promise((resolve, reject) => {
+      videoStream.on('finish', resolve);
+      videoStream.on('error', reject);
+    });
+
+    console.log("✅ Video downloaded:", files.video);
+
+    // Step 6: Send video
     await api.sendMessage({
-      body: `🎉 Talking Photo Ready\n📝 "${text}"`,
-      attachment: videoFile.data
+      body: `✅ Talking Photo Video Created Successfully!\n\n📝 Text: "${text}"\n🎬 Enjoy your animated photo!`,
+      attachment: fs.createReadStream(files.video)
     }, event.threadID, event.messageID);
 
-    api.setMessageReaction("✅", event.messageID, () => {}, true);
+    // Update reaction
+    api.setMessageReaction("✅", event.messageID, () => { }, true);
 
-  } catch (err) {
-    console.error(err);
-    api.sendMessage("❌ Process failed\nError: " + err.message, event.threadID);
-    api.setMessageReaction("❌", event.messageID, () => {}, true);
+  } catch (error) {
+    console.error("❌ Error in movevideo command:", error);
+    
+    // Clean up files on error
+    cleanupFiles.forEach(file => {
+      if (fs.existsSync(file)) {
+        try {
+          fs.unlinkSync(file);
+        } catch (cleanupError) {
+          console.error("Failed to clean up file:", file, cleanupError.message);
+        }
+      }
+    });
+
+    let errorMessage = "❌ Process failed!\n";
+    
+    if (error.message.includes("timeout")) {
+      errorMessage += "⏱️ Request timed out. The server might be busy.\nPlease try again in a few moments.";
+    } else if (error.message.includes("network")) {
+      errorMessage += "🌐 Network error. Please check your connection.";
+    } else if (error.message.includes("API")) {
+      errorMessage += "🔧 API service is temporarily unavailable.\nPlease try again later.";
+    } else {
+      errorMessage += "Error: " + error.message;
+    }
+    
+    api.sendMessage(errorMessage, event.threadID, event.messageID);
+    api.setMessageReaction("❌", event.messageID, () => { }, true);
+    
+  } finally {
+    // Final cleanup after 5 seconds
+    setTimeout(() => {
+      cleanupFiles.forEach(file => {
+        if (fs.existsSync(file)) {
+          try {
+            fs.unlinkSync(file);
+            console.log("🧹 Cleaned up:", file);
+          } catch (e) {
+            // Silent fail for cleanup
+          }
+        }
+      });
+    }, 5000);
   }
 };
