@@ -2,55 +2,65 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "autoPhotoToVideoReact",
-  version: "1.0.6",
+  version: "1.0.0",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Automatically convert photo to video and react with emoji",
+  description: "Auto convert photo to video",
   commandCategory: "media",
-  usages: "Just send a photo",
-  cooldowns: 5
+  usages: "[सिर्फ फोटो भेजें]",
+  cooldowns: 30,
+  dependencies: {
+    "axios": ""
+  }
 };
 
-module.exports.run = async ({ api, event, global }) => {
+module.exports.handleEvent = async function({ api, event }) {
   try {
-    // Extract attachments
-    const attachments = event.message?.attachments || [];
-
-    // Find the first photo attachment
-    const photoAttachment = attachments.find(a => a.type === "photo" || a.type === "image");
-    if (!photoAttachment) return; // Exit silently if no photo is found
-
-    const photoUrl = photoAttachment.url;
-
-    // React to user's message with 🎬
-    if (typeof api.setMessageReaction === "function") {
-      try {
-        await api.setMessageReaction("🎬", event.messageID, event.threadID, true);
-      } catch (reactErr) {
-        console.error("Failed to add reaction:", reactErr);
-      }
-    }
-
-    // Call the updated API
+    // सिर्फ फोटो मैसेज के लिए
+    if (!event.message || !event.message.attachments || event.message.attachments.length === 0) return;
+    
+    const attachments = event.message.attachments;
+    const photo = attachments.find(att => att.type === "photo" || att.type === "image");
+    
+    if (!photo) return; // अगर फोटो नहीं है तो रिटर्न
+    
+    console.log("फोटो डिटेक्ट हुई:", photo.url);
+    
+    // रिएक्शन जोड़ें
+    try {
+      await api.setMessageReaction("🎬", event.messageID, (err) => {}, true);
+    } catch (e) {}
+    
+    // यूज़र को प्रोसेसिंग बताएं
+    await api.sendMessage("🎬 फोटो को वीडियो में कन्वर्ट किया जा रहा है...", event.threadID, event.messageID);
+    
+    // API कॉल
     const response = await axios.post("https://api-aryan-d-id-video.onrender.com/generate", {
-      image_url: photoUrl  // Make sure the API expects "image_url" as the key
+      image_url: photo.url
+    }, {
+      timeout: 60000 // 60 सेकंड timeout
     });
-
-    // Check if video URL exists
-    if (!response.data?.videoUrl) {
-      return api.sendMessage("❌ Failed to generate video.", event.threadID, event.messageID);
+    
+    if (response.data && response.data.videoUrl) {
+      const videoStream = await global.utils.getStreamFromURL(response.data.videoUrl);
+      
+      // वीडियो भेजें
+      await api.sendMessage({
+        body: "✅ आपका वीडियो तैयार है!",
+        attachment: videoStream
+      }, event.threadID, event.messageID);
+    } else {
+      await api.sendMessage("❌ वीडियो बनाने में असफल। API ने कोई वीडियो URL नहीं दिया।", event.threadID, event.messageID);
     }
-
-    const videoUrl = response.data.videoUrl;
-
-    // Send the generated video back
-    api.sendMessage({
-      body: "🎬 Here's your video!",
-      attachment: await global.utils.getStreamFromURL(videoUrl)
-    }, event.threadID, event.messageID);
-
+    
   } catch (error) {
-    console.error(error);
-    api.sendMessage("❌ Something went wrong while generating the video.", event.threadID, event.messageID);
+    console.error("autoPhotoToVideoReact error:", error);
+    try {
+      await api.sendMessage(`❌ एरर: ${error.message}`, event.threadID, event.messageID);
+    } catch (e) {}
   }
+};
+
+module.exports.run = async function({ api, event }) {
+  await api.sendMessage("ℹ️ यह मॉड्यूल ऑटोमेटिक काम करता है। बस कोई फोटो भेजें और यह उसे वीडियो में बदल देगा।", event.threadID);
 };
