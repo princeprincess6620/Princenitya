@@ -4,107 +4,173 @@ const path = require('path');
 const FormData = require('form-data');
 
 module.exports.config = {
-  name: "movevideo",
-  version: "2.0.0",
-  hasPermssion: 0,
-  credits: "Aryan",
-  description: "Reply a photo with .move video <text> to generate AI video",
-  commandCategory: "media",
-  usages: ".move video Hello!",
-  cooldowns: 8
+    name: "movevideo",
+    version: "2.0.0",
+    hasPermission: 0,  // Fixed spelling: hasPermssion → hasPermission
+    credits: "Aryan",
+    description: "Reply a photo with .move video <text> to generate AI video",
+    commandCategory: "media",
+    usages: "[text]",
+    cooldowns: 8,
+    dependencies: {
+        "axios": "",
+        "form-data": ""
+    }
 };
 
-module.exports.run = async ({ api, event, args }) => {
-  try {
-    const RENDER_API = "https://aryan-d-id-video-api.onrender.com";
-    const tmpDir = path.join(__dirname, "tmp_movevideo");
+module.exports.run = async function({ api, event, args }) {
+    try {
+        const RENDER_API = "https://aryan-d-id-video-api.onrender.com";
+        const tmpDir = path.join(__dirname, "tmp_movevideo");
 
-    if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir, { recursive: true });
+        if (!fs.existsSync(tmpDir)) {
+            fs.mkdirSync(tmpDir, { recursive: true });
+        }
 
-    const send = msg => api.sendMessage(msg, event.threadID);
-    const text = args.join(" ").trim();
+        const send = (msg) => api.sendMessage(msg, event.threadID, event.messageID);
+        
+        // Check if command is used correctly
+        if (event.type !== "message_reply") {
+            return send("❌ Please reply to an image with the command: .move video [text]");
+        }
 
-    if (!event.messageReply || !event.messageReply.attachments)
-      return send("❌ Reply a photo and type: .move video Hello!");
+        if (!event.messageReply.attachments || event.messageReply.attachments.length === 0) {
+            return send("❌ No attachment found in the replied message.");
+        }
 
-    const attachment = event.messageReply.attachments[0];
-    const imageUrl = attachment.url;
+        const attachment = event.messageReply.attachments[0];
+        
+        if (attachment.type !== "photo") {
+            return send("❌ Please reply to a photo only.");
+        }
 
-    if (!imageUrl) return send("❌ Image URL not found, try again.");
-    if (!text) return send("❌ Please enter text. Example: .move video Namaste!");
+        const imageUrl = attachment.url;
+        const text = args.join(" ").trim();
 
-    send("⏳ Processing your request...");
+        if (!text) {
+            return send("❌ Please provide text. Example: .move video Hello World!");
+        }
 
-    // Auto react to message
-    api.setMessageReaction("⏳", event.messageID, () => {}, true);
+        send("⏳ Processing your AI video... Please wait.");
+        
+        // React to show processing
+        api.setMessageReaction("⏳", event.messageID, (err) => {}, true);
 
-    // Download Image
-    const imgFile = path.join(tmpDir, `img_${Date.now()}.jpg`);
-    const writer = fs.createWriteStream(imgFile);
-    const response = await axios.get(imageUrl, { responseType: "stream" });
+        // Download image
+        const imgFile = path.join(tmpDir, `img_${Date.now()}.jpg`);
+        const response = await axios({
+            method: 'GET',
+            url: imageUrl,
+            responseType: 'stream'
+        });
 
-    await new Promise((resolve, reject) => {
-      response.data.pipe(writer);
-      writer.on("error", reject);
-      writer.on("close", resolve);
-    });
+        const writer = fs.createWriteStream(imgFile);
+        response.data.pipe(writer);
 
-    // Upload to API
-    const form = new FormData();
-    form.append("file", fs.createReadStream(imgFile));
+        await new Promise((resolve, reject) => {
+            writer.on('finish', resolve);
+            writer.on('error', reject);
+        });
 
-    const upload = await axios.post(`${RENDER_API}/upload`, form, {
-      headers: form.getHeaders()
-    });
+        // Upload to API
+        const form = new FormData();
+        form.append('file', fs.createReadStream(imgFile));
 
-    const imageId = upload.data.id;
+        const upload = await axios.post(`${RENDER_API}/upload`, form, {
+            headers: {
+                ...form.getHeaders(),
+                'Content-Type': 'multipart/form-data'
+            }
+        });
 
-    // Create video request
-    const create = await axios.post(`${RENDER_API}/process`, {
-      image_id: imageId,
-      text,
-      voice: "hi-IN-MadhurNeural"
-    });
+        const imageId = upload.data.id;
 
-    const videoId = create.data.id;
-    let videoUrl = null;
+        if (!imageId) {
+            throw new Error("Failed to upload image to API");
+        }
 
-    // Poll result
-    for (let i = 0; i < 14; i++) {
-      const check = await axios.get(`${RENDER_API}/result/${videoId}`);
-      if (check.data.url) {
-        videoUrl = check.data.url;
-        break;
-      }
-      await new Promise(r => setTimeout(r, 5000));
+        // Process video
+        const create = await axios.post(`${RENDER_API}/process`, {
+            image_id: imageId,
+            text: text,
+            voice: "hi-IN-MadhurNeural"
+        });
+
+        const videoId = create.data.id;
+        
+        if (!videoId) {
+            throw new Error("Failed to start video generation");
+        }
+
+        send("🔄 Video is being generated... This may take 15-30 seconds.");
+
+        // Check status with timeout
+        let videoUrl = null;
+        let attempts = 0;
+        const maxAttempts = 20; // 20 * 5 = 100 seconds max
+
+        while (attempts < maxAttempts && !videoUrl) {
+            try {
+                const check = await axios.get(`${RENDER_API}/result/${videoId}`);
+                
+                if (check.data && check.data.url) {
+                    videoUrl = check.data.url;
+                    break;
+                }
+                
+                attempts++;
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            } catch (e) {
+                attempts++;
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            }
+        }
+
+        if (!videoUrl) {
+            throw new Error("Video generation timeout. Please try again.");
+        }
+
+        // Download video
+        const videoPath = path.join(tmpDir, `video_${Date.now()}.mp4`);
+        const videoResponse = await axios({
+            method: 'GET',
+            url: videoUrl,
+            responseType: 'stream'
+        });
+
+        const videoWriter = fs.createWriteStream(videoPath);
+        videoResponse.data.pipe(videoWriter);
+
+        await new Promise((resolve, reject) => {
+            videoWriter.on('finish', resolve);
+            videoWriter.on('error', reject);
+        });
+
+        // Send video
+        await api.sendMessage({
+            body: `✅ Your AI video is ready!\n📝 Text: ${text}`,
+            attachment: fs.createReadStream(videoPath)
+        }, event.threadID, event.messageID);
+
+        // Cleanup
+        try {
+            fs.unlinkSync(imgFile);
+            fs.unlinkSync(videoPath);
+        } catch (cleanupErr) {
+            console.log("Cleanup error:", cleanupErr);
+        }
+
+        // Success reaction
+        api.setMessageReaction("✅", event.messageID, (err) => {}, true);
+
+    } catch (error) {
+        console.error("MoveVideo Error:", error);
+        api.sendMessage(`❌ Error: ${error.message || "Unknown error occurred"}`, event.threadID, event.messageID);
+        api.setMessageReaction("❌", event.messageID, (err) => {}, true);
     }
+};
 
-    if (!videoUrl) return send("❌ Video generation timeout. Try again later.");
-
-    // Download final video
-    const videoPath = path.join(tmpDir, `out_${Date.now()}.mp4`);
-    const videoResp = await axios.get(videoUrl, { responseType: "stream" });
-    const vWriter = fs.createWriteStream(videoPath);
-
-    await new Promise((resolve, reject) => {
-      videoResp.data.pipe(vWriter);
-      vWriter.on("error", reject);
-      vWriter.on("finish", resolve);
-    });
-
-    // Send back video
-    await api.sendMessage({ attachment: fs.createReadStream(videoPath) }, event.threadID);
-
-    // Final reaction
-    api.setMessageReaction("✔️", event.messageID, () => {}, true);
-
-    // Cleanup
-    fs.unlinkSync(imgFile);
-    fs.unlinkSync(videoPath);
-
-  } catch (err) {
-    console.error(err);
-    api.sendMessage("❌ Error: " + err.message, event.threadID);
-    api.setMessageReaction("❌", event.messageID, () => {}, true);
-  }
+module.exports.handleEvent = async function({ api, event }) {
+    // This function can be used for command detection if needed
+    // Not required for basic functionality
 };
