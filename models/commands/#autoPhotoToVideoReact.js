@@ -1,38 +1,36 @@
 const axios = require("axios");
 
 module.exports.config = {
-  name: "moveVideoAuto",
-  version: "1.0.3",
+  name: "autoPhotoToVideoReact",
+  version: "1.0.5",
   hasPermssion: 0,
   credits: "Aryan",
-  description: "Convert photo to video when user types 'move video' with a photo",
+  description: "Automatically convert photo to video and react with emoji",
   commandCategory: "media",
-  usages: "Send 'move video' with a photo",
+  usages: "Just send a photo",
   cooldowns: 5
 };
 
 module.exports.run = async ({ api, event, global }) => {
   try {
-    const messageText = (event.message && event.message.text) ? event.message.text : "";
-    
-    // Trigger only if message contains "move video"
-    if (!/move\s+video/i.test(messageText)) return;
+    const attachments = event.message && event.message.attachments ? event.message.attachments : [];
 
-    // Check if attachments exist
-    const attachments = event.message.attachments || [];
-    if (attachments.length === 0) {
-      return api.sendMessage("📸 Please attach a photo along with 'move video'!", event.threadID, event.messageID);
-    }
-
-    // Find photo attachment (adjust type if your framework uses "image" instead of "photo")
+    // Check if photo exists
     const photoAttachment = attachments.find(a => a.type === "photo" || a.type === "image");
-    if (!photoAttachment) {
-      return api.sendMessage("❌ No photo detected!", event.threadID, event.messageID);
-    }
+    if (!photoAttachment) return; // Silently exit if no photo
 
     const photoUrl = photoAttachment.url;
 
-    // Call your video generation API
+    // React to the user's message with 🎬
+    if (typeof api.setMessageReaction === "function") {
+      try {
+        await api.setMessageReaction("🎬", event.messageID, event.threadID, true);
+      } catch (reactErr) {
+        console.error("Reaction failed:", reactErr);
+      }
+    }
+
+    // Call the D-ID video generation API
     const response = await axios.post("https://aryan-d-id-video-generator.onrender.com/generate", {
       imageUrl: photoUrl
     });
@@ -43,7 +41,7 @@ module.exports.run = async ({ api, event, global }) => {
 
     const videoUrl = response.data.videoUrl;
 
-    // Send video back to group
+    // Send the generated video back
     api.sendMessage({
       body: "🎬 Here's your video!",
       attachment: await global.utils.getStreamFromURL(videoUrl)
