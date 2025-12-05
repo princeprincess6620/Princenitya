@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "uid",
-  version: "6.0.0",
+  version: "10.0.0",
   hasPermssion: 0,
-  credits: "ARIF-BABU",
-  description: "Generate stylish Facebook info card with circular DP",
+  credits: "M.R-LEGEND-ARYAN",
+  description: "UID info with circular DP + stylish glowing name",
   commandCategory: "Tools",
   cooldowns: 5
 };
@@ -24,51 +24,80 @@ module.exports.run = async function ({ api, event }) {
     name = "Facebook User";
   }
 
-  const dpURL = `https://graph.facebook.com/${uid}/picture?height=600&width=600&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-  const filePath = __dirname + `/cache/circle_${uid}.png`;
+  const dpURL = `https://graph.facebook.com/${uid}/picture?height=700&width=700&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+  const avatarPath = __dirname + `/cache/avatar_${uid}.png`;
 
   await new Promise(resolve =>
     request(dpURL)
-      .pipe(fs.createWriteStream(filePath))
+      .pipe(fs.createWriteStream(avatarPath))
       .on("close", resolve)
   );
 
-  const img = await loadImage(filePath);
+  const avatar = await loadImage(avatarPath);
 
-  const canvas = createCanvas(512, 512);
+  const canvas = createCanvas(800, 950);
   const ctx = canvas.getContext("2d");
 
+  // Background
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, 512, 512);
+  ctx.fillRect(0, 0, 800, 950);
 
+  // Round DP
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(256, 256, 250, 0, Math.PI * 2, true);
+  ctx.arc(400, 450, 300, 0, Math.PI * 2, true);
   ctx.closePath();
   ctx.clip();
+  ctx.drawImage(avatar, 100, 150, 600, 600);
+  ctx.restore();
 
-  ctx.drawImage(img, 0, 0, 512, 512);
+  // Border frame
+  ctx.lineWidth = 12;
+  ctx.strokeStyle = "#000000";
+  ctx.beginPath();
+  ctx.arc(400, 450, 300, 0, Math.PI * 2);
+  ctx.stroke();
 
-  const finalPath = __dirname + `/cache/finaldp_${uid}.png`;
+  // GRADIENT NAME WITH GLOW
+  let gradient = ctx.createLinearGradient(200, 0, 600, 0);
+  gradient.addColorStop(0, "#ff4dd2"); // Pink
+  gradient.addColorStop(1, "#00b7ff"); // Blue
+
+  ctx.font = "bold 55px Arial";
+  ctx.textAlign = "center";
+  ctx.lineWidth = 8;
+
+  // Outline
+  ctx.strokeStyle = "black";
+  ctx.strokeText(name, 400, 120);
+
+  // Glow effect
+  ctx.shadowColor = "rgba(0, 153, 255, 0.8)";
+  ctx.shadowBlur = 25;
+
+  // Fill text (gradient)
+  ctx.fillStyle = gradient;
+  ctx.fillText(name, 400, 120);
+
+  // Remove shadow for rest elements
+  ctx.shadowBlur = 0;
+
+  const finalPath = __dirname + `/cache/final_uid_${uid}.png`;
   fs.writeFileSync(finalPath, canvas.toBuffer());
 
   const moment = require("moment-timezone");
   moment.tz.setDefault("Asia/Dhaka");
 
-  const date = moment().format("DD/MM/YYYY");
-  const time = moment().format("hh:mm:ss A");
-  const day = moment().format("dddd");
-
-  let msg =
-`━━━━━━━━━━━━━━━━━━
-🤖 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎 🎉
-━━━━━━━━━━━━━━━━━━
-📅 Date: ${date}
-🕒 Time: ${time}
-📆 Day: ${day}
+  let msg = `
+🤖 BOT INFO 🎉
+━━━━━━━━━━━━━━
+📅 Date: ${moment().format("DD/MM/YYYY")}
+🕒 Time: ${moment().format("hh:mm:ss A")}
+📆 Day: ${moment().format("dddd")}
 
 👤 Name: ${name}
 🆔 UID: ${uid}
-━━━━━━━━━━━━━━━━━━`;
+━━━━━━━━━━━━━━`;
 
   api.sendMessage(
     {
@@ -77,7 +106,7 @@ module.exports.run = async function ({ api, event }) {
     },
     event.threadID,
     () => {
-      fs.unlinkSync(filePath);
+      fs.unlinkSync(avatarPath);
       fs.unlinkSync(finalPath);
     },
     event.messageID
