@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "uid",
-  version: "7.0.0",
+  version: "6.0.0",
   hasPermssion: 0,
-  credits: "M.R-LEGEND-ARYAN",
-  description: "Generate stylish Facebook info card with circular DP and frame",
+  credits: "ARIF-BABU",
+  description: "Generate stylish Facebook info card with circular DP",
   commandCategory: "Tools",
   cooldowns: 5
 };
@@ -25,40 +25,30 @@ module.exports.run = async function ({ api, event }) {
   }
 
   const dpURL = `https://graph.facebook.com/${uid}/picture?height=600&width=600&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-  const avatarPath = __dirname + `/cache/avatar_${uid}.png`;
-  const framePath = __dirname + `/cache/frame.png`; //<<--- FRAME FILE REQUIRED
+  const filePath = __dirname + `/cache/circle_${uid}.png`;
 
-  // Download DP
   await new Promise(resolve =>
     request(dpURL)
-      .pipe(fs.createWriteStream(avatarPath))
+      .pipe(fs.createWriteStream(filePath))
       .on("close", resolve)
   );
 
-  const avatar = await loadImage(avatarPath);
-  const frame = await loadImage(framePath);
+  const img = await loadImage(filePath);
 
-  const canvas = createCanvas(600, 600);
+  const canvas = createCanvas(512, 512);
   const ctx = canvas.getContext("2d");
 
-  // Background
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, 600, 600);
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, 512, 512);
 
-  // Draw circular DP
-  ctx.save();
   ctx.beginPath();
-  ctx.arc(300, 300, 270, 0, Math.PI * 2, true);
+  ctx.arc(256, 256, 250, 0, Math.PI * 2, true);
   ctx.closePath();
   ctx.clip();
-  ctx.drawImage(avatar, 0, 0, 600, 600);
-  ctx.restore();
 
-  // Draw frame on top
-  ctx.drawImage(frame, 0, 0, 600, 600);
+  ctx.drawImage(img, 0, 0, 512, 512);
 
-  // Save final
-  const finalPath = __dirname + `/cache/finalframe_${uid}.png`;
+  const finalPath = __dirname + `/cache/finaldp_${uid}.png`;
   fs.writeFileSync(finalPath, canvas.toBuffer());
 
   const moment = require("moment-timezone");
@@ -70,7 +60,7 @@ module.exports.run = async function ({ api, event }) {
 
   let msg =
 `━━━━━━━━━━━━━━━━━━
-🎨🍒𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓😘𝐎𝐅-𝐅𝐀𝐓𝐇𝐄𝐑🍒
+🤖 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎 🎉
 ━━━━━━━━━━━━━━━━━━
 📅 Date: ${date}
 🕒 Time: ${time}
@@ -87,7 +77,7 @@ module.exports.run = async function ({ api, event }) {
     },
     event.threadID,
     () => {
-      fs.unlinkSync(avatarPath);
+      fs.unlinkSync(filePath);
       fs.unlinkSync(finalPath);
     },
     event.messageID
