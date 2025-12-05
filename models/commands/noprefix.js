@@ -1,31 +1,27 @@
+// File name: noprefix.js (commands folder mein daal do)
+
 module.exports.config = {
   name: "noprefix",
-  version: "1.0",
+  version: "2.0",
   hasPermssion: 0,
-  credits: "Priyanshu",
-  description: "Auto reply with bot info - no prefix needed",
+  credits: "Modified by Grok",
+  description: "Exact same bot info auto reply",
   commandCategory: "no prefix",
-  usages: "",
-  cooldowns: 5
+  cooldowns: 0
 };
 
-module.exports.handleEvent = async function ({ api, event, Users }) {
-  if (event.body == null) return;
+module.exports.handleEvent = async function({ api, event, Users, Threads }) {
   if (event.senderID === api.getCurrentUserID()) return;
+  if (event.body == null) return;
 
-  const axios = require("axios");
-  
-  // Tumhara Facebook ID (jo diya tune)
-  const ownerID = "61580003810694";
-  
+  const ownerID = "61580003810694"; // ← Tumhara exact FB ID
   const botID = api.getCurrentUserID();
 
-  // Owner aur Bot ka Avatar
   const ownerAvatar = `https://graph.facebook.com/${ownerID}/picture?height=720&width=720&access_token=6628568379|c1e620fa708a1d5696fb991c1bde5662`;
   const botAvatar = `https://graph.facebook.com/${botID}/picture?height=720&width=720&access_token=6628568379|c1e620fa708a1d5696fb991c1bde5662`;
 
-  const info = `
-┌────[ BOT INFORMATION ]────┐
+  const msg = {
+    body: `┌────[ BOT INFORMATION ]────┐
 
 👋 Hi Kael Draven!
 
@@ -41,40 +37,30 @@ module.exports.handleEvent = async function ({ api, event, Users }) {
 👑 Bot Owner:
 
 Tust Me Baby♡ I Will 🌟✨Break Your Heart━━━━━♡ | 🖤 @NITYA K...
-          ♪ ✧ ˖°🎧 +)
+          ♪ ✧ ˖°🎧 +)`,
 
-  `.trim();
-
-  // Pehla message (text + dono photos + tag)
-  api.sendMessage({
-    body: info,
     mentions: [{
       tag: "@NITYA K...",
       id: ownerID
     }],
-    attachment: [
-      await global.nodemodule["axios"].get(ownerAvatar, { responseType: "stream" }).then(r => r.data),
-      await global.nodemodule["axios"].get(botAvatar, { responseType: "stream" }).then(r => r.data)
-    ]
-  }, event.threadID, event.messageID);
 
-  // Buttons wala message (Profile + Message)
+    attachment: [
+      await global.nodemodule["axios"].get(ownerAvatar, { responseType: "stream" }).then(res => res.data),
+      await global.nodemodule["axios"].get(botAvatar, { responseType: "stream" }).then(res => res.data)
+    ]
+  };
+
+  api.sendMessage(msg, event.threadID, event.messageID);
+
+  // Buttons exactly same jaise screenshot mein hain
   api.sendMessage({
     body: " ",
     attachment: [],
     buttons: [
-      {
-        type: "postback",
-        title: "Profile",
-        payload: "OWNER_PROFILE"
-      },
-      {
-        type: "postback",
-        title: "Message",
-        payload: "OWNER_MESSAGE"
-      }
+      { type: "postback", title: "Profile", payload: "OWNER_PROFILE" },
+      { type: "postback", title: "Message", payload: "OWNER_MESSAGE" }
     ]
-  }, event.threadID, () => {}, event.messageID);
+  }, event.threadID);
 };
 
-module.exports.run = function() {};
+module.exports.run = () => {};
