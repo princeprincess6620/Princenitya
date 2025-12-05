@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "uid",
-  version: "11.0.0",
+  version: "6.0.0",
   hasPermssion: 0,
-  credits: "ChatGPT",
-  description: "UID info with circular DP + real name + glow text",
+  credits: "ARYAN-LEGEND",
+  description: "Generate stylish Facebook info card with circular DP + Real Name",
   commandCategory: "Tools",
   cooldowns: 5
 };
@@ -12,10 +12,9 @@ module.exports.run = async function ({ api, event }) {
 
   const fs = global.nodemodule["fs-extra"];
   const request = global.nodemodule["request"];
-  const axios = global.nodemodule["axios"];
   const { createCanvas, loadImage } = require("canvas");
 
-  let uid;
+  let uid, name;
 
   if (Object.keys(event.mentions).length > 0) {
     uid = Object.keys(event.mentions)[0];
@@ -23,90 +22,59 @@ module.exports.run = async function ({ api, event }) {
     uid = event.senderID;
   }
 
-  // GET REAL NAME FROM FACEBOOK
-  let name = "Unknown User";
+  // 🔥 REAL FACEBOOK NAME FETCH
   try {
-    let info = (
-      await axios.get(
-        `https://graph.facebook.com/${uid}?fields=name&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`
-      )
-    ).data;
-    name = info.name || "Unknown User";
+    let info = await api.getUserInfo(uid);
+    name = info[uid]?.name || "Unknown User";
   } catch (e) {
     name = "Unknown User";
   }
 
-  // DP LINK
-  const dpURL = `https://graph.facebook.com/${uid}/picture?height=700&width=700&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-  const avatarPath = __dirname + `/cache/avatar_${uid}.png`;
+  // DP DOWNLOAD
+  const dpURL = `https://graph.facebook.com/${uid}/picture?height=600&width=600&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
+  const filePath = __dirname + `/cache/circle_${uid}.png`;
 
   await new Promise(resolve =>
     request(dpURL)
-      .pipe(fs.createWriteStream(avatarPath))
+      .pipe(fs.createWriteStream(filePath))
       .on("close", resolve)
   );
 
-  const avatar = await loadImage(avatarPath);
+  const img = await loadImage(filePath);
 
-  const canvas = createCanvas(800, 950);
+  const canvas = createCanvas(512, 512);
   const ctx = canvas.getContext("2d");
 
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, 800, 950);
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, 512, 512);
 
-  // Round DP
-  ctx.save();
   ctx.beginPath();
-  ctx.arc(400, 450, 300, 0, Math.PI * 2);
-  ctx.closePath();
+  ctx.arc(256, 256, 250, 0, Math.PI * 2, true);
   ctx.clip();
-  ctx.drawImage(avatar, 100, 150, 600, 600);
-  ctx.restore();
 
-  // Circle frame
-  ctx.lineWidth = 12;
-  ctx.strokeStyle = "#000000";
-  ctx.beginPath();
-  ctx.arc(400, 450, 300, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.drawImage(img, 0, 0, 512, 512);
 
-  // Glow Name
-  let gradient = ctx.createLinearGradient(200, 0, 600, 0);
-  gradient.addColorStop(0, "#ff4dd2");
-  gradient.addColorStop(1, "#00b7ff");
-
-  ctx.font = "bold 55px Arial";
-  ctx.textAlign = "center";
-
-  ctx.lineWidth = 8;
-  ctx.strokeStyle = "black";
-  ctx.strokeText(name, 400, 120);
-
-  ctx.shadowColor = "rgba(0,153,255,0.8)";
-  ctx.shadowBlur = 25;
-
-  ctx.fillStyle = gradient;
-  ctx.fillText(name, 400, 120);
-
-  ctx.shadowBlur = 0;
-
-  const finalPath = __dirname + `/cache/final_uid_${uid}.png`;
+  const finalPath = __dirname + `/cache/finaldp_${uid}.png`;
   fs.writeFileSync(finalPath, canvas.toBuffer());
 
-  // TIME
   const moment = require("moment-timezone");
   moment.tz.setDefault("Asia/Dhaka");
 
-  let msg = `
-🤖 BOT INFO 🎉
-━━━━━━━━━━━━━━
-📅 Date: ${moment().format("DD/MM/YYYY")}
-🕒 Time: ${moment().format("hh:mm:ss A")}
-📆 Day: ${moment().format("dddd")}
+  const date = moment().format("DD/MM/YYYY");
+  const time = moment().format("hh:mm:ss A");
+  const day = moment().format("dddd");
+
+  let msg =
+`━━━━━━━━━━━━━━━━━━
+🤖 𝐁𝐎𝐓 𝐈𝐍𝐅𝐎 🎉
+━━━━━━━━━━━━━━━━━━
+📅 Date: ${date}
+🕒 Time: ${time}
+📆 Day: ${day}
 
 👤 Name: ${name}
 🆔 UID: ${uid}
-━━━━━━━━━━━━━━`;
+━━━━━━━━━━━━━━━━━━`;
 
   api.sendMessage(
     {
@@ -115,7 +83,7 @@ module.exports.run = async function ({ api, event }) {
     },
     event.threadID,
     () => {
-      fs.unlinkSync(avatarPath);
+      fs.unlinkSync(filePath);
       fs.unlinkSync(finalPath);
     },
     event.messageID
