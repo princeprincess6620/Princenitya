@@ -8,27 +8,30 @@ module.exports.config = {
   version: "1.0.0",
   hasPermssion: 0,
   credits: "ChatGPT",
-  description: "Upload Image/Video to imgbb.com",
+  description: "Upload Image/GIF to imgbb.com",
   commandCategory: "Utilities",
-  usages: "[reply media]",
+  usages: "[reply image/gif]",
   cooldowns: 5
 };
 
 module.exports.run = async ({ api, event }) => {
   const { type, messageReply, threadID, messageID } = event;
 
-  if (type !== "message_reply" || !messageReply.attachments || messageReply.attachments.length === 0) {
-    return api.sendMessage("⚠ Reply to an image/video!", threadID, messageID);
+  if (type !== "message_reply" ||
+      !messageReply.attachments ||
+      messageReply.attachments.length === 0) {
+    return api.sendMessage("⚠ Reply to an image or GIF!", threadID, messageID);
   }
 
   const att = messageReply.attachments[0];
 
-  const ext =
-    att.type === "photo" ? "jpg" :
-    att.type === "video" ? "mp4" :
-    att.type === "animated_image" ? "gif" :
-    att.type === "audio" ? "m4a" : "dat";
+  // Allow only image + gif
+  if (att.type !== "photo" && att.type !== "animated_image") {
+    return api.sendMessage("❌ Imgbb sirf image/GIF support karta hai!", threadID, messageID);
+  }
 
+  // Extension auto
+  const ext = att.type === "animated_image" ? "gif" : "jpg";
   const filePath = path.join(__dirname, `cache/imgbb_${Date.now()}.${ext}`);
 
   try {
@@ -40,9 +43,7 @@ module.exports.run = async ({ api, event }) => {
 
     const res = await axios.post(
       `https://api.imgbb.com/1/upload?key=ac2771c6abbfdfe4f78dc49cd717008c`,
-      {
-        image: imageBase64
-      }
+      { image: imageBase64 }
     );
 
     fs.unlinkSync(filePath);
