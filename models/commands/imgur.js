@@ -4,59 +4,52 @@ const path = require("path");
 const { downloadFile } = require("../../utils");
 
 module.exports.config = {
-    name: "imgur",
-    version: "3.0.0",
-    hasPermssion: 0,
-    credits: "ChatGPT",
-    description: "Upload Image/Video to Imgur (No external API)",
-    commandCategory: "Utilities",
-    usages: "[reply image/video]",
-    cooldowns: 5
+  name: "imgur",
+  version: "1.0.0",
+  hasPermssion: 0,
+  credits: "ChatGPT",
+  description: "Upload Image/Video (no API key required)",
+  commandCategory: "Utilities",
+  usages: "[reply media]",
+  cooldowns: 5
 };
 
 module.exports.run = async ({ api, event }) => {
-    const { threadID, messageID, type, messageReply } = event;
+  const { type, messageReply, threadID, messageID } = event;
 
-    if (type !== "message_reply" || !messageReply.attachments || messageReply.attachments.length === 0) {
-        return api.sendMessage("⚠ Reply to an image/video!", threadID, messageID);
-    }
+  if (type !== "message_reply" || !messageReply.attachments || messageReply.attachments.length === 0) {
+    return api.sendMessage("⚠ Reply to an image/video!", threadID, messageID);
+  }
 
-    const ClientID = "YOUR_CLIENT_ID"; // ← yaha apna Client-ID daalo
+  const att = messageReply.attachments[0];
 
-    const tempDir = path.join(__dirname, "cache");
-    if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir);
+  const ext =
+    att.type === "photo" ? "jpg" :
+    att.type === "video" ? "mp4" :
+    att.type === "animated_image" ? "gif" :
+    att.type === "audio" ? "m4a" : "dat";
 
-    let filePath;
-    let ext = "jpg";
+  const filePath = path.join(__dirname, `cache/imgur_${Date.now()}.${ext}`);
 
-    const att = messageReply.attachments[0];
-
-    if (att.type === "photo") ext = "jpg";
-    else if (att.type === "video") ext = "mp4";
-    else if (att.type === "animated_image") ext = "gif";
-
-    filePath = path.join(tempDir, `imgur_${Date.now()}.${ext}`);
+  try {
     await downloadFile(att.url, filePath);
 
-    api.sendMessage("⏳ Uploading to Imgur…", threadID, messageID);
+    const form = new FormData();
+    form.append("reqtype", "fileupload");
+    form.append("fileToUpload", fs.createReadStream(filePath));
 
-    try {
-        const data = fs.readFileSync(filePath, { encoding: "base64" });
+    api.sendMessage("⏳ Uploading to Imgur… (Catbox backend)", threadID, messageID);
 
-        const res = await axios.post(
-            "https://api.imgur.com/3/upload",
-            { image: data, type: "base64" },
-            { headers: { Authorization: `Client-ID ${ClientID}` } }
-        );
+    const res = await axios.post("https://catbox.moe/user/api.php", form, {
+      headers: form.getHeaders()
+    });
 
-        const link = res.data.data.link;
+    fs.unlinkSync(filePath);
 
-        fs.unlinkSync(filePath);
+    return api.sendMessage(`✅ Uploaded Successfully:\n${res.data}`, threadID, messageID);
 
-        return api.sendMessage(`✅ Uploaded:\n${link}`, threadID, messageID);
-
-    } catch (err) {
-        console.log("❌ Error:", err.response?.data || err.message);
-        return api.sendMessage("❌ Upload failed.", threadID, messageID);
-    }
+  } catch (e) {
+    console.log("❌ Error:", e.message);
+    return api.sendMessage("❌ Upload failed.", threadID, messageID);
+  }
 };
