@@ -1,8 +1,8 @@
 const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
+const FormData = require("form-data");
 
-// Download helper function
 async function downloadFile(url, filePath) {
   const res = await axios({ url, responseType: "stream" });
   const writer = fs.createWriteStream(filePath);
@@ -15,7 +15,7 @@ async function downloadFile(url, filePath) {
 
 module.exports.config = {
   name: "imgbb",
-  version: "1.0.0",
+  version: "1.1.0",
   hasPermssion: 0,
   credits: "ChatGPT",
   description: "Upload Image/GIF to imgbb.com",
@@ -27,45 +27,36 @@ module.exports.config = {
 module.exports.run = async ({ api, event }) => {
   const { type, messageReply, threadID, messageID } = event;
 
-  // Check reply and attachments
-  if (type !== "message_reply" || !messageReply?.attachments || messageReply.attachments.length === 0) {
+  if (type !== "message_reply" || !messageReply?.attachments || messageReply.attachments.length === 0)
     return api.sendMessage("⚠ Reply to an image or GIF!", threadID, messageID);
-  }
 
   const att = messageReply.attachments[0];
 
-  // Allow only photo or animated_image
-  if (att.type !== "photo" && att.type !== "animated_image") {
+  if (att.type !== "photo" && att.type !== "animated_image")
     return api.sendMessage("❌ Imgbb only supports image or GIF!", threadID, messageID);
-  }
 
-  // Ensure cache folder exists
   const cacheDir = path.join(__dirname, "cache");
   if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-  // File path
   const ext = att.type === "animated_image" ? "gif" : "jpg";
   const filePath = path.join(cacheDir, `imgbb_${Date.now()}.${ext}`);
 
   try {
-    // Download the file
     await downloadFile(att.url, filePath);
 
-    // Convert to base64
-    const imageBase64 = fs.readFileSync(filePath, { encoding: "base64" });
+    const form = new FormData();
+    form.append("image", fs.createReadStream(filePath));
 
     api.sendMessage("⏳ Uploading to Imgbb…", threadID, messageID);
 
-    // Imgbb API request
     const res = await axios.post(
       `https://api.imgbb.com/1/upload?key=ac2771c6abbfdfe4f78dc49cd717008c`,
-      { image: imageBase64 }
+      form,
+      { headers: form.getHeaders() }
     );
 
-    // Delete local file
     fs.unlinkSync(filePath);
 
-    // Send success message
     const link = res.data.data.url;
     return api.sendMessage(`✅ Uploaded Successfully (Imgbb):\n${link}`, threadID, messageID);
 
