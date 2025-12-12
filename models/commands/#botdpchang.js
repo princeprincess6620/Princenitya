@@ -1,6 +1,3 @@
-bot apne aap dp cheng kare ga
-
-
 const fs = require("fs-extra");
 const axios = require("axios");
 
