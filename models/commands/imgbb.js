@@ -4,11 +4,11 @@ const path = require("path");
 const { downloadFile } = require("../../utils");
 
 module.exports.config = {
-  name: "imgur",
+  name: "imgbb",
   version: "1.0.0",
   hasPermssion: 0,
   credits: "ChatGPT",
-  description: "Upload Image/Video (no API key required)",
+  description: "Upload Image/Video to imgbb.com",
   commandCategory: "Utilities",
   usages: "[reply media]",
   cooldowns: 5
@@ -29,24 +29,31 @@ module.exports.run = async ({ api, event }) => {
     att.type === "animated_image" ? "gif" :
     att.type === "audio" ? "m4a" : "dat";
 
-  const filePath = path.join(__dirname, `cache/imgur_${Date.now()}.${ext}`);
+  const filePath = path.join(__dirname, `cache/imgbb_${Date.now()}.${ext}`);
 
   try {
     await downloadFile(att.url, filePath);
 
-    const form = new FormData();
-    form.append("reqtype", "fileupload");
-    form.append("fileToUpload", fs.createReadStream(filePath));
+    const imageBase64 = fs.readFileSync(filePath, { encoding: "base64" });
 
-    api.sendMessage("⏳ Uploading to Imgur… (Catbox backend)", threadID, messageID);
+    api.sendMessage("⏳ Uploading to Imgbb…", threadID, messageID);
 
-    const res = await axios.post("https://catbox.moe/user/api.php", form, {
-      headers: form.getHeaders()
-    });
+    const res = await axios.post(
+      `https://api.imgbb.com/1/upload?key=ac2771c6abbfdfe4f78dc49cd717008c`,
+      {
+        image: imageBase64
+      }
+    );
 
     fs.unlinkSync(filePath);
 
-    return api.sendMessage(`✅ Uploaded Successfully:\n${res.data}`, threadID, messageID);
+    const link = res.data.data.url;
+
+    return api.sendMessage(
+      `✅ Uploaded Successfully (Imgbb):\n${link}`,
+      threadID,
+      messageID
+    );
 
   } catch (e) {
     console.log("❌ Error:", e.message);
