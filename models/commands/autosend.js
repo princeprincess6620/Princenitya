@@ -1,153 +1,200 @@
-const schedule = require('node-schedule');
-const moment = require('moment-timezone');
-const chalk = require('chalk');
+
 const fs = require('fs');
 const path = require('path');
 
 module.exports.config = {
-    name: 'autosend', // Changed to match folder name
-    version: '5.0.0',
-    hasPermssion: 0,
-    credits: '𝐌.𝐑 𝐀𝐑𝐘𝐀𝐍',
-    description: 'Auto Message Every Hour with Time & Photo',
-    commandCategory: 'system',
-    usages: 'automatic',
-    cooldowns: 0
+    name: "autosend",
+    version: "2.0.0",
+    credits: "𝐌.𝐑 𝐀𝐑𝐘𝐀𝐍",
+    description: "Auto send messages with photos",
+    hasPermssion: 2,
+    commandCategory: "system",
+    usages: "",
+    cooldowns: 5
 };
 
-module.exports.onLoad = async ({ api }) => {
-    // Get Current Time Information
-    const getTimeInfo = () => {
-        const now = moment().tz('Asia/Kolkata');
-        const hour = parseInt(now.format('HH'));
+// Bot start hote hi chalu ho jayega
+module.exports.onLoad = function({ api }) {
+    console.log("🔄 AutoSend System Loading...");
+    
+    // Photos folder check
+    const photoDir = path.join(__dirname, "autosend");
+    console.log("📁 Looking for photos in:", photoDir);
+    
+    if (fs.existsSync(photoDir)) {
+        const photos = fs.readdirSync(photoDir)
+            .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file));
+        console.log(`📸 Found ${photos.length} photos in autosend folder`);
         
-        // Determine time of day emoji
-        let timeEmoji;
-        if (hour >= 5 && hour < 12) timeEmoji = '🌅';
-        else if (hour >= 12 && hour < 17) timeEmoji = '☀️';
-        else if (hour >= 17 && hour < 21) timeEmoji = '🌇';
-        else timeEmoji = '🌙';
-        
-        return {
-            time: now.format('hh:mm A'),
-            day: now.format('dddd'),
-            month: now.format('MMMM'),
-            hour: hour,
-            emoji: timeEmoji
-        };
-    };
-
-    // Create Beautiful Bracket
-    const createBracket = (info) => {
-        return `
-╔═══════════════════════════════════════════╗
-║          🎀 𝗔𝗥𝗬𝗔𝗡 ☄️𝗕𝗢𝗧 𝗦𝗘𝗡𝗧 𝗦𝗬𝗦𝗧𝗘𝗠 🎀         ║
-║             𝗕𝗼𝘁 𝗔𝘂𝘁𝗼𝗺𝗮𝘁𝗶𝗰 𝗠𝗲𝘀𝘀𝗮𝗴𝗲𝘀                 ║
-╠═══════════════════════════════════════════╣
-║    ${info.emoji}  𝗧𝗶𝗺𝗲: ${info.time}  ${info.emoji}    ║
-║    📅 𝗗𝗮𝘆: ${info.day}                ║
-║    📆 𝗠𝗼𝗻𝘁𝗵: ${info.month}           ║
-║    ✨ 𝗛𝗮𝘃𝗲 𝗮 𝗯𝗲𝗮𝘂𝘁𝗶𝗳𝘂𝗹 𝗺𝗼𝗺𝗲𝗻𝘁! ✨     ║
-╚═══════════════════════════════════════════╝
-        `;
-    };
-
-    // Get Random Photo - FIXED PATH
-    const getRandomPhoto = () => {
-        try {
-            const photosFolder = path.join(__dirname, '..', 'autosend'); // Fixed path
-            
-            if (!fs.existsSync(photosFolder)) {
-                console.log(chalk.yellow(`⚠️ Folder not found: ${photosFolder}`));
-                console.log(chalk.yellow(`ℹ️ Creating folder...`));
-                fs.mkdirSync(photosFolder, { recursive: true });
-                return null;
-            }
-            
-            const files = fs.readdirSync(photosFolder)
-                .filter(file => /\.(jpg|jpeg|png|gif|webp)$/i.test(file));
-            
-            if (files.length === 0) {
-                console.log(chalk.yellow(`⚠️ No photos found in autosend folder`));
-                return null;
-            }
-            
-            const randomFile = files[Math.floor(Math.random() * files.length)];
-            console.log(chalk.cyan(`📸 Selected photo: ${randomFile}`));
-            return fs.createReadStream(path.join(photosFolder, randomFile));
-            
-        } catch (error) {
-            console.log(chalk.red(`❌ Error getting photo: ${error.message}`));
-            return null;
+        if (photos.length > 0) {
+            console.log("✅ Photos available:");
+            photos.slice(0, 5).forEach(photo => console.log(`   - ${photo}`));
+            if (photos.length > 5) console.log(`   ... and ${photos.length - 5} more`);
+        } else {
+            console.log("⚠️ No photos found in autosend folder!");
         }
-    };
-
-    // Function to send messages
-    const sendAutoMessage = async () => {
+    } else {
+        console.log("❌ autosend folder not found!");
+        console.log("📁 Creating folder...");
+        fs.mkdirSync(photoDir, { recursive: true });
+    }
+    
+    // Function to send auto messages
+    async function sendAutoMessages() {
         try {
-            const info = getTimeInfo();
-            const message = createBracket(info);
-            const photo = getRandomPhoto();
+            console.log("\n⏰ Starting auto message send...");
             
-            // Check if global.data.allThreadID exists
-            if (!global.data || !global.data.allThreadID || !Array.isArray(global.data.allThreadID)) {
-                console.log(chalk.red('❌ Error: global.data.allThreadID not found or invalid'));
-                return;
+            // Get time
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const timeStr = `${hours}:${minutes < 10 ? '0' : ''}${minutes}`;
+            
+            // Greeting based on time
+            let greeting = "Hello!";
+            let emoji = "👋";
+            
+            if (hours < 12) {
+                greeting = "Good Morning! 🌅";
+                emoji = "🌅";
+            } else if (hours < 17) {
+                greeting = "Good Afternoon! ☀️";
+                emoji = "☀️";
+            } else if (hours < 21) {
+                greeting = "Good Evening! 🌇";
+                emoji = "🌇";
+            } else {
+                greeting = "Good Night! 🌙";
+                emoji = "🌙";
             }
             
-            console.log(chalk.blue(`📤 Sending to ${global.data.allThreadID.length} threads...`));
+            // Create message
+            const message = `
+╔════════════════════════════════╗
+║     𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓 𝐀𝐔𝐓𝐎 𝐒𝐄𝐍𝐃     ║
+╠════════════════════════════════╣
+║    ${emoji} ${greeting}     ║
+║    ⏰ Time: ${timeStr}             ║
+║    📅 ${now.toDateString()}       ║
+║    💖 Stay Happy & Blessed!     ║
+╚════════════════════════════════╝
+            `;
             
-            for (const threadID of global.data.allThreadID) {
-                try {
-                    await api.sendMessage({
-                        body: message,
-                        attachment: photo
-                    }, threadID);
-                    console.log(chalk.green(`✅ Sent to ${threadID} at ${info.time}`));
-                } catch (threadError) {
-                    console.log(chalk.yellow(`⚠️ Failed to send to ${threadID}: ${threadError.message}`));
+            // Get random photo from autosend folder
+            let attachment = null;
+            const photoPath = path.join(__dirname, "autosend");
+            
+            if (fs.existsSync(photoPath)) {
+                const photos = fs.readdirSync(photoPath)
+                    .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file));
+                
+                if (photos.length > 0) {
+                    const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+                    const fullPath = path.join(photoPath, randomPhoto);
+                    attachment = fs.createReadStream(fullPath);
+                    console.log(`📸 Using photo: ${randomPhoto}`);
                 }
-                // Delay to avoid rate limiting
-                await new Promise(resolve => setTimeout(resolve, 500));
             }
             
+            // Get all groups
+            let allThreads = [];
+            try {
+                allThreads = await api.getThreadList(100, null, ['INBOX']);
+            } catch (e) {
+                console.log("⚠️ Using global.data for threads");
+                if (global.data && global.data.allThreadID) {
+                    allThreads = global.data.allThreadID.map(id => ({ threadID: id, isGroup: true }));
+                }
+            }
+            
+            const groups = allThreads.filter(t => t.isGroup);
+            console.log(`👥 Found ${groups.length} groups`);
+            
+            // Send to each group
+            let successCount = 0;
+            for (const group of groups) {
+                try {
+                    const sendObj = { body: message };
+                    
+                    if (attachment) {
+                        // Create new stream for each send
+                        const photos = fs.readdirSync(photoPath)
+                            .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file));
+                        
+                        if (photos.length > 0) {
+                            const randomPhoto = photos[Math.floor(Math.random() * photos.length)];
+                            sendObj.attachment = fs.createReadStream(path.join(photoPath, randomPhoto));
+                        }
+                    }
+                    
+                    await api.sendMessage(sendObj, group.threadID);
+                    successCount++;
+                    console.log(`✅ Sent to group ${successCount}/${groups.length}`);
+                    
+                    // Wait 2 seconds between sends
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    
+                } catch (err) {
+                    console.log(`⚠️ Failed for group: ${err.message}`);
+                }
+            }
+            
+            console.log(`🎉 Sent ${successCount} messages successfully!`);
+            console.log(`🕐 Next message in 1 hour\n`);
+            
         } catch (error) {
-            console.log(chalk.red(`❌ Error in sendAutoMessage: ${error.message}`));
+            console.log("❌ Auto send error:", error.message);
         }
-    };
-
-    // Schedule Hourly Messages
-    const rule = new schedule.RecurrenceRule();
-    rule.minute = 0; // Every hour at minute 0
-
-    const job = schedule.scheduleJob(rule, () => {
-        console.log(chalk.magenta('⏰ Hourly trigger activated'));
-        sendAutoMessage();
-    });
-
-    // Console Display
-    const initialInfo = getTimeInfo();
-    console.log(chalk.bold.hex('#FF6B9D')(`
-╔═══════════════════════════════════════════╗
-║          🎀 𝗔𝗨𝗧𝗢 𝗦𝗘𝗡𝗧 𝗦𝗬𝗦𝗧𝗘𝗠 🎀         ║
-║       𝗛𝗼𝘂𝗿𝗹𝘆 𝗔𝘂𝘁𝗼𝗺𝗮𝘁𝗶𝗰 𝗠𝗲𝘀𝘀𝗮𝗴𝗲𝘀       ║
-╠═══════════════════════════════════════════╣
-║    ${initialInfo.emoji}  Started: ${initialInfo.time}  ${initialInfo.emoji} ║
-║    📅 Day: ${initialInfo.day}                ║
-║    📆 Month: ${initialInfo.month}           ║
-║    ✨ By: 𝐌.𝐑 𝐀𝐑𝐘𝐀𝐍 ✨               ║
-╚═══════════════════════════════════════════╝
-    `));
-
-    console.log(chalk.cyan(`📁 Photo folder: ${path.join(__dirname, '..', 'autosend')}`));
-
-    // Send Initial Message after 5 seconds
+    }
+    
+    // First message after 10 seconds
     setTimeout(() => {
-        console.log(chalk.yellow('🚀 Sending initial message...'));
-        sendAutoMessage();
-    }, 5000);
+        console.log("🚀 Sending first auto message...");
+        sendAutoMessages();
+    }, 10000);
+    
+    // Then every 1 hour
+    setInterval(() => {
+        sendAutoMessages();
+    }, 60 * 60 * 1000); // 1 hour
+    
+    console.log("✅ AutoSend System Ready!");
+    console.log("📅 Messages will be sent every hour automatically\n");
 };
 
-module.exports.run = async ({ event, api }) => {
-    api.sendMessage("✅ AutoSend System is running! Messages will be sent every hour.", event.threadID);
+// Manual trigger ke liye
+module.exports.run = async function({ api, event }) {
+    console.log("👤 Manual trigger by user");
+    
+    // Show available photos
+    const photoDir = path.join(__dirname, "autosend");
+    if (fs.existsSync(photoDir)) {
+        const photos = fs.readdirSync(photoDir)
+            .filter(file => /\.(jpg|jpeg|png|gif)$/i.test(file));
+        
+        if (photos.length > 0) {
+            await api.sendMessage(
+                `📸 AutoSend System Active!\n\n` +
+                `✅ Photos available: ${photos.length}\n` +
+                `🕐 Next auto message in 1 hour\n` +
+                `📁 Folder: autosend/\n\n` +
+                `Sample photos:\n` +
+                photos.slice(0, 3).map(p => `• ${p}`).join('\n') +
+                (photos.length > 3 ? `\n• ... and ${photos.length - 3} more` : ''),
+                event.threadID
+            );
+        } else {
+            await api.sendMessage(
+                "⚠️ AutoSend System Active but no photos found!\n" +
+                "Please add photos to the 'autosend' folder",
+                event.threadID
+            );
+        }
+    } else {
+        await api.sendMessage(
+            "❌ autosend folder not found!\n" +
+            "Creating folder... Please add photos there",
+            event.threadID
+        );
+    }
 };
