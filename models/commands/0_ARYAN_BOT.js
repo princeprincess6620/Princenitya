@@ -668,7 +668,7 @@ if ((event.body.toLowerCase() == "😀") || (event.body.toLowerCase() == "😀�
    };
    mess = "{name}"
 
-  if (event.body.indexOf("Bot") >= 0 || (event.body.indexOf("bot") >= 0)) {
+  if (event.body.indexOf("Bot janu") >= 0 || (event.body.indexOf("bot janu") >= 0)) {
     var msg = {
       body: `❤️🌿🍒${name}🌿🥀💙, \n\n
           ${rand} 🤣🍁❤
