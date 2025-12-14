@@ -6,40 +6,45 @@ const path = require('path');
 
 module.exports.config = {
     name: 'autosend',
-    version: '6.0.0',
+    version: '7.0.0',
     hasPermssion: 0,
     credits: '𝐌.𝐑 𝐀𝐑𝐘𝐀𝐍',
-    description: 'Smart Auto Message - Only Active Threads',
+    description: 'Simple Auto Message - Every 1 Hour',
     commandCategory: 'system',
-    usages: '[test/addthread/status]',
+    usages: '[on/off/test]',
     cooldowns: 0
 };
 
-// 📝 Shayri Collection
-const SHAYRI_LIST = [
-    "दिल तोड़ने वाले एक बात याद रखना...\nजिस दिन हम बदल गए, संभाल नहीं पाओगे।",
-    "मोहब्बत छोड़ी नहीं जाती,\nवो तो बस दिल से उतर जाती है।",
-    "हमने तो प्यार करने में जान लगा दी,\nवो हमसे बात करने में busy हो गए।",
-    "सच कहना मुश्किल नहीं,\nसच सुनना मुश्किल होता है।",
-    "कभी कभी लगता है,\nशायद मैं किसी के लिए बना ही नहीं।"
+// Simple message templates
+const MESSAGES = [
+    "आज का दिन आपके लिए शुभ हो! 🌟",
+    "मुस्कुराते रहिए, खुश रहिए! 😊",
+    "हर पल नया अवसर लेकर आता है! ✨",
+    "आपकी मेहनत रंग लाएगी! 💪",
+    "सकारात्मक सोच से हर मुश्किल आसान हो जाती है! 🌈"
 ];
 
-module.exports.onLoad = async ({ api }) => {
-    console.log(chalk.blue('🤖 Smart AutoSend v6.0 Initializing...'));
+// Global state
+let isEnabled = true;
+let currentThread = null; // सिर्फ एक thread में भेजेगा
 
-    // MANUAL THREADS LIST - यहाँ अपने ACTIVE threads IDs डालें
-    let manualThreads = [];
+module.exports.onLoad = async ({ api }) => {
+    console.log(chalk.blue('🤖 Simple AutoSend v7.0 Started'));
     
-    // Load saved manual threads
+    // Load settings
     try {
-        const configPath = path.join(__dirname, 'autosend_config.json');
-        if (fs.existsSync(configPath)) {
-            const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-            manualThreads = config.manualThreads || [];
-            console.log(chalk.green(`📂 Loaded ${manualThreads.length} manual threads from config`));
+        const settingsPath = path.join(__dirname, 'autosend_settings.json');
+        if (fs.existsSync(settingsPath)) {
+            const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+            isEnabled = settings.isEnabled !== false;
+            currentThread = settings.currentThread;
+            console.log(chalk.green(`📂 Settings loaded: ${isEnabled ? 'ENABLED' : 'DISABLED'}`));
+            if (currentThread) {
+                console.log(chalk.blue(`🎯 Target thread: ${currentThread}`));
+            }
         }
     } catch (e) {
-        console.log(chalk.yellow('⚠️ No config found, starting fresh'));
+        console.log(chalk.yellow('⚠️ No settings found'));
     }
 
     const getTimeInfo = () => {
@@ -49,16 +54,16 @@ module.exports.onLoad = async ({ api }) => {
         let timeEmoji, greeting;
         if (hour >= 5 && hour < 12) {
             timeEmoji = '🌅';
-            greeting = 'सुप्रभात! 🌅';
+            greeting = 'सुप्रभात!';
         } else if (hour >= 12 && hour < 17) {
             timeEmoji = '☀️';
-            greeting = 'नमस्कार! ☀️';
+            greeting = 'नमस्कार!';
         } else if (hour >= 17 && hour < 21) {
             timeEmoji = '🌇';
-            greeting = 'शुभ संध्या! 🌇';
+            greeting = 'शुभ संध्या!';
         } else {
             timeEmoji = '🌙';
-            greeting = 'शुभ रात्रि! 🌙';
+            greeting = 'शुभ रात्रि!';
         }
 
         return {
@@ -67,264 +72,239 @@ module.exports.onLoad = async ({ api }) => {
             month: now.format('MMMM'),
             date: now.format('DD'),
             emoji: timeEmoji,
-            greeting: greeting,
-            hour: hour,
-            fullTime: now.format('HH:mm:ss')
+            greeting: greeting
         };
     };
 
-    const createBracket = (info) => {
+    const createMessage = (info) => {
+        const randomMsg = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+        
         return `
 ╔═══════════════════════════════════════════╗
 ║         🎀 𝗔𝗨𝗧𝗢 𝗦𝗘𝗡𝗗 𝗦𝗬𝗦𝗧𝗘𝗠 🎀               ║
 ╠═══════════════════════════════════════════╣
-║    ${info.greeting}                             ║
+║    ${info.greeting} ${info.emoji}                       ║
 ║    ${info.emoji}  𝗧𝗶𝗺𝗲: ${info.time}  ${info.emoji}    ║
 ║    📅 𝗗𝗮𝘁𝗲: ${info.date} ${info.month} ${info.day} ║
 ║    ⏰ 𝗜𝗻𝘁𝗲𝗿𝘃𝗮𝗹: 1 𝗛𝗼𝘂𝗿                ║
 ╚═══════════════════════════════════════════╝
+
+💌 𝗠𝗲𝘀𝘀𝗮𝗴𝗲: ${randomMsg}
         `;
     };
 
-    const getRandomShayri = () => {
-        return SHAYRI_LIST[Math.floor(Math.random() * SHAYRI_LIST.length)];
-    };
-
-    const getRandomPhoto = () => {
+    const getPhotoAttachment = () => {
         try {
-            const photoFolder = path.join(__dirname, 'autosend');
-            console.log(chalk.cyan(`📁 Checking: ${photoFolder}`));
+            // Check multiple possible locations
+            const possibleFolders = [
+                path.join(__dirname, 'autosend'),
+                path.join(__dirname, '..', 'autosend'),
+                path.join(process.cwd(), 'autosend'),
+                '/home/runner/work/Aryan-chat/Aryan-chat/autosend'
+            ];
             
-            if (!fs.existsSync(photoFolder)) {
+            let photoFolder = null;
+            for (const folder of possibleFolders) {
+                if (fs.existsSync(folder)) {
+                    const files = fs.readdirSync(folder)
+                        .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
+                    if (files.length > 0) {
+                        photoFolder = folder;
+                        console.log(chalk.green(`📸 Found ${files.length} photos in ${folder}`));
+                        break;
+                    }
+                }
+            }
+            
+            if (!photoFolder) {
+                // Create default folder
+                photoFolder = path.join(__dirname, 'autosend');
                 fs.mkdirSync(photoFolder, { recursive: true });
-                console.log(chalk.yellow(`📁 Created: ${photoFolder}`));
+                console.log(chalk.yellow(`📁 Created folder: ${photoFolder}`));
                 
-                // Create readme
-                fs.writeFileSync(
-                    path.join(photoFolder, 'README.txt'),
-                    'Add photos here (jpg, png, gif, webp)\nBot will send random photo every hour.'
-                );
+                // Add sample photo (optional)
+                const samplePath = path.join(photoFolder, 'sample.txt');
+                fs.writeFileSync(samplePath, 'Add photos here (jpg, png, etc.)\nBot will send random photo every hour.');
                 return null;
             }
-
+            
             const files = fs.readdirSync(photoFolder)
                 .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
             
-            console.log(chalk.cyan(`📸 Found: ${files.length} photos`));
-            
             if (files.length === 0) {
-                console.log(chalk.yellow('⚠️ No photos found'));
                 return null;
             }
-
+            
             const randomFile = files[Math.floor(Math.random() * files.length)];
             const photoPath = path.join(photoFolder, randomFile);
             
-            console.log(chalk.green(`✅ Selected: ${randomFile}`));
-            return fs.createReadStream(photoPath);
+            console.log(chalk.cyan(`✅ Selected: ${randomFile}`));
+            
+            // Read file as buffer for attachment
+            return fs.readFileSync(photoPath);
             
         } catch (error) {
-            console.log(chalk.red('❌ Photo error:'), error.message);
+            console.log(chalk.yellow(`⚠️ Photo error: ${error.message}`));
             return null;
         }
     };
 
-    // 🔍 SMART THREAD DETECTION FUNCTION
-    const detectActiveThreads = async () => {
-        console.log(chalk.magenta('🔍 Detecting active threads...'));
-        
-        const activeThreads = [];
-        
-        // Current thread detection (where bot received command)
-        try {
-            // Get recent threads from API if possible
-            // This depends on your bot framework
-            
-            console.log(chalk.blue('💡 Tip: Use !autosend addthread to add current thread'));
-            
-        } catch (error) {
-            console.log(chalk.red('❌ Auto-detection failed:'), error.message);
+    const sendMessage = async (threadID = null) => {
+        if (!isEnabled) {
+            console.log(chalk.yellow('⏸️ AutoSend is disabled'));
+            return;
         }
         
-        return activeThreads;
-    };
+        const targetThread = threadID || currentThread;
+        
+        if (!targetThread) {
+            console.log(chalk.red('❌ No thread configured!'));
+            console.log(chalk.yellow('💡 Use: !autosend setthread to set current thread'));
+            return;
+        }
 
-    const sendAutoMessage = async (isTest = false) => {
         try {
-            console.log(chalk.magenta('\n🚀 Starting auto message send...'));
+            console.log(chalk.magenta(`\n🚀 Sending to thread: ${targetThread}`));
             
             const info = getTimeInfo();
-            const baseMessage = createBracket(info);
-            const shayri = getRandomShayri();
-            const photo = getRandomPhoto();
+            const message = createMessage(info);
+            const photoBuffer = getPhotoAttachment();
             
-            const finalMessage = `${baseMessage}\n\n📝 𝗦𝗣𝗘𝗖𝗜𝗔𝗟 𝗦𝗛𝗔𝗬𝗥𝗜:\n${shayri}\n\n${photo ? '📸 Random Photo Attached' : '📸 No photos in folder'}`;
+            // Prepare message object
+            const messageObj = {
+                body: message
+            };
+            
+            // Add attachment if available
+            if (photoBuffer) {
+                messageObj.attachment = photoBuffer;
+            }
             
             console.log(chalk.blue('📝 Message ready'));
-            console.log(chalk.blue('🖼️ Photo:'), photo ? 'Attached' : 'Not attached');
-
-            // 🎯 USE ONLY MANUAL THREADS
-            let threadsToSend = [...manualThreads];
+            console.log(chalk.blue('🖼️ Attachment:'), photoBuffer ? 'Yes' : 'No');
             
-            if (threadsToSend.length === 0) {
-                console.log(chalk.red('❌ No threads configured!'));
-                console.log(chalk.yellow('💡 Use: !autosend addthread to add current thread'));
-                return;
-            }
-
-            // For test, send to first thread only
-            if (isTest) {
-                threadsToSend = [threadsToSend[0]];
-                console.log(chalk.blue(`🧪 Test mode: Sending to 1 thread only`));
-            }
-
-            console.log(chalk.blue(`📤 Sending to ${threadsToSend.length} configured threads`));
-
-            let successCount = 0;
-            let failCount = 0;
-            const workingThreads = [];
-
-            for (const threadID of threadsToSend) {
-                try {
-                    const sendObj = { body: finalMessage };
-                    
-                    if (photo) {
-                        // Get fresh photo for each thread
-                        const freshPhoto = getRandomPhoto();
-                        if (freshPhoto) {
-                            sendObj.attachment = freshPhoto;
-                        }
-                    }
-                    
-                    await api.sendMessage(sendObj, threadID);
-                    
-                    successCount++;
-                    workingThreads.push(threadID);
-                    console.log(chalk.green(`  ✅ Sent to: ${threadID}`));
-                    
-                    // Delay
-                    await new Promise(resolve => setTimeout(resolve, 1500));
-                    
-                } catch (err) {
-                    failCount++;
-                    if (err.message && err.message.includes('1545012')) {
-                        console.log(chalk.yellow(`  ⚠️ Not in thread: ${threadID} (remove from config)`));
-                    } else {
-                        console.log(chalk.red(`  ❌ Error: ${err.message || 'Unknown'}`));
-                    }
+            // 🔧 FIXED: Simple API call with error handling
+            try {
+                // Try different API methods based on your bot framework
+                const result = await api.sendMessage(messageObj, targetThread);
+                console.log(chalk.green(`✅ Successfully sent to ${targetThread}`));
+                
+                // Save successful thread
+                if (!currentThread) {
+                    currentThread = targetThread;
+                    saveSettings();
                 }
-            }
-
-            // Update config with working threads only
-            if (workingThreads.length > 0) {
-                try {
-                    const configPath = path.join(__dirname, 'autosend_config.json');
-                    const config = {
-                        manualThreads: workingThreads,
-                        lastSuccess: new Date().toISOString(),
-                        stats: {
-                            totalSent: successCount,
-                            lastRun: info.fullTime
-                        }
-                    };
-                    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-                    console.log(chalk.blue(`💾 Updated config with ${workingThreads.length} working threads`));
-                } catch (e) {
-                    console.log(chalk.yellow('⚠️ Could not update config'));
+                
+                return true;
+            } catch (apiError) {
+                console.log(chalk.red(`❌ API Error: ${apiError.message}`));
+                
+                // Specific error handling
+                if (apiError.message.includes('404') || apiError.message.includes('not found')) {
+                    console.log(chalk.yellow('⚠️ Thread not found or bot removed'));
+                    currentThread = null;
+                    saveSettings();
+                } else if (apiError.message.includes('1545012')) {
+                    console.log(chalk.yellow('⚠️ Bot not in conversation'));
                 }
-            }
-
-            console.log(chalk.green(`\n📊 Final Report:`));
-            console.log(chalk.green(`  ✅ Successful: ${successCount}`));
-            console.log(chalk.red(`  ❌ Failed: ${failCount}`));
-            console.log(chalk.blue(`  🎯 Working threads: ${workingThreads.length}`));
-            
-            if (failCount > 0) {
-                console.log(chalk.yellow('💡 Remove failed threads with: !autosend clearthreads'));
+                
+                return false;
             }
             
         } catch (error) {
-            console.log(chalk.red('🔥 Critical error:'), error);
+            console.log(chalk.red(`🔥 Error: ${error.message}`));
+            return false;
         }
     };
 
-    // 🕐 SCHEDULE: Every 1 hour
+    // Save settings
+    const saveSettings = () => {
+        try {
+            const settingsPath = path.join(__dirname, 'autosend_settings.json');
+            const settings = {
+                isEnabled: isEnabled,
+                currentThread: currentThread,
+                lastUpdated: new Date().toISOString()
+            };
+            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+            console.log(chalk.blue('💾 Settings saved'));
+        } catch (e) {
+            console.log(chalk.yellow('⚠️ Could not save settings'));
+        }
+    };
+
+    // 🕐 Schedule: Every hour at minute 0
     schedule.scheduleJob('0 * * * *', () => {
+        if (!isEnabled) return;
+        
         const now = moment().tz('Asia/Kolkata');
-        console.log(chalk.bgGreen.black(`\n⏰ [${now.format('HH:mm')}] AutoSend Triggered`));
-        sendAutoMessage();
+        console.log(chalk.bgGreen.black(`\n⏰ [${now.format('HH:mm')}] Scheduled AutoSend`));
+        sendMessage();
     });
 
-    console.log(chalk.green('✅ Scheduled: Every 1 hour at :00 minutes'));
-    console.log(chalk.yellow('📁 Photo folder:'), path.join(__dirname, 'autosend'));
-    console.log(chalk.blue('🎯 Configured threads:'), manualThreads.length);
-    console.log(chalk.cyan('💡 Commands: !autosend addthread, !autosend test, !autosend status'));
+    // 🕐 Additional schedule: Every 6 hours (backup)
+    schedule.scheduleJob('0 */6 * * *', () => {
+        if (!isEnabled || !currentThread) return;
+        
+        console.log(chalk.cyan('\n🔄 6-hour backup check'));
+        sendMessage();
+    });
+
+    console.log(chalk.green('✅ Scheduled: Every hour at :00 minutes'));
+    console.log(chalk.blue('💡 Commands: !autosend on/off/test/setthread'));
+    
+    // Initial test after 30 seconds
+    setTimeout(() => {
+        if (isEnabled && currentThread) {
+            console.log(chalk.cyan('\n🧪 Initial test in 30 seconds...'));
+        }
+    }, 30000);
 };
 
 module.exports.run = async ({ event, api, args }) => {
     const command = args[0]?.toLowerCase();
     const threadID = event.threadID;
     
-    // Load config
-    const configPath = path.join(__dirname, 'autosend_config.json');
-    let config = { manualThreads: [], stats: {} };
-    try {
-        if (fs.existsSync(configPath)) {
-            config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        }
-    } catch (e) {
-        config = { manualThreads: [], stats: {} };
-    }
+    // Load module functions
+    const modulePath = path.join(__dirname, 'autosend.js');
     
-    if (command === 'addthread') {
-        // Add current thread to manual list
-        if (!config.manualThreads.includes(threadID)) {
-            config.manualThreads.push(threadID);
-            fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-            
-            api.sendMessage(
-                `✅ Thread added to AutoSend!\n\n` +
-                `Thread ID: ${threadID}\n` +
-                `Total threads: ${config.manualThreads.length}\n\n` +
-                `Now this thread will receive hourly messages.`,
-                threadID
-            );
-        } else {
-            api.sendMessage(`ℹ️ This thread is already in AutoSend list.`, threadID);
-        }
-        return;
-    }
-    
-    if (command === 'removethread') {
-        // Remove current thread
-        const index = config.manualThreads.indexOf(threadID);
-        if (index > -1) {
-            config.manualThreads.splice(index, 1);
-            fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-            api.sendMessage(`✅ Thread removed from AutoSend.`, threadID);
-        } else {
-            api.sendMessage(`ℹ️ This thread is not in AutoSend list.`, threadID);
-        }
-        return;
-    }
-    
-    if (command === 'clearthreads') {
-        // Clear all threads
-        config.manualThreads = [];
-        fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-        api.sendMessage(`🧹 All threads cleared from AutoSend.\nUse !autosend addthread to add current thread.`, threadID);
-        return;
-    }
-    
-    if (command === 'listthreads') {
-        const count = config.manualThreads.length;
-        const list = count > 0 ? 
-            `Threads (${count}):\n${config.manualThreads.map((id, i) => `${i+1}. ${id}`).join('\n')}` : 
-            'No threads configured.';
+    if (command === 'on' || command === 'enable') {
+        isEnabled = true;
+        saveSettings();
         
         api.sendMessage(
-            `📋 AutoSend Threads List\n\n${list}\n\n` +
-            `💡 Add this thread: !autosend addthread`,
+            `✅ AutoSend ENABLED\n\n` +
+            `Now sending messages every hour.\n` +
+            `Current thread: ${currentThread || 'Not set'}\n\n` +
+            `Use !autosend setthread to set this thread.`,
+            threadID
+        );
+        return;
+    }
+    
+    if (command === 'off' || command === 'disable') {
+        isEnabled = false;
+        saveSettings();
+        
+        api.sendMessage(
+            `⏸️ AutoSend DISABLED\n\n` +
+            `Hourly messages stopped.\n` +
+            `Use !autosend on to enable again.`,
+            threadID
+        );
+        return;
+    }
+    
+    if (command === 'setthread') {
+        currentThread = threadID;
+        saveSettings();
+        
+        api.sendMessage(
+            `🎯 Thread SET\n\n` +
+            `This thread is now configured for AutoSend:\n` +
+            `Thread ID: ${threadID}\n\n` +
+            `You will receive messages every hour.\n` +
+            `Status: ${isEnabled ? 'ENABLED ✅' : 'DISABLED ⏸️'}`,
             threadID
         );
         return;
@@ -332,41 +312,45 @@ module.exports.run = async ({ event, api, args }) => {
     
     if (command === 'test') {
         api.sendMessage(
-            `🧪 AutoSend Test Mode\n\n` +
-            `✅ System is running\n` +
-            `📅 Scheduled: Every 1 hour\n` +
-            `📝 Shayri: ${SHAYRI_LIST.length} messages\n` +
-            `📸 Photos: ${fs.existsSync(path.join(__dirname, 'autosend')) ? 'Folder exists' : 'No folder'}\n` +
-            `🎯 Configured threads: ${config.manualThreads.length}\n\n` +
-            `Sending test message to this thread only...`,
+            `🧪 Sending test message...\n` +
+            `Thread: ${currentThread || 'Not set'}\n` +
+            `Status: ${isEnabled ? 'ENABLED' : 'DISABLED'}`,
             threadID
         );
         
-        // Trigger test send
-        const module = require('./autosend');
-        if (module.exports.onLoad) {
-            // We'll simulate a send
-            setTimeout(() => {
-                api.sendMessage(
-                    `╔══════════════════════════╗\n` +
-                    `║     🧪 TEST MESSAGE      ║\n` +
-                    `╠══════════════════════════╣\n` +
-                    `║  ✅ AutoSend Working     ║\n` +
-                    `║  🕐 Next: Next hour      ║\n` +
-                    `║  📸 Photos: Ready        ║\n` +
-                    `║  🎯 Threads: ${config.manualThreads.length}        ║\n` +
-                    `╚══════════════════════════╝\n\n` +
-                    `${SHAYRI_LIST[0]}`,
-                    threadID
-                );
-            }, 2000);
-        }
+        // Send test message
+        setTimeout(async () => {
+            try {
+                const info = getTimeInfo();
+                const testMsg = `🧪 TEST MESSAGE\n\n` +
+                               `Time: ${info.time}\n` +
+                               `Date: ${info.date} ${info.month}\n` +
+                               `Thread: ${currentThread || 'Not set'}\n` +
+                               `Status: ${isEnabled ? 'ACTIVE' : 'INACTIVE'}`;
+                
+                await api.sendMessage({ body: testMsg }, threadID);
+            } catch (error) {
+                api.sendMessage(`❌ Test failed: ${error.message}`, threadID);
+            }
+        }, 1000);
         return;
     }
     
     if (command === 'status') {
-        const photoFolder = path.join(__dirname, 'autosend');
+        const settingsPath = path.join(__dirname, 'autosend_settings.json');
+        let lastUpdated = 'Never';
+        if (fs.existsSync(settingsPath)) {
+            try {
+                const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+                lastUpdated = settings.lastUpdated ? 
+                    moment(settings.lastUpdated).tz('Asia/Kolkata').format('DD/MM HH:mm') : 
+                    'Never';
+            } catch (e) {}
+        }
+        
+        // Check photo folder
         let photoCount = 0;
+        const photoFolder = path.join(__dirname, 'autosend');
         if (fs.existsSync(photoFolder)) {
             photoCount = fs.readdirSync(photoFolder)
                 .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f)).length;
@@ -374,43 +358,92 @@ module.exports.run = async ({ event, api, args }) => {
         
         api.sendMessage(
             `📊 AutoSend Status\n\n` +
-            `✅ System: ACTIVE\n` +
-            `🕐 Schedule: Every 1 hour\n` +
-            `📝 Shayri: ${SHAYRI_LIST.length} messages\n` +
+            `⚡ Version: 7.0\n` +
+            `📅 Schedule: Every 1 hour\n` +
+            `🎯 Target thread: ${currentThread || 'Not set'}\n` +
             `📸 Photos: ${photoCount} in folder\n` +
-            `🎯 Configured threads: ${config.manualThreads.length}\n` +
-            `📅 Last run: ${config.stats.lastRun || 'Never'}\n\n` +
+            `🔧 Status: ${isEnabled ? 'ENABLED ✅' : 'DISABLED ⏸️'}\n` +
+            `🕒 Last updated: ${lastUpdated}\n\n` +
             `📌 Commands:\n` +
-            `• !autosend addthread - Add this thread\n` +
-            `• !autosend removethread - Remove this thread\n` +
-            `• !autosend listthreads - Show all threads\n` +
+            `• !autosend on/off - Enable/disable\n` +
+            `• !autosend setthread - Set this thread\n` +
             `• !autosend test - Send test\n` +
-            `• !autosend status - This info`,
+            `• !autosend status - Show this info`,
             threadID
         );
         return;
     }
     
-    // DEFAULT HELP
+    if (command === 'help') {
+        api.sendMessage(
+            `🆘 AutoSend Help\n\n` +
+            `This bot sends automatic messages every hour.\n\n` +
+            `🔧 SETUP:\n` +
+            `1. !autosend setthread - Set current thread\n` +
+            `2. !autosend on - Enable messages\n` +
+            `3. Add photos to 'autosend' folder\n\n` +
+            `📋 COMMANDS:\n` +
+            `• on/off - Enable/disable\n` +
+            `• setthread - Set current thread\n` +
+            `• test - Send test message\n` +
+            `• status - Check status\n` +
+            `• help - This message`,
+            threadID
+        );
+        return;
+    }
+    
+    // DEFAULT MESSAGE
     api.sendMessage(
-        `╔══════════════════════════════════╗\n` +
-        `║     🎀 𝗔𝗨𝗧𝗢𝗦𝗘𝗡𝗗 𝗦𝗬𝗦𝗧𝗘𝗠 🎀        ║\n` +
-        `╠══════════════════════════════════╣\n` +
-        `║  🤖 Smart AutoSend v6.0         ║\n` +
-        `║  ✅ Fixes 1545012 Error         ║\n` +
-        `║  🕐 Schedule: Every 1 hour      ║\n` +
-        `║  📸 Photos + Shayri             ║\n` +
-        `║                                  ║\n` +
-        `║  🔧 FIRST SETUP:                ║\n` +
-        `║  1. !autosend addthread         ║\n` +
-        `║  2. Add photos to folder        ║\n` +
-        `║  3. Wait for hourly messages    ║\n` +
-        `║                                  ║\n` +
-        `║  📌 Other commands:             ║\n` +
-        `║  • !autosend test               ║\n` +
-        `║  • !autosend status             ║\n` +
-        `║  • !autosend listthreads        ║\n` +
-        `╚══════════════════════════════════╝`,
+        `🤖 AutoSend Bot v7.0\n\n` +
+        `I send automatic messages every hour.\n\n` +
+        `⚡ Quick Setup:\n` +
+        `1. Type: !autosend setthread\n` +
+        `2. Type: !autosend on\n` +
+        `3. Wait for hourly messages\n\n` +
+        `📌 Type !autosend help for all commands`,
         threadID
     );
+    
+    // Helper functions
+    function getTimeInfo() {
+        const now = moment().tz('Asia/Kolkata');
+        const hour = parseInt(now.format('HH'));
+        
+        let timeEmoji, greeting;
+        if (hour >= 5 && hour < 12) {
+            timeEmoji = '🌅';
+            greeting = 'सुप्रभात!';
+        } else if (hour >= 12 && hour < 17) {
+            timeEmoji = '☀️';
+            greeting = 'नमस्कार!';
+        } else if (hour >= 17 && hour < 21) {
+            timeEmoji = '🌇';
+            greeting = 'शुभ संध्या!';
+        } else {
+            timeEmoji = '🌙';
+            greeting = 'शुभ रात्रि!';
+        }
+        
+        return {
+            time: now.format('hh:mm A'),
+            day: now.format('dddd'),
+            month: now.format('MMMM'),
+            date: now.format('DD'),
+            emoji: timeEmoji,
+            greeting: greeting
+        };
+    }
+    
+    function saveSettings() {
+        try {
+            const settingsPath = path.join(__dirname, 'autosend_settings.json');
+            const settings = {
+                isEnabled: isEnabled,
+                currentThread: currentThread,
+                lastUpdated: new Date().toISOString()
+            };
+            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        } catch (e) {}
+    }
 };
