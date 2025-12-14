@@ -45,21 +45,35 @@ const createBracket = (info) => `
 ╚═══════════════════════════════════════════╝
 `;
 
-const photoFolder = path.join(__dirname, "..", "autosend");
+// Photo folder ka correct path
+const photoFolder = path.join(__dirname, "autosend");
 
 const getRandomPhoto = () => {
+  console.log(chalk.blue(`📁 Checking photo folder: ${photoFolder}`));
+  
   if (!fs.existsSync(photoFolder)) {
+    console.log(chalk.yellow(`⚠️ Folder not found, creating: ${photoFolder}`));
     fs.mkdirSync(photoFolder, { recursive: true });
+    console.log(chalk.green(`✅ Folder created successfully`));
     return null;
   }
 
   const files = fs.readdirSync(photoFolder)
-    .filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
+    .filter(f => /\.(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(f));
 
-  if (!files.length) return null;
+  console.log(chalk.blue(`📸 Found ${files.length} photos in folder`));
+  
+  if (!files.length) {
+    console.log(chalk.red(`❌ No photos found in ${photoFolder}`));
+    console.log(chalk.yellow(`💡 Please add photos to: ${photoFolder}`));
+    return null;
+  }
 
-  const file = files[Math.floor(Math.random() * files.length)];
-  return fs.createReadStream(path.join(photoFolder, file));
+  const randomFile = files[Math.floor(Math.random() * files.length)];
+  const filePath = path.join(photoFolder, randomFile);
+  console.log(chalk.green(`✅ Selected photo: ${randomFile}`));
+  
+  return fs.createReadStream(filePath);
 };
 
 /* ================= ON LOAD ================= */
@@ -71,22 +85,35 @@ module.exports.onLoad = async ({ api }) => {
   jobStarted = true;
 
   console.log(chalk.green("✅ AutoSend (1 Hour) Loaded"));
+  console.log(chalk.cyan(`📁 Photo folder path: ${photoFolder}`));
 
   const sendAutoMessage = async () => {
     const info = getTimeInfo();
     const message = createBracket(info);
     const threadIDs = global.data?.allThreadID || [];
+    
+    console.log(chalk.cyan(`📤 Sending to ${threadIDs.length} threads at ${info.time}`));
 
     for (const tid of threadIDs) {
       try {
         const photo = getRandomPhoto();
-        await api.sendMessage(
-          photo ? { body: message, attachment: photo } : { body: message },
-          tid
-        );
+        
+        if (photo) {
+          console.log(chalk.green(`📷 Sending with photo to ${tid}`));
+          await api.sendMessage({
+            body: message,
+            attachment: photo
+          }, tid);
+        } else {
+          console.log(chalk.yellow(`⚠️ Sending without photo to ${tid}`));
+          await api.sendMessage({
+            body: message + "\n\n📸 Note: Add photos to autosend folder to get photos!"
+          }, tid);
+        }
+        
         await new Promise(r => setTimeout(r, 500));
       } catch (e) {
-        console.log("❌ Failed:", tid);
+        console.log(chalk.red(`❌ Failed to send to ${tid}: ${e.message}`));
       }
     }
   };
@@ -96,6 +123,8 @@ module.exports.onLoad = async ({ api }) => {
 
   // 🚀 First test after 10 seconds
   setTimeout(sendAutoMessage, 10000);
+  
+  console.log(chalk.green("⏰ Scheduled: Auto message every 1 hour"));
 };
 
 /* ================= MANUAL TEST ================= */
@@ -105,8 +134,37 @@ module.exports.run = async ({ api, event }) => {
   const message = createBracket(info);
   const photo = getRandomPhoto();
 
-  await api.sendMessage(
-    photo ? { body: message, attachment: photo } : { body: message },
-    event.threadID
-  );
+  try {
+    if (photo) {
+      console.log(chalk.green("✅ Test: Sending with photo"));
+      await api.sendMessage({
+        body: message,
+        attachment: photo
+      }, event.threadID);
+    } else {
+      console.log(chalk.yellow("⚠️ Test: No photo found"));
+      await api.sendMessage({
+        body: message + "\n\n📸 Note: Add photos to autosend folder!"
+      }, event.threadID);
+    }
+  } catch (error) {
+    console.log(chalk.red(`❌ Test failed: ${error.message}`));
+  }
+};
+
+/* ================= FOLDER CHECKER ================= */
+
+module.exports.checkFolder = async ({ api, event }) => {
+  const exists = fs.existsSync(photoFolder);
+  const files = exists ? fs.readdirSync(photoFolder)
+    .filter(f => /\.(jpg|jpeg|png|gif|webp|mp4|mov|avi)$/i.test(f)) : [];
+  
+  await api.sendMessage({
+    body: `📁 Folder Status:\n` +
+          `Path: ${photoFolder}\n` +
+          `Exists: ${exists ? "✅ Yes" : "❌ No"}\n` +
+          `Photos: ${files.length} found\n` +
+          `Files: ${files.length ? files.slice(0, 10).join(", ") : "None"}\n` +
+          `${files.length > 10 ? `... and ${files.length - 10} more` : ""}`
+  }, event.threadID);
 };
