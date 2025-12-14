@@ -16,6 +16,13 @@ module.exports.config = {
 };
 
 module.exports.onLoad = async ({ api }) => {
+    console.log(chalk.blue('🔄 AutoSend System Initializing...'));
+    
+    // Debug log
+    console.log(chalk.yellow('📋 Global data check:'), global.data ? 'Exists' : 'Not Found');
+    if (global.data?.allThreadID) {
+        console.log(chalk.yellow('📌 Threads found:'), global.data.allThreadID.length);
+    }
 
     const getTimeInfo = () => {
         const now = moment().tz('Asia/Kolkata');
@@ -39,7 +46,7 @@ module.exports.onLoad = async ({ api }) => {
     const createBracket = (info) => {
         return `
 ╔═══════════════════════════════════════════╗
-║         🎀 𝗔𝗥𝗦𝗛 ☄️ 𝗦𝗘𝗡𝗗 𝗦𝗬𝗦𝗧𝗘𝗠 🎀              ║
+║         🎀 𝗔𝗨𝗧𝗢 𝗦𝗘𝗡𝗗 𝗦𝗬𝗦𝗧𝗘𝗠 🎀               ║
 ╠═══════════════════════════════════════════╣
 ║    ${info.emoji}  𝗧𝗶𝗺𝗲: ${info.time}  ${info.emoji}    ║
 ║    📅 𝗗𝗮𝘁𝗲: ${info.date} ${info.month} ${info.day} ║
@@ -50,37 +57,78 @@ module.exports.onLoad = async ({ api }) => {
 
     const getRandomPhoto = () => {
         const folder = path.join(__dirname, '..', 'autosend');
-        if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
+        console.log(chalk.cyan('📁 Checking folder:'), folder);
+        
+        if (!fs.existsSync(folder)) {
+            console.log(chalk.red('❌ Folder not found, creating...'));
+            fs.mkdirSync(folder, { recursive: true });
+            return null;
+        }
 
         const files = fs.readdirSync(folder).filter(f => /\.(jpg|jpeg|png|gif|webp)$/i.test(f));
-        if (!files.length) return null;
+        console.log(chalk.cyan('📸 Photos found:'), files.length);
+        
+        if (!files.length) {
+            console.log(chalk.yellow('⚠️ No photos in autosend folder'));
+            return null;
+        }
 
-        return fs.createReadStream(path.join(folder, files[Math.floor(Math.random() * files.length)]));
+        const randomFile = files[Math.floor(Math.random() * files.length)];
+        console.log(chalk.green('✅ Selected photo:'), randomFile);
+        
+        return fs.createReadStream(path.join(folder, randomFile));
     };
 
     const sendAutoMessage = async () => {
-        const info = getTimeInfo();
-        const message = createBracket(info);
-        const photo = getRandomPhoto();
+        try {
+            console.log(chalk.magenta('🚀 Starting auto message send...'));
+            
+            const info = getTimeInfo();
+            const message = createBracket(info);
+            const photo = getRandomPhoto();
 
-        if (!global.data?.allThreadID) return;
+            if (!global.data?.allThreadID || global.data.allThreadID.length === 0) {
+                console.log(chalk.red('❌ No threads found in global.data.allThreadID'));
+                return;
+            }
 
-        for (const id of global.data.allThreadID) {
-            await api.sendMessage({ body: message, attachment: photo }, id);
-            await new Promise(r => setTimeout(r, 500));
+            console.log(chalk.blue('📤 Sending to threads:'), global.data.allThreadID.length);
+
+            for (const id of global.data.allThreadID) {
+                try {
+                    await api.sendMessage({ 
+                        body: message, 
+                        attachment: photo 
+                    }, id);
+                    console.log(chalk.green(`✅ Sent to thread: ${id}`));
+                    await new Promise(r => setTimeout(r, 500)); // Delay between sends
+                } catch (err) {
+                    console.log(chalk.red(`❌ Error sending to ${id}:`), err.message);
+                }
+            }
+            
+            console.log(chalk.green('🎉 Auto message completed!'));
+        } catch (error) {
+            console.log(chalk.red('🔥 Critical error in sendAutoMessage:'), error);
         }
     };
 
-    // ✅ ONLY CHANGE — Every 1 Hour
+    // Schedule every hour
     schedule.scheduleJob('0 * * * *', () => {
-        console.log(chalk.green('⏰ AutoSend Triggered (Every 1 Hour)'));
+        const now = new Date();
+        console.log(chalk.bgGreen.black(`⏰ [${now.toLocaleTimeString()}] AutoSend Triggered`));
         sendAutoMessage();
     });
 
-    // Initial message
-    setTimeout(sendAutoMessage, 10000);
+    console.log(chalk.green('✅ Scheduled job set for every hour'));
+
+    // Initial test after 10 seconds
+    setTimeout(() => {
+        console.log(chalk.cyan('🚀 Sending initial test message...'));
+        sendAutoMessage();
+    }, 10000);
 };
 
 module.exports.run = async ({ event, api }) => {
-    api.sendMessage("✅ AutoSend system running (1 Hour Interval)", event.threadID);
+    api.sendMessage("✅ AutoSend system is running (1 Hour Interval)\n\nCheck console for logs.", event.threadID);
 };
