@@ -1,83 +1,108 @@
+
 module.exports.config = {
   name: "dpname5",
-  version: "1.0.0",
+  version: "2.0.0",
   hasPermssion: 0,
-  credits: "LEGEND-ARYAN",
-  description: "dpname maker",
+  credits: "LEGEND-ARYAN (Fixed by ChatGPT)",
+  description: "DP Name Maker",
   commandCategory: "dpname",
-  usages: "text 1 + text 2",
+  usages: "text1 + text2",
   cooldowns: 1
 };
-module.exports.wrapText = (ctx, text, maxWidth) => {
-  return new Promise((resolve) => {
-    if (ctx.measureText(text).width < maxWidth) return resolve([text]);
-    if (ctx.measureText("W").width > maxWidth) return resolve(null);
-    const words = text.split(" ");
-    const lines = [];
-    let line = "";
-    while (words.length > 0) {
-      let split = false;
-      while (ctx.measureText(words[0]).width >= maxWidth) {
-        const temp = words[0];
-        words[0] = temp.slice(0, -1);
-        if (split) words[1] = `${temp.slice(-1)}${words[1]}`;
-        else {
-          split = true;
-          words.splice(1, 0, temp.slice(-1));
-        }
-      }
-      if (ctx.measureText(`${line}${words[0]}`).width < maxWidth)
-        line += `${words.shift()} `;
-      else {
-        lines.push(line.trim());
-        line = "";
-      }
-      if (words.length === 0) lines.push(line.trim());
+
+const wrapText = async (ctx, text, maxWidth) => {
+  if (!text) return [];
+  if (ctx.measureText(text).width < maxWidth) return [text];
+
+  const words = text.split(" ");
+  const lines = [];
+  let line = "";
+
+  for (let word of words) {
+    if (ctx.measureText(line + word).width < maxWidth) {
+      line += word + " ";
+    } else {
+      lines.push(line.trim());
+      line = word + " ";
     }
-    return resolve(lines);
-  });
+  }
+  if (line) lines.push(line.trim());
+  return lines;
 };
 
-module.exports.run = async function ({ api, event, args, Users }) {
-  let { senderID, threadID, messageID } = event;
-  const { loadImage, createCanvas } = require("canvas");
+module.exports.run = async function ({ api, event, args }) {
+  const { threadID, messageID } = event;
+
   const Canvas = global.nodemodule["canvas"];
-  const request = require('request');
+  const { loadImage, createCanvas } = Canvas;
   const fs = global.nodemodule["fs-extra"];
   const axios = global.nodemodule["axios"];
-  let pathImg = __dirname + `/cache/drake.png`;
-  const text = args.join(" ").trim().replace(/\s+/g, " ").replace(/(\s+\=)/g, "+").replace(/\|\s+/g, "+").split("+");
-  let getImage = (
-    await axios.get(encodeURI(`https://i.imgur.com/ZQrkbch.jpg`), {
-      responseType: "arraybuffer",
-    })
-  ).data;
-  fs.writeFileSync(pathImg, Buffer.from(getImage, "utf-8"));
-if(!fs.existsSync(__dirname+'/cache/SNAZZYSURGE.ttf')) { 
-      let getfont = (await axios.get(`https://drive.google.com/u/0/uc?id=11YxymRp0y3Jle5cFBmLzwU89XNqHIZux&export=download`, { responseType: "arraybuffer" })).data;
-       fs.writeFileSync(__dirname+"/cache/SNAZZYSURGE.ttf", Buffer.from(getfont, "utf-8"));
-    };
-  let baseImage = await loadImage(pathImg);
-  let canvas = createCanvas(baseImage.width, baseImage.height);
-  let ctx = canvas.getContext("2d");
+  const path = require("path");
+
+  // ✅ Argument check
+  const input = args.join(" ").split("+").map(e => e.trim());
+  if (!input[0] || !input[1]) {
+    return api.sendMessage(
+      "❌ Format galat hai\n\n✅ Use:\n dpname5 Text1 + Text2",
+      threadID,
+      messageID
+    );
+  }
+
+  // ✅ Cache folder
+  const cacheDir = path.join(__dirname, "cache");
+  if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
+
+  const imgPath = path.join(cacheDir, "dpname5.png");
+  const fontPath = path.join(cacheDir, "SNAZZYSURGE.ttf");
+
+  // ✅ Background image
+  if (!fs.existsSync(imgPath)) {
+    const img = await axios.get(
+      "https://i.imgur.com/ZQrkbch.jpg",
+      { responseType: "arraybuffer" }
+    );
+    fs.writeFileSync(imgPath, img.data);
+  }
+
+  // ✅ Font download
+  if (!fs.existsSync(fontPath)) {
+    const font = await axios.get(
+      "https://drive.google.com/uc?export=download&id=11YxymRp0y3Jle5cFBmLzwU89XNqHIZux",
+      { responseType: "arraybuffer" }
+    );
+    fs.writeFileSync(fontPath, font.data);
+  }
+
+  Canvas.registerFont(fontPath, { family: "SNAZZYSURGE" });
+
+  const baseImage = await loadImage(imgPath);
+  const canvas = createCanvas(baseImage.width, baseImage.height);
+  const ctx = canvas.getContext("2d");
+
   ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
-  Canvas.registerFont(__dirname+`/cache/SNAZZYSURGE.ttf`, {
-        family: "SNAZZYSURGE"
-    });
-  ctx.font = "30px SNAZZYSURGE";
-  ctx.fillStyle = "#000000";
   ctx.textAlign = "center";
-  const line = await this.wrapText(ctx, text[0], 720);
-  const lines = await this.wrapText(ctx, text[1], 733);
-  ctx.fillText(line.join("\n"), 460, 250)
-  ctx.fillText(lines.join("\n"), 250, 510)
-  ctx.beginPath();
-  const imageBuffer = canvas.toBuffer();
-  fs.writeFileSync(pathImg, imageBuffer);
+  ctx.fillStyle = "#000000";
+  ctx.font = "30px SNAZZYSURGE";
+
+  const line1 = await wrapText(ctx, input[0], 720);
+  const line2 = await wrapText(ctx, input[1], 720);
+
+  line1.forEach((txt, i) => {
+    ctx.fillText(txt, 460, 250 + i * 35);
+  });
+
+  line2.forEach((txt, i) => {
+    ctx.fillText(txt, 250, 510 + i * 35);
+  });
+
+  const buffer = canvas.toBuffer();
+  fs.writeFileSync(imgPath, buffer);
+
   return api.sendMessage(
-    { attachment: fs.createReadStream(pathImg) },
+    { attachment: fs.createReadStream(imgPath) },
     threadID,
-    () => fs.unlinkSync(pathImg),
+    () => fs.unlinkSync(imgPath),
     messageID
   );
-}
+};
