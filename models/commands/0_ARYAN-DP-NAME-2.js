@@ -10,7 +10,6 @@ module.exports.config = {
   cooldowns: 1
 };
 
-// WrapText function ko correctly define kiya gaya hai
 module.exports.wrapText = (ctx, text, maxWidth) => {
   return new Promise((resolve) => {
     if (ctx.measureText(text).width < maxWidth) return resolve([text]);
@@ -36,64 +35,65 @@ module.exports.run = async function ({ api, event, args }) {
   const axios = require("axios");
   const { createCanvas, loadImage, registerFont } = require("canvas");
 
-  // Input check
   const input = args.join(" ").split("+");
-  if (!input[0] || !input[1]) return api.sendMessage("❌ Galat format! Use: dpname2 Text 1 + Text 2", threadID, messageID);
+  if (!input[0] || !input[1]) return api.sendMessage("❌ Format: dpname2 Text 1 + Text 2", threadID, messageID);
 
   const text1 = input[0].trim();
   const text2 = input[1].trim();
   
   const pathImg = __dirname + `/cache/drake_${threadID}.png`;
-  const pathFont = __dirname + `/cache/SVNArial2.ttf`;
+  const pathFont = __dirname + `/cache/font_svn.ttf`;
 
   try {
-    api.sendMessage("⏳ Processing, please wait...", threadID, messageID);
-
-    // 1. Font Download (Agar cache mein nahi hai)
+    // 1. Font Download (Alternative link agar pehla wala 404 de raha hai)
     if (!fs.existsSync(pathFont)) {
-      // Direct link placeholder - Replace with a working direct link if drive fails
-      let getfont = (await axios.get(`https://github.com/hpro123/font/raw/main/SVN-Arial%202.ttf`, { responseType: "arraybuffer" })).data;
-      fs.writeFileSync(pathFont, Buffer.from(getfont, "utf-8"));
+      const fontUrl = `https://github.com/hpro123/font/raw/main/SVN-Arial%202.ttf`;
+      try {
+        const getfont = (await axios.get(fontUrl, { responseType: "arraybuffer" })).data;
+        fs.writeFileSync(pathFont, Buffer.from(getfont, "utf-8"));
+      } catch (e) {
+        return api.sendMessage("❌ Font download fail ho gaya (404). Link change karein.", threadID, messageID);
+      }
     }
 
-    // 2. Image Download
-    let getImage = (await axios.get(encodeURI(`https://i.imgur.com/r7w4Vxb.jpeg`), { responseType: "arraybuffer" })).data;
-    fs.writeFileSync(pathImg, Buffer.from(getImage, "utf-8"));
+    // 2. Background Image Download
+    // Note: Drake meme template ka stable link use kiya hai
+    const imgUrl = `https://i.imgflip.com/30zz5g.jpg`; 
+    try {
+      const getImage = (await axios.get(encodeURI(imgUrl), { responseType: "arraybuffer" })).data;
+      fs.writeFileSync(pathImg, Buffer.from(getImage, "utf-8"));
+    } catch (e) {
+      return api.sendMessage("❌ Background image link 404 hai.", threadID, messageID);
+    }
 
-    // 3. Canvas Operations
+    // 3. Canvas Setup
     registerFont(pathFont, { family: "SVN-Arial-2" });
-    let baseImage = await loadImage(pathImg);
-    let canvas = createCanvas(baseImage.width, baseImage.height);
-    let ctx = canvas.getContext("2d");
+    const baseImage = await loadImage(pathImg);
+    const canvas = createCanvas(baseImage.width, baseImage.height);
+    const ctx = canvas.getContext("2d");
 
     ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
-    ctx.font = "60px SVN-Arial-2";
+    ctx.font = "40px SVN-Arial-2"; // Font size adjust kiya template ke liye
     ctx.fillStyle = "#000000";
-    ctx.textAlign = "center";
 
-    // Text Wrapping
-    const line1 = await this.wrapText(ctx, text1, 400);
-    const line2 = await this.wrapText(ctx, text2, 464);
+    // Drake Template Coordinates (Approximate)
+    const line1 = await this.wrapText(ctx, text1, 250);
+    const line2 = await this.wrapText(ctx, text2, 250);
 
-    // Text Drawing (Coordinates check karein)
-    ctx.fillText(line1.join("\n"), 264, 618);
-    ctx.fillText(line2.join("\n"), 441, 505);
+    ctx.fillText(line1.join("\n"), 250, 100); // Pehla box
+    ctx.fillText(line2.join("\n"), 250, 350); // Dusra box
 
-    // 4. Send Result
     const imageBuffer = canvas.toBuffer();
     fs.writeFileSync(pathImg, imageBuffer);
 
     return api.sendMessage(
       { attachment: fs.createReadStream(pathImg) },
       threadID,
-      () => {
-        if (fs.existsSync(pathImg)) fs.unlinkSync(pathImg);
-      },
+      () => fs.unlinkSync(pathImg),
       messageID
     );
 
   } catch (e) {
-    console.log(e);
     return api.sendMessage(`⚠️ Error: ${e.message}`, threadID, messageID);
   }
 };
