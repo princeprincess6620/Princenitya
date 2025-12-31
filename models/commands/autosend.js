@@ -41,7 +41,7 @@ const createBracket = (info) => `
 ╠═══════════════════════════════════════════╣
 ║    ${info.emoji} Time: ${info.time} ${info.emoji}
 ║    📅 Date: ${info.date} ${info.month} ${info.day}
-║    ⏰ Interval: 🎂𝐇𝐀𝐏𝐏𝐘 𝐐𝐔𝐑𝐄𝐒𝐇𝐈 𝐁𝐈𝐑𝐓𝐇𝐃𝐀𝐘🎂
+║    ⏰ Interval:🎂𝐇𝐀𝐏𝐏𝐘 𝐁𝐈𝐑𝐓𝐇𝐃𝐀𝐘🎂𝐐𝐔𝐑𝐄𝐒𝐇𝐈
 ╚═══════════════════════════════════════════╝
 `;
 
