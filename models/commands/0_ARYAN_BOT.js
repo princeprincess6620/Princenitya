@@ -4,7 +4,7 @@ module.exports.config = {
   version: "1.0.1",
   hasPermssion: 0,
   credits: "Mod by John Lester",
-  description: "goibot",
+  description: "bot",
   commandCategory: "Noprefix",
   usages: "noprefix",
   cooldowns: 5,
@@ -668,18 +668,13 @@ if ((event.body.toLowerCase() == "😀") || (event.body.toLowerCase() == "😀�
    };
    mess = "{name}"
 
-  if (event.body.indexOf("Bot janu") >= 0 || (event.body.indexOf("bot janu") >= 0)) {
+  if (event.body.indexOf("Bot") >= 0 || (event.body.indexOf("bot") >= 0)) {
     var msg = {
       body: `❤️🌿🍒${name}🌿🥀💙, \n\n
           ${rand} 🤣🍁❤
             
-            *★᭄𝗢𝘄𝗻𝗲𝗿 ཫ༄𒁍≛⃝𝐋𝐞𝐠𝐞𝐧𝐝 𝐚𝐫𝐲𝐚𝐧🍀🍒
-       😍𝔸𝕡𝕦𝕟😎𝔸𝕒𝕘𝕪𝕒😝
-
-   ☝️
-      \😎
-      (   )>
-   _/   \_`
+            *★᭄𝗢𝘄𝗻𝗲𝗿 ཫ༄𒁍≛⃝𝐋𝐞𝐠𝐞𝐧𝐝 𓃮 𝐀𝐫𝐬𝐡☜🍀🍒
+       
     }
     return api.sendMessage(msg, threadID, messageID);
   };
