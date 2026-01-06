@@ -3,104 +3,125 @@ const fs = require("fs");
 const path = require("path");
 const yts = require("yt-search");
 
-const nix = "https://raw.githubusercontent.com/aryannix/stuffs/master/raw/apis.json";
+const API_JSON = "https://raw.githubusercontent.com/aryannix/stuffs/master/raw/apis.json";
 
-const getApiUrl = async () => {
-  const configRes = await axios.get(nix);
-  if (!configRes.data?.api) throw new Error("API base URL missing");
-  return `${configRes.data.api}/play`;
-};
+async function getApiUrl() {
+  const res = await axios.get(API_JSON, { timeout: 15000 });
+  if (!res.data || !res.data.api) {
+    throw new Error("API base URL not found");
+  }
+  return res.data.api + "/play";
+}
 
 module.exports.config = {
   name: "sing",
-  version: "1.0.0",
+  version: "2.0.0",
   hasPermssion: 0,
-  credits: "SHAAN (Modified by ChatGPT)",
-  description: "Download YouTube MP3 or Video",
+  credits: "SHAAN • Fixed by ChatGPT",
+  description: "Download YouTube song mp3 or video",
   commandCategory: "music",
   usages: "sing mp3 <song> | sing video <song>",
   cooldowns: 5
 };
 
-async function handleMusic(api, event, type, query) {
+async function sendMusic(api, event, type, query) {
   const { threadID, messageID } = event;
-  const wait = await api.sendMessage("⏳ Please wait, downloading...", threadID);
+
+  const waitMsg = await api.sendMessage("⏳ Song download ho raha hai...", threadID);
 
   try {
-    const apiBase = await getApiUrl();
-
+    // 🔎 YouTube search
     const search = await yts(query);
-    if (!search.videos.length) throw new Error("No results found");
+    if (!search.videos || search.videos.length === 0) {
+      throw new Error("Song nahi mila");
+    }
 
     const video = search.videos[0];
-    const videoUrl = video.url;
+    const apiBase = await getApiUrl();
 
-    const apiUrl = `${apiBase}?url=${encodeURIComponent(videoUrl)}&type=${type}`;
-    const res = await axios.get(apiUrl);
+    const apiUrl = `${apiBase}?url=${encodeURIComponent(video.url)}&type=${type}`;
+    const res = await axios.get(apiUrl, { timeout: 30000 });
 
-    if (!res.data?.status || !res.data.downloadUrl)
-      throw new Error("Download failed");
+    if (!res.data || !res.data.status || !res.data.downloadUrl) {
+      throw new Error("Download API error");
+    }
 
     const ext = type === "video" ? "mp4" : "mp3";
-    const filePath = path.join(__dirname, `${Date.now()}.${ext}`);
+    const filePath = path.join(__dirname, `/cache/sing_${Date.now()}.${ext}`);
 
-    const file = await axios.get(res.data.downloadUrl, { responseType: "arraybuffer" });
-    fs.writeFileSync(filePath, file.data);
+    // ⬇ Download file
+    const file = await axios.get(res.data.downloadUrl, {
+      responseType: "arraybuffer",
+      timeout: 60000
+    });
 
-    const msg =
-      `🎵 TITLE: ${video.title}\n` +
-      `📺 CHANNEL: ${video.author.name}\n` +
-      `⏱ DURATION: ${video.timestamp}\n` +
-      `👀 VIEWS: ${video.views.toLocaleString()}\n\n` +
-      `✅ Type: ${type.toUpperCase()}`;
+    fs.writeFileSync(filePath, Buffer.from(file.data));
+
+    const info =
+      `🎵 Title: ${video.title}\n` +
+      `📺 Channel: ${video.author.name}\n` +
+      `⏱ Duration: ${video.timestamp}\n` +
+      `👀 Views: ${video.views.toLocaleString()}\n` +
+      `📥 Type: ${type.toUpperCase()}`;
 
     await api.sendMessage(
       {
-        body: msg,
+        body: info,
         attachment: fs.createReadStream(filePath)
       },
       threadID,
       () => {
-        fs.unlinkSync(filePath);
-        api.unsendMessage(wait.messageID);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        api.unsendMessage(waitMsg.messageID);
       },
       messageID
     );
-  } catch (e) {
-    api.unsendMessage(wait.messageID);
-    api.sendMessage("❌ Error: " + e.message, threadID, messageID);
+  } catch (err) {
+    api.unsendMessage(waitMsg.messageID);
+    api.sendMessage("❌ Error: " + err.message, threadID, messageID);
   }
 }
 
-// NO PREFIX
+/* ================= NO PREFIX ================= */
 module.exports.handleEvent = async function ({ api, event }) {
-  const body = event.body;
-  if (!body) return;
+  if (!event.body) return;
 
-  const args = body.split(/\s+/);
+  const args = event.body.trim().split(/\s+/);
   const cmd = args.shift().toLowerCase();
 
   if (cmd !== "sing") return;
 
   const type = args.shift()?.toLowerCase();
-  if (!["mp3", "video"].includes(type))
-    return api.sendMessage("❌ Use: sing mp3 <song> OR sing video <song>", event.threadID);
+  if (!["mp3", "video"].includes(type)) {
+    return api.sendMessage(
+      "❌ Use:\n👉 sing mp3 <song name>\n👉 sing video <song name>",
+      event.threadID,
+      event.messageID
+    );
+  }
 
-  if (!args.length)
-    return api.sendMessage("❌ Song name missing", event.threadID);
+  if (!args.length) {
+    return api.sendMessage("❌ Song name likho", event.threadID, event.messageID);
+  }
 
-  handleMusic(api, event, type, args.join(" "));
+  sendMusic(api, event, type, args.join(" "));
 };
 
-// WITH PREFIX
+/* ================= WITH PREFIX ================= */
 module.exports.run = async function ({ api, event, args }) {
   const type = args.shift()?.toLowerCase();
 
-  if (!["mp3", "video"].includes(type))
-    return api.sendMessage("❌ Use: sing mp3 <song> OR sing video <song>", event.threadID);
+  if (!["mp3", "video"].includes(type)) {
+    return api.sendMessage(
+      "❌ Use:\n👉 sing mp3 <song name>\n👉 sing video <song name>",
+      event.threadID,
+      event.messageID
+    );
+  }
 
-  if (!args.length)
-    return api.sendMessage("❌ Song name missing", event.threadID);
+  if (!args.length) {
+    return api.sendMessage("❌ Song name likho", event.threadID, event.messageID);
+  }
 
-  handleMusic(api, event, type, args.join(" "));
+  sendMusic(api, event, type, args.join(" "));
 };
