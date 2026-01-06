@@ -1,12 +1,12 @@
 module.exports = {
     config: {
-      name: "bot2",
+      name: "bot2 janu",
       version: "1.0.0",
       hasPermssion: 0,
       credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
       description: "Multiple reply with gender",
       commandCategory: "No command needed",
-      usages: "Just type bot",
+      usages: "Just type bot janu",
       cooldowns: 0
     },
   
@@ -17,7 +17,7 @@ module.exports = {
       const message = body.toLowerCase();
   
       // Only respond to "bot janu"
-      if (message !== "bot") return;
+      if (message !== " janu bot") return;
   
       // Specific UIDs for custom replies
       const specificUIDs = {
