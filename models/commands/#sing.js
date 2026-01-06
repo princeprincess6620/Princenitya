@@ -3,125 +3,98 @@ const fs = require("fs");
 const path = require("path");
 const yts = require("yt-search");
 
-const API_JSON = "https://raw.githubusercontent.com/aryannix/stuffs/master/raw/apis.json";
+const nix = "https://raw.githubusercontent.com/aryannix/stuffs/master/raw/apis.json";
 
-async function getApiUrl() {
-  const res = await axios.get(API_JSON, { timeout: 15000 });
-  if (!res.data || !res.data.api) {
-    throw new Error("API base URL not found");
-  }
-  return res.data.api + "/play";
-}
+const getApiUrl = async () => {
+    try {
+        const configRes = await axios.get(nix);
+        const baseUrl = configRes.data?.api;
+        if (!baseUrl) throw new Error("Missing 'api' base URL.");
+        return `${baseUrl}/play`; 
+    } catch (error) {
+        throw new Error(`Failed to load API config: ${error.message}`);
+    }
+};
 
 module.exports.config = {
   name: "sing",
-  version: "2.0.0",
+  version: "0.0.4",
   hasPermssion: 0,
-  credits: "SHAAN • Fixed by ChatGPT",
-  description: "Download YouTube song mp3 or video",
+  credits: "SHAAN",
+  description: "Download music with details",
   commandCategory: "music",
-  usages: "sing mp3 <song> | sing video <song>",
+  usages: "sing <song name>",
   cooldowns: 5
 };
 
-async function sendMusic(api, event, type, query) {
+async function handleMusic(api, event, query) {
   const { threadID, messageID } = event;
-
-  const waitMsg = await api.sendMessage("⏳ Song download ho raha hai...", threadID);
+  const waiting = await api.sendMessage("✅ 𝗠𝗔𝗜𝗡 𝗔𝗣𝗞𝗔 𝗣𝗬𝗔𝗥𝗔 𝗕𝗢𝗧 𝗔𝗣𝗞𝗘 𝗟𝗜𝗬𝗘 𝗦𝗢𝗡𝗚 𝗟𝗔 𝗥𝗛𝗔 𝗛𝗨𝗡 𝗧𝗛𝗢𝗗𝗔 𝗦𝗔𝗕𝗥 𝗞𝗥𝗢 𝗠𝗘𝗥𝗜 𝗝𝗔𝗔𝗡....", threadID);
 
   try {
-    // 🔎 YouTube search
-    const search = await yts(query);
-    if (!search.videos || search.videos.length === 0) {
-      throw new Error("Song nahi mila");
-    }
-
-    const video = search.videos[0];
     const apiBase = await getApiUrl();
 
-    const apiUrl = `${apiBase}?url=${encodeURIComponent(video.url)}&type=${type}`;
-    const res = await axios.get(apiUrl, { timeout: 30000 });
+    // YTS se extra details nikalne ke liye
+    const search = await yts(query);
+    if (!search.videos.length) throw new Error("No results found.");
+    const video = search.videos[0];
+    const videoUrl = video.url;
 
-    if (!res.data || !res.data.status || !res.data.downloadUrl) {
-      throw new Error("Download API error");
-    }
+    const apiUrl = `${apiBase}?url=${encodeURIComponent(videoUrl)}`;
+    const res = await axios.get(apiUrl);
 
-    const ext = type === "video" ? "mp4" : "mp3";
-    const filePath = path.join(__dirname, `/cache/sing_${Date.now()}.${ext}`);
+    if (!res.data.status || !res.data.downloadUrl)
+      throw new Error("API error.");
 
-    // ⬇ Download file
-    const file = await axios.get(res.data.downloadUrl, {
-      responseType: "arraybuffer",
-      timeout: 60000
-    });
+    const mp3name = `${Date.now()}.mp3`; 
+    const filePath = path.join(__dirname, mp3name);
 
-    fs.writeFileSync(filePath, Buffer.from(file.data));
+    const audio = await axios.get(res.data.downloadUrl, { responseType: "arraybuffer" });
+    fs.writeFileSync(filePath, audio.data);
 
-    const info =
-      `🎵 Title: ${video.title}\n` +
-      `📺 Channel: ${video.author.name}\n` +
-      `⏱ Duration: ${video.timestamp}\n` +
-      `👀 Views: ${video.views.toLocaleString()}\n` +
-      `📥 Type: ${type.toUpperCase()}`;
+    // --- Message Format ---
+    const messageBody = `🖤 𝑻𝑰𝑻𝑳𝑬: ${video.title}\n` +
+                        `📺 𝑪𝑯𝑨𝑵𝑵𝑬𝑳: ${video.author.name}\n` +
+                        `👀 𝑽𝑰𝑬𝑾𝑺: ${video.views.toLocaleString()}\n` +
+                        `⏳ 𝑫𝑼𝑹𝑨𝑻𝑰𝑶𝑵: ${video.timestamp}\n` +
+                        `📅 𝑼𝑷𝑳𝑶𝑨𝑫𝑬𝑫: ${video.ago}\n` +
+                        `\n` +
+                        `»»𝑶𝑾𝑵𝑬𝑹««★™ »»𝑺𝑯𝑨𝑨𝑵 𝑲𝑯𝑨𝑵««\n` +
+                        `🥀𝒀𝑬 𝑳𝑶 𝑩𝑨𝑩𝒀 𝑨𝑷𝑲𝑰👉 MUSIC`;
 
     await api.sendMessage(
       {
-        body: info,
+        body: messageBody,
         attachment: fs.createReadStream(filePath)
       },
       threadID,
       () => {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        api.unsendMessage(waitMsg.messageID);
+        api.unsendMessage(waiting.messageID);
       },
       messageID
     );
+
   } catch (err) {
-    api.unsendMessage(waitMsg.messageID);
-    api.sendMessage("❌ Error: " + err.message, threadID, messageID);
+    if (waiting.messageID) api.unsendMessage(waiting.messageID);
+    return api.sendMessage("❌ Error: " + err.message, threadID, messageID);
   }
 }
 
-/* ================= NO PREFIX ================= */
+// NO PREFIX
 module.exports.handleEvent = async function ({ api, event }) {
-  if (!event.body) return;
-
-  const args = event.body.trim().split(/\s+/);
-  const cmd = args.shift().toLowerCase();
-
-  if (cmd !== "sing") return;
-
-  const type = args.shift()?.toLowerCase();
-  if (!["mp3", "video"].includes(type)) {
-    return api.sendMessage(
-      "❌ Use:\n👉 sing mp3 <song name>\n👉 sing video <song name>",
-      event.threadID,
-      event.messageID
-    );
+  const { body } = event;
+  if (!body) return;
+  const args = body.split(/\s+/);
+  const trigger = args.shift().toLowerCase();
+  if (trigger === "sing") {
+    if (args.length === 0) return api.sendMessage("❌ Provide a song name.", event.threadID, event.messageID);
+    return handleMusic(api, event, args.join(" "));
   }
-
-  if (!args.length) {
-    return api.sendMessage("❌ Song name likho", event.threadID, event.messageID);
-  }
-
-  sendMusic(api, event, type, args.join(" "));
 };
 
-/* ================= WITH PREFIX ================= */
+// WITH PREFIX
 module.exports.run = async function ({ api, event, args }) {
-  const type = args.shift()?.toLowerCase();
-
-  if (!["mp3", "video"].includes(type)) {
-    return api.sendMessage(
-      "❌ Use:\n👉 sing mp3 <song name>\n👉 sing video <song name>",
-      event.threadID,
-      event.messageID
-    );
-  }
-
-  if (!args.length) {
-    return api.sendMessage("❌ Song name likho", event.threadID, event.messageID);
-  }
-
-  sendMusic(api, event, type, args.join(" "));
+  if (args.length === 0) return api.sendMessage("❌ Provide a song name.", event.threadID, event.messageID);
+  return handleMusic(api, event, args.join(" "));
 };
