@@ -1,11 +1,11 @@
 module.exports.config = {
   name: "purpose",
-  version: "7.3.2",
+  version: "9.0.0",
   hasPermssion: 0,
   credits: "Chand",
-  description: "Get Pair From Mention",
+  description: "Pair image without mention bug",
   commandCategory: "img",
-  usages: "[@mention]",
+  usages: "purpose @mention | reply | uid",
   cooldowns: 5,
   dependencies: {
     "axios": "",
@@ -15,100 +15,102 @@ module.exports.config = {
   }
 };
 
+// ================= ON LOAD =================
 module.exports.onLoad = async () => {
-  const { resolve } = global.nodemodule["path"];
-  const { existsSync, mkdirSync } = global.nodemodule["fs-extra"];
+  const fs = global.nodemodule["fs-extra"];
+  const path = global.nodemodule["path"];
   const { downloadFile } = global.utils;
 
-  const dir = resolve(__dirname, "cache", "canvas");
-  const imgPath = resolve(dir, "lovep.png");
+  const dir = path.join(__dirname, "cache", "canvas");
+  const bg = path.join(dir, "lovep.png");
 
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  if (!existsSync(imgPath)) {
+  if (!fs.existsSync(bg)) {
     await downloadFile(
       "https://i.ibb.co/SXjyVqmM/imgbb-1767937142818.jpg",
-      imgPath
+      bg
     );
   }
 };
 
-async function makeImage({ one, two }) {
-  const fs = global.nodemodule["fs-extra"];
-  const path = global.nodemodule["path"];
+// ================= IMAGE MAKER =================
+async function makeImage(senderID, targetID) {
   const axios = global.nodemodule["axios"];
   const jimp = global.nodemodule["jimp"];
+  const fs = global.nodemodule["fs-extra"];
+  const path = global.nodemodule["path"];
 
-  const root = path.resolve(__dirname, "cache", "canvas");
+  const root = path.join(__dirname, "cache", "canvas");
+  const outPath = path.join(root, `pair_${senderID}_${targetID}.png`);
 
-  const baseImg = await jimp.read(`${root}/lovep.png`);
-  const outPath = `${root}/pair_${one}_${two}.png`;
+  const bg = await jimp.read(path.join(root, "lovep.png"));
 
-  const avt1 = `${root}/avt_${one}.png`;
-  const avt2 = `${root}/avt_${two}.png`;
+  async function getAvatar(uid) {
+    const imgData = (
+      await axios.get(
+        `https://graph.facebook.com/${uid}/picture?width=512&height=512`,
+        { responseType: "arraybuffer" }
+      )
+    ).data;
 
-  const img1 = (
-    await axios.get(`https://graph.facebook.com/${one}/picture?width=512&height=512`, {
-      responseType: "arraybuffer"
-    })
-  ).data;
+    return (await jimp.read(Buffer.from(imgData)))
+      .circle()
+      .resize(200, 200);
+  }
 
-  const img2 = (
-    await axios.get(`https://graph.facebook.com/${two}/picture?width=512&height=512`, {
-      responseType: "arraybuffer"
-    })
-  ).data;
+  const avatar1 = await getAvatar(senderID);
+  const avatar2 = await getAvatar(targetID);
 
-  fs.writeFileSync(avt1, Buffer.from(img1));
-  fs.writeFileSync(avt2, Buffer.from(img2));
+  bg
+    .composite(avatar1, 60, 180)
+    .composite(avatar2, 610, 180);
 
-  const c1 = await circle(avt1);
-  const c2 = await circle(avt2);
-
-  baseImg
-    .composite(c1.resize(200, 200), 60, 180)
-    .composite(c2.resize(200, 200), 610, 180);
-
-  await baseImg.writeAsync(outPath);
-
-  fs.unlinkSync(avt1);
-  fs.unlinkSync(avt2);
-
+  await bg.writeAsync(outPath);
   return outPath;
 }
 
-async function circle(imgPath) {
-  const jimp = require("jimp");
-  const img = await jimp.read(imgPath);
-  img.circle();
-  return img;
-}
-
-module.exports.run = async function ({ event, api }) {
+// ================= RUN =================
+module.exports.run = async function ({ event, api, args }) {
   const fs = global.nodemodule["fs-extra"];
-  const { threadID, messageID, senderID, mentions } = event;
+  const { threadID, messageID, senderID, mentions, messageReply } = event;
 
-  const mention = Object.keys(mentions);
-  if (!mention[0]) {
-    return api.sendMessage("❌ Please mention 1 person.", threadID, messageID);
+  let targetID = null;
+
+  // ✅ METHOD 1: REAL MENTION
+  if (mentions && Object.keys(mentions).length > 0) {
+    targetID = Object.keys(mentions)[0];
+  }
+  // ✅ METHOD 2: REPLY (BEST & 100%)
+  else if (messageReply && messageReply.senderID) {
+    targetID = messageReply.senderID;
+  }
+  // ✅ METHOD 3: UID
+  else if (args[0] && /^\d+$/.test(args[0])) {
+    targetID = args[0];
+  }
+
+  if (!targetID) {
+    return api.sendMessage(
+      "❌ Use any ONE method:\n\n" +
+      "1️⃣ purpose @mention\n" +
+      "2️⃣ reply kisi ke msg pe + purpose\n" +
+      "3️⃣ purpose <uid>",
+      threadID,
+      messageID
+    );
   }
 
   try {
-    const imgPath = await makeImage({
-      one: senderID,
-      two: mention[0]
-    });
-
+    const imgPath = await makeImage(senderID, targetID);
     api.sendMessage(
-      {
-        attachment: fs.createReadStream(imgPath)
-      },
+      { attachment: fs.createReadStream(imgPath) },
       threadID,
       () => fs.unlinkSync(imgPath),
       messageID
     );
-  } catch (e) {
-    api.sendMessage("❌ Error while generating image.", threadID, messageID);
-    console.error(e);
+  } catch (err) {
+    console.error(err);
+    api.sendMessage("❌ Image generate error.", threadID, messageID);
   }
 };
