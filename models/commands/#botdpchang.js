@@ -13,7 +13,7 @@ module.exports.config = {
 };
 
 // 🔐 Yahan apna owner UID daalo
-const OWNER_IDS = ["61584629226732"]; // <-- apna real FB UID lagao
+const OWNER_IDS = ["61585476270478"]; // <-- apna real FB UID lagao
 
 module.exports.run = async function ({ api, event }) {
 
