@@ -1,9 +1,9 @@
 module.exports.config = {
   name: "purpose",
-  version: "10.0.0",
+  version: "11.0.0",
   hasPermssion: 0,
   credits: "Chand",
-  description: "Pair image (NO mention issue at all)",
+  description: "Pair image with REAL Facebook profile avatar",
   commandCategory: "img",
   usages: "purpose",
   cooldowns: 5,
@@ -35,7 +35,7 @@ module.exports.onLoad = async () => {
 };
 
 // ================= IMAGE MAKER =================
-async function makeImage(uid1, uid2) {
+async function makeImage(uid1, uid2, api) {
   const axios = global.nodemodule["axios"];
   const jimp = global.nodemodule["jimp"];
   const path = global.nodemodule["path"];
@@ -45,12 +45,13 @@ async function makeImage(uid1, uid2) {
 
   const bg = await jimp.read(path.join(root, "lovep.png"));
 
+  // ✅ REAL FACEBOOK PROFILE PHOTO (NO GRAPH API)
   const getAvatar = async (uid) => {
+    const info = await api.getUserInfo(uid);
+    const avatarUrl = info[uid].profileUrl;
+
     const data = (
-      await axios.get(
-        `https://graph.facebook.com/${uid}/picture?width=512&height=512`,
-        { responseType: "arraybuffer" }
-      )
+      await axios.get(avatarUrl, { responseType: "arraybuffer" })
     ).data;
 
     return (await jimp.read(Buffer.from(data)))
@@ -61,9 +62,11 @@ async function makeImage(uid1, uid2) {
   const a1 = await getAvatar(uid1);
   const a2 = await getAvatar(uid2);
 
-  bg.composite(a1, 60, 180).composite(a2, 610, 180);
-  await bg.writeAsync(out);
+  bg
+    .composite(a1, 60, 180)
+    .composite(a2, 610, 180);
 
+  await bg.writeAsync(out);
   return out;
 }
 
@@ -74,22 +77,22 @@ module.exports.run = async function ({ event, api, args }) {
 
   let targetID = null;
 
-  // ✅ TRY 1: mention
+  // 1️⃣ mention
   if (event.mentions && Object.keys(event.mentions).length > 0) {
     targetID = Object.keys(event.mentions)[0];
   }
 
-  // ✅ TRY 2: reply (ALL MIRAI VERSIONS)
+  // 2️⃣ reply (BEST)
   if (!targetID && event.type === "message_reply" && event.messageReply) {
     targetID = event.messageReply.senderID;
   }
 
-  // ✅ TRY 3: UID
+  // 3️⃣ uid
   if (!targetID && args[0] && /^\d+$/.test(args[0])) {
     targetID = args[0];
   }
 
-  // ✅ FINAL AUTO FIX (NO ERROR EVER)
+  // 4️⃣ AUTO PICK (NO ERROR EVER)
   if (!targetID) {
     const info = await api.getThreadInfo(threadID);
     const members = info.participantIDs.filter(id => id !== senderID);
@@ -97,7 +100,7 @@ module.exports.run = async function ({ event, api, args }) {
   }
 
   try {
-    const img = await makeImage(senderID, targetID);
+    const img = await makeImage(senderID, targetID, api);
     api.sendMessage(
       { attachment: fs.createReadStream(img) },
       threadID,
@@ -106,6 +109,6 @@ module.exports.run = async function ({ event, api, args }) {
     );
   } catch (e) {
     console.error(e);
-    api.sendMessage("❌ Image error.", threadID, messageID);
+    api.sendMessage("❌ Image generate error.", threadID, messageID);
   }
 };
