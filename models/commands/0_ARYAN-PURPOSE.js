@@ -1,12 +1,12 @@
 module.exports.config = {
   name: "purpose",
-  version: "8.0.0",
+  version: "7.3.1",
   hasPermssion: 0,
-  credits: "Chand (fixed by ChatGPT)",
-  description: "Make love pair image from mention",
+  credits: "Chand",
+  description: "Get Pair From Mention",
   commandCategory: "img",
-  usages: "@mention",
-  cooldowns: 5,
+  usages: "[@mention]",
+  cooldowns: 5, 
   dependencies: {
     "axios": "",
     "fs-extra": "",
@@ -15,101 +15,124 @@ module.exports.config = {
   }
 };
 
-module.exports.onLoad = async () => {
-  const fs = global.nodemodule["fs-extra"];
-  const path = global.nodemodule["path"];
-  const axios = global.nodemodule["axios"];
-
-  const dir = path.join(__dirname, "cache", "canvas");
-  const bgPath = path.join(dir, "lovep.png");
-
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-
-  if (!fs.existsSync(bgPath)) {
-    const img = (await axios.get(
-      "https://i.ibb.co/SXjyVqmM/imgbb-1767937142818.jpg",
-      { responseType: "arraybuffer" }
-    )).data;
-    fs.writeFileSync(bgPath, img);
+module.exports.onLoad = async() => {
+  const { resolve } = global.nodemodule["path"];
+  const { existsSync, mkdirSync } = global.nodemodule["fs-extra"];
+  const { downloadFile } = global.utils;
+  const dirMaterial = __dirname + `/cache/canvas/`;
+  const path = resolve(__dirname, 'cache/canvas', 'lovep.png');
+  
+  if (!existsSync(dirMaterial)) mkdirSync(dirMaterial, { recursive: true });
+  if (!existsSync(path)) {
+    try {
+      await downloadFile("https://i.imgur.com/4Z8n0YD.png", path); // Working background image
+    } catch (error) {
+      console.error("Error downloading background image:", error);
+    }
   }
-};
-
-async function circleImage(imgPath) {
-  const jimp = global.nodemodule["jimp"];
-  const img = await jimp.read(imgPath);
-  img.circle();
-  return img;
 }
 
-async function makeImage(uid1, uid2) {
+async function makeImage({ one, two }) {
   const fs = global.nodemodule["fs-extra"];
   const path = global.nodemodule["path"];
-  const axios = global.nodemodule["axios"];
+  const axios = global.nodemodule["axios"]; 
   const jimp = global.nodemodule["jimp"];
-
-  const dir = path.join(__dirname, "cache", "canvas");
-
-  const bg = await jimp.read(path.join(dir, "lovep.png"));
-
-  const avt1 = path.join(dir, `avt_${uid1}.png`);
-  const avt2 = path.join(dir, `avt_${uid2}.png`);
-  const out = path.join(dir, `pair_${uid1}_${uid2}.png`);
-
-  const token = "6628568379|c1e620fa708a1d5696fb991c1bde5662";
-
-  const img1 = (await axios.get(
-    `https://graph.facebook.com/${uid1}/picture?width=512&height=512&access_token=${token}`,
-    { responseType: "arraybuffer" }
-  )).data;
-
-  const img2 = (await axios.get(
-    `https://graph.facebook.com/${uid2}/picture?width=512&height=512&access_token=${token}`,
-    { responseType: "arraybuffer" }
-  )).data;
-
-  fs.writeFileSync(avt1, img1);
-  fs.writeFileSync(avt2, img2);
-
-  const c1 = await circleImage(avt1);
-  const c2 = await circleImage(avt2);
-
-  bg.composite(c1.resize(200, 200), 60, 180);
-  bg.composite(c2.resize(200, 200), 610, 180);
-
-  await bg.writeAsync(out);
-
-  fs.unlinkSync(avt1);
-  fs.unlinkSync(avt2);
-
-  return out;
-}
-
-module.exports.run = async function ({ api, event }) {
-  const fs = global.nodemodule["fs-extra"];
-  const { threadID, messageID, senderID, mentions } = event;
-
-  const ids = Object.keys(mentions);
-  if (ids.length === 0)
-    return api.sendMessage(
-      "❌ Sirf 1 person ko mention karo.",
-      threadID,
-      messageID
-    );
-
-  const targetID = ids[0];
+  const __root = path.resolve(__dirname, "cache", "canvas");
 
   try {
-    const imgPath = await makeImage(senderID, targetID);
-    api.sendMessage(
-      {
-        body: "💞 Love Pair 💞",
-        attachment: fs.createReadStream(imgPath)
-      },
-      threadID,
-      () => fs.unlinkSync(imgPath),
-      messageID
-    );
-  } catch (e) {
-    api.sendMessage("❌ Image generate nahi hui.", threadID, messageID);
+    // Read background image
+    let background = await jimp.read(__root + "/lovep.png");
+    
+    // Prepare paths
+    let pathImg = __root + `/pair_${one}_${two}.png`;
+    let avatarOnePath = __root + `/avt_${one}.png`;
+    let avatarTwoPath = __root + `/avt_${two}.png`;
+
+    // Download first avatar
+    let getAvatarOne = await axios.get(`https://graph.facebook.com/${one}/picture?width=512&height=512&access_token=170918142443047|95d8ab09474e5c8b9f512c63a0a1a38a`, {
+      responseType: 'arraybuffer'
+    });
+    fs.writeFileSync(avatarOnePath, Buffer.from(getAvatarOne.data, 'binary'));
+
+    // Download second avatar
+    let getAvatarTwo = await axios.get(`https://graph.facebook.com/${two}/picture?width=512&height=512&access_token=170918142443047|95d8ab09474e5c8b9f512c63a0a1a38a`, {
+      responseType: 'arraybuffer'
+    });
+    fs.writeFileSync(avatarTwoPath, Buffer.from(getAvatarTwo.data, 'binary'));
+
+    // Process avatars
+    let avatarOne = await jimp.read(avatarOnePath);
+    let avatarTwo = await jimp.read(avatarTwoPath);
+    
+    // Create circular avatars
+    avatarOne.circle();
+    avatarTwo.circle();
+    
+    // Resize avatars
+    avatarOne.resize(150, 150);
+    avatarTwo.resize(150, 150);
+
+    // Composite images
+    background.composite(avatarOne, 100, 150);
+    background.composite(avatarTwo, 450, 150);
+
+    // Save image
+    let buffer = await background.getBufferAsync("image/png");
+    fs.writeFileSync(pathImg, buffer);
+
+    // Cleanup temporary files
+    fs.unlinkSync(avatarOnePath);
+    fs.unlinkSync(avatarTwoPath);
+
+    return pathImg;
+    
+  } catch (error) {
+    console.error("Error in makeImage:", error);
+    throw error;
   }
-};
+}
+
+async function circle(image) {
+  const jimp = require("jimp");
+  image = await jimp.read(image);
+  image.circle();
+  return await image.getBufferAsync("image/png");
+}
+
+module.exports.run = async function ({ event, api, args }) {    
+  const fs = global.nodemodule["fs-extra"];
+  const { threadID, messageID, senderID } = event;
+  
+  try {
+    const mention = Object.keys(event.mentions);
+    
+    if (mention.length === 0) {
+      return api.sendMessage("Please mention 1 person to create a pair photo.", threadID, messageID);
+    }
+    
+    const one = senderID;
+    const two = mention[0];
+    
+    // Send processing message
+    await api.sendMessage("Creating your pair photo... ❤️", threadID, messageID);
+    
+    const path = await makeImage({ one, two });
+    
+    // Send the generated image
+    return api.sendMessage({ 
+      body: "Here's your perfect pair! 💞", 
+      attachment: fs.createReadStream(path) 
+    }, threadID, () => {
+      // Delete the image after sending
+      try {
+        fs.unlinkSync(path);
+      } catch (e) {
+        console.error("Error deleting file:", e);
+      }
+    }, messageID);
+    
+  } catch (error) {
+    console.error("Error:", error);
+    return api.sendMessage("Sorry, there was an error creating the pair photo. Please try again later.", threadID, messageID);
+  }
+}
