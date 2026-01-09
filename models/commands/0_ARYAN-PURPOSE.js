@@ -1,11 +1,11 @@
 module.exports.config = {
   name: "purpose",
-  version: "11.0.0",
+  version: "8.0.0",
   hasPermssion: 0,
-  credits: "Chand",
-  description: "Pair image with REAL Facebook profile avatar",
+  credits: "Chand (fixed by ChatGPT)",
+  description: "Make love pair image from mention",
   commandCategory: "img",
-  usages: "purpose",
+  usages: "@mention",
   cooldowns: 5,
   dependencies: {
     "axios": "",
@@ -15,100 +15,101 @@ module.exports.config = {
   }
 };
 
-// ================= ON LOAD =================
 module.exports.onLoad = async () => {
   const fs = global.nodemodule["fs-extra"];
   const path = global.nodemodule["path"];
-  const { downloadFile } = global.utils;
+  const axios = global.nodemodule["axios"];
 
   const dir = path.join(__dirname, "cache", "canvas");
-  const bg = path.join(dir, "lovep.png");
+  const bgPath = path.join(dir, "lovep.png");
 
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  if (!fs.existsSync(bg)) {
-    await downloadFile(
+  if (!fs.existsSync(bgPath)) {
+    const img = (await axios.get(
       "https://i.ibb.co/SXjyVqmM/imgbb-1767937142818.jpg",
-      bg
-    );
+      { responseType: "arraybuffer" }
+    )).data;
+    fs.writeFileSync(bgPath, img);
   }
 };
 
-// ================= IMAGE MAKER =================
-async function makeImage(uid1, uid2, api) {
+async function circleImage(imgPath) {
+  const jimp = global.nodemodule["jimp"];
+  const img = await jimp.read(imgPath);
+  img.circle();
+  return img;
+}
+
+async function makeImage(uid1, uid2) {
+  const fs = global.nodemodule["fs-extra"];
+  const path = global.nodemodule["path"];
   const axios = global.nodemodule["axios"];
   const jimp = global.nodemodule["jimp"];
-  const path = global.nodemodule["path"];
 
-  const root = path.join(__dirname, "cache", "canvas");
-  const out = path.join(root, `pair_${uid1}_${uid2}.png`);
+  const dir = path.join(__dirname, "cache", "canvas");
 
-  const bg = await jimp.read(path.join(root, "lovep.png"));
+  const bg = await jimp.read(path.join(dir, "lovep.png"));
 
-  // ✅ REAL FACEBOOK PROFILE PHOTO (NO GRAPH API)
-  const getAvatar = async (uid) => {
-    const info = await api.getUserInfo(uid);
-    const avatarUrl = info[uid].profileUrl;
+  const avt1 = path.join(dir, `avt_${uid1}.png`);
+  const avt2 = path.join(dir, `avt_${uid2}.png`);
+  const out = path.join(dir, `pair_${uid1}_${uid2}.png`);
 
-    const data = (
-      await axios.get(avatarUrl, { responseType: "arraybuffer" })
-    ).data;
+  const token = "6628568379|c1e620fa708a1d5696fb991c1bde5662";
 
-    return (await jimp.read(Buffer.from(data)))
-      .circle()
-      .resize(200, 200);
-  };
+  const img1 = (await axios.get(
+    `https://graph.facebook.com/${uid1}/picture?width=512&height=512&access_token=${token}`,
+    { responseType: "arraybuffer" }
+  )).data;
 
-  const a1 = await getAvatar(uid1);
-  const a2 = await getAvatar(uid2);
+  const img2 = (await axios.get(
+    `https://graph.facebook.com/${uid2}/picture?width=512&height=512&access_token=${token}`,
+    { responseType: "arraybuffer" }
+  )).data;
 
-  bg
-    .composite(a1, 60, 180)
-    .composite(a2, 610, 180);
+  fs.writeFileSync(avt1, img1);
+  fs.writeFileSync(avt2, img2);
+
+  const c1 = await circleImage(avt1);
+  const c2 = await circleImage(avt2);
+
+  bg.composite(c1.resize(200, 200), 60, 180);
+  bg.composite(c2.resize(200, 200), 610, 180);
 
   await bg.writeAsync(out);
+
+  fs.unlinkSync(avt1);
+  fs.unlinkSync(avt2);
+
   return out;
 }
 
-// ================= RUN =================
-module.exports.run = async function ({ event, api, args }) {
+module.exports.run = async function ({ api, event }) {
   const fs = global.nodemodule["fs-extra"];
-  const { threadID, messageID, senderID } = event;
+  const { threadID, messageID, senderID, mentions } = event;
 
-  let targetID = null;
+  const ids = Object.keys(mentions);
+  if (ids.length === 0)
+    return api.sendMessage(
+      "❌ Sirf 1 person ko mention karo.",
+      threadID,
+      messageID
+    );
 
-  // 1️⃣ mention
-  if (event.mentions && Object.keys(event.mentions).length > 0) {
-    targetID = Object.keys(event.mentions)[0];
-  }
-
-  // 2️⃣ reply (BEST)
-  if (!targetID && event.type === "message_reply" && event.messageReply) {
-    targetID = event.messageReply.senderID;
-  }
-
-  // 3️⃣ uid
-  if (!targetID && args[0] && /^\d+$/.test(args[0])) {
-    targetID = args[0];
-  }
-
-  // 4️⃣ AUTO PICK (NO ERROR EVER)
-  if (!targetID) {
-    const info = await api.getThreadInfo(threadID);
-    const members = info.participantIDs.filter(id => id !== senderID);
-    targetID = members[Math.floor(Math.random() * members.length)];
-  }
+  const targetID = ids[0];
 
   try {
-    const img = await makeImage(senderID, targetID, api);
+    const imgPath = await makeImage(senderID, targetID);
     api.sendMessage(
-      { attachment: fs.createReadStream(img) },
+      {
+        body: "💞 Love Pair 💞",
+        attachment: fs.createReadStream(imgPath)
+      },
       threadID,
-      () => fs.unlinkSync(img),
+      () => fs.unlinkSync(imgPath),
       messageID
     );
   } catch (e) {
-    console.error(e);
-    api.sendMessage("❌ Image generate error.", threadID, messageID);
+    api.sendMessage("❌ Image generate nahi hui.", threadID, messageID);
   }
 };
