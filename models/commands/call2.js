@@ -1,92 +1,105 @@
-const fs = require("fs");
+const fs = require("fs-extra");
+const path = require("path");
+const axios = require("axios");
+const jimp = require("jimp");
 
 module.exports.config = {
   name: "call2",
-  version: "7.3.1",
+  version: "7.3.2",
   hasPermssion: 0,
   credits: "M.R ARYAN",
   description: "Get Pair From Mention",
   commandCategory: "img",
-  usages: "call @mention",
-  cooldowns: 5,
-  dependencies: {
-    "axios": "",
-    "fs-extra": "",
-    "path": "",
-    "jimp": ""
+  usages: "call2 @mention",
+  cooldowns: 5
+};
+
+const CACHE_DIR = path.join(__dirname, "cache");
+const BG_PATH = path.join(CACHE_DIR, "calll.jpg");
+const BG_URL = "https://i.ibb.co/Ndb86pQH/uzairrcall.jpg";
+
+/* ---------- ON LOAD ---------- */
+module.exports.onLoad = async () => {
+  try {
+    if (!fs.existsSync(CACHE_DIR)) fs.mkdirSync(CACHE_DIR, { recursive: true });
+
+    if (!fs.existsSync(BG_PATH)) {
+      const img = await axios.get(BG_URL, { responseType: "arraybuffer" });
+      fs.writeFileSync(BG_PATH, img.data);
+    }
+  } catch (e) {
+    console.log("❌ call2 onLoad error:", e.message);
   }
 };
 
-module.exports.onLoad = async () => {
-  const { resolve } = global.nodemodule["path"];
-  const { existsSync, mkdirSync } = global.nodemodule["fs-extra"];
-  const { downloadFile } = global.utils;
-  const dirMaterial = __dirname + `cache`;
-  const path = resolve(__dirname, 'cache', 'calll.jpg');
-  if (!existsSync(dirMaterial)) mkdirSync(dirMaterial, { recursive: true });
-  if (!existsSync(path)) await downloadFile("https://i.ibb.co/Ndb86pQH/uzairrcall.jpg", path);
-};
-
-async function makeImage({ one, two }) {
-  const fs = global.nodemodule["fs-extra"];
-  const path = global.nodemodule["path"];
-  const axios = global.nodemodule["axios"];
-  const jimp = global.nodemodule["jimp"];
-  const __root = path.resolve(__dirname, "cache");
-
-  let batgiam_img = await jimp.read(__root + "/calll.jpg");
-  let pathImg = __root + `/batman${one}_${two}.jpeg`;
-  let avatarOne = __root + `/avt_${one}.jpeg`;
-  let avatarTwo = __root + `/avt_${two}.jpeg`;
-
-  let getAvatarOne = (await axios.get(`https://graph.facebook.com/${one}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: 'arraybuffer' })).data;
-  fs.writeFileSync(avatarOne, Buffer.from(getAvatarOne, 'utf-8'));
-
-  let getAvatarTwo = (await axios.get(`https://graph.facebook.com/${two}/picture?width=512&height=512&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`, { responseType: 'arraybuffer' })).data;
-  fs.writeFileSync(avatarTwo, Buffer.from(getAvatarTwo, 'utf-8'));
-
-  let circleOne = await jimp.read(await circle(avatarOne));
-  let circleTwo = await jimp.read(await circle(avatarTwo));
-  batgiam_img
-    .composite(circleOne.resize(72, 72), 148, 357)
-    .composite(circleTwo.resize(72, 72), 440, 357);
-
-  let raw = await batgiam_img.getBufferAsync("image/jpeg");
-  fs.writeFileSync(pathImg, raw);
-  fs.unlinkSync(avatarOne);
-  fs.unlinkSync(avatarTwo);
-
-  return pathImg;
+/* ---------- CIRCLE IMAGE ---------- */
+async function circleImage(imgPath) {
+  const img = await jimp.read(imgPath);
+  img.circle();
+  return await img.getBufferAsync("image/png");
 }
 
-async function circle(image) {
-  const jimp = require("jimp");
-  image = await jimp.read(image);
-  image.circle();
-  return await image.getBufferAsync("image/png");
+/* ---------- MAKE IMAGE ---------- */
+async function makeImage(one, two) {
+  const outPath = path.join(CACHE_DIR, `call_${one}_${two}.jpg`);
+  const avt1 = path.join(CACHE_DIR, `avt_${one}.jpg`);
+  const avt2 = path.join(CACHE_DIR, `avt_${two}.jpg`);
+
+  try {
+    const bg = await jimp.read(BG_PATH);
+
+    // Facebook avatar (NO TOKEN – SAFE)
+    const url1 = `https://graph.facebook.com/${one}/picture?width=512&height=512`;
+    const url2 = `https://graph.facebook.com/${two}/picture?width=512&height=512`;
+
+    const a1 = await axios.get(url1, { responseType: "arraybuffer" });
+    const a2 = await axios.get(url2, { responseType: "arraybuffer" });
+
+    fs.writeFileSync(avt1, a1.data);
+    fs.writeFileSync(avt2, a2.data);
+
+    const c1 = await jimp.read(await circleImage(avt1));
+    const c2 = await jimp.read(await circleImage(avt2));
+
+    bg
+      .composite(c1.resize(72, 72), 148, 357)
+      .composite(c2.resize(72, 72), 440, 357);
+
+    await bg.writeAsync(outPath);
+
+    fs.unlinkSync(avt1);
+    fs.unlinkSync(avt2);
+
+    return outPath;
+
+  } catch (err) {
+    throw new Error("Image generation failed");
+  }
 }
 
+/* ---------- HANDLE EVENT ---------- */
 module.exports.handleEvent = async function ({ api, event }) {
-  const fs = global.nodemodule["fs-extra"];
-  const { threadID, messageID, senderID, body } = event;
-
+  const { threadID, messageID, senderID, body, mentions } = event;
   if (!body) return;
   if (!body.toLowerCase().startsWith("call2")) return;
 
-  const mention = Object.keys(event.mentions);
-  if (!mention[0]) return;
+  const ids = Object.keys(mentions || {});
+  if (!ids[0]) {
+    return api.sendMessage("❌ Sirf 1 person ko mention karo", threadID, messageID);
+  }
 
-  const one = senderID, two = mention[0];
-  return makeImage({ one, two }).then(path =>
+  try {
+    const imgPath = await makeImage(senderID, ids[0]);
+
     api.sendMessage(
-      { body: "", attachment: fs.createReadStream(path) },
+      { attachment: fs.createReadStream(imgPath) },
       threadID,
-      () => fs.unlinkSync(path),
+      () => fs.existsSync(imgPath) && fs.unlinkSync(imgPath),
       messageID
-    )
-  );
+    );
+  } catch (e) {
+    api.sendMessage("❌ Image banane me error aa gaya", threadID, messageID);
+  }
 };
 
-module.exports.run = async function () { 
-  return;
-};
+module.exports.run = async () => {};
