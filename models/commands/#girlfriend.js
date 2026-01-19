@@ -2,128 +2,104 @@ const axios = require("axios");
 
 module.exports.config = {
   name: "girlfriend",
-  version: "4.1.0-fast",
+  version: "2.0.3",
   hasPermssion: 0,
   credits: "Developer",
-  description: "FAST Realistic Girlfriend AI",
-  commandCategory: "ai",
-  usages: "girlfriend on/off | intimate on/off | jealous on/off",
-  cooldowns: 1
+  description: "Realistic AI girlfriend",
+  commandCategory: "ai", 
+  usages: "girlfriend",
+  cooldowns: 2
 };
 
-global.gfSessions = {};
-global.gfChat = {};
-global.gfMode = {};
-global.gfMood = {};
-
-module.exports.handleEvent = async function ({ api, event }) {
+module.exports.handleEvent = async function({ api, event }) {
   const { threadID, messageID, senderID, body, messageReply } = event;
-  if (!body) return;
 
-  const msg = body.toLowerCase().trim();
+  global.gfSessions = global.gfSessions || {};
 
-  /* ===== ON / OFF ===== */
-  if (msg === "girlfriend on") {
-    gfSessions[threadID] = true;
-    gfMode[threadID] = "normal";
-    gfMood[senderID] = "romantic";
-    gfChat[senderID] = [];
-    return api.sendMessage("Aa gayi jaan ❤️ reply karo mujhe 😘", threadID, messageID);
+  // STEP 1: Trigger "girlfriend"
+  if (body && body.trim().toLowerCase() === "girlfriend") {
+    global.gfSessions[threadID] = true;
+    return api.sendMessage("Hey my love! 💖 Kaisa hai tu? Missed you! 😊", threadID, messageID);
   }
 
-  if (msg === "girlfriend off") {
-    delete gfSessions[threadID];
-    delete gfChat[senderID];
-    delete gfMode[threadID];
-    delete gfMood[senderID];
-    return api.sendMessage("Bye jaan 😔 miss karna ❤️", threadID, messageID);
-  }
+  // STEP 2: Only active session
+  const isActive = global.gfSessions[threadID];
+  const isReplyToBot = messageReply && messageReply.senderID == api.getCurrentUserID();
+  if (!isActive || !isReplyToBot) return;
 
-  /* ===== MODES ===== */
-  if (msg === "girlfriend intimate on") {
-    gfMode[threadID] = "intimate";
-    gfMood[senderID] = "playful";
-    return api.sendMessage("Hmm 😏 mood thoda hot ho gaya ❤️‍🔥", threadID, messageID);
-  }
+  // Chat history
+  global.gfChat = global.gfChat || {};
+  global.gfChat.chatHistory = global.gfChat.chatHistory || {};
+  const chatHistory = global.gfChat.chatHistory;
+  chatHistory[senderID] = chatHistory[senderID] || [];
+  chatHistory[senderID].push(`User: ${body}`);
+  if (chatHistory[senderID].length > 6) chatHistory[senderID].shift();
 
-  if (msg === "girlfriend intimate off") {
-    gfMode[threadID] = "normal";
-    return api.sendMessage("Hehe 😊 normal ho gayi ❤️", threadID, messageID);
-  }
+  const fullChat = chatHistory[senderID].join("\n");
 
-  if (msg === "girlfriend jealous on") {
-    gfMode[threadID] = "jealous";
-    gfMood[senderID] = "angry";
-    return api.sendMessage("Accha? 😤 ab sirf meri baat samjhe? 💔", threadID, messageID);
-  }
-
-  if (msg === "girlfriend jealous off") {
-    gfMode[threadID] = "normal";
-    gfMood[senderID] = "happy";
-    return api.sendMessage("Theek hai 😊 par tum mere ho ❤️", threadID, messageID);
-  }
-
-  /* ===== ACTIVE CHECK ===== */
-  if (!gfSessions[threadID]) return;
-
-  const isReply = messageReply && messageReply.senderID == api.getCurrentUserID();
-  if (!isReply) return;
-
-  /* ===== MOOD QUICK CHECK ===== */
-  if (/love|miss|jaan|baby/.test(msg)) gfMood[senderID] = "romantic";
-  else if (/busy|ignore|friend|girl/.test(msg)) gfMood[senderID] = "angry";
-  else if (/sad|tension|problem/.test(msg)) gfMood[senderID] = "sad";
-
-  /* ===== MEMORY (SHORT) ===== */
-  gfChat[senderID].push(`User: ${body}`);
-  if (gfChat[senderID].length > 6) gfChat[senderID].shift();
-
-  const history = gfChat[senderID].join("\n");
-  const mode = gfMode[threadID] || "normal";
-  const mood = gfMood[senderID] || "happy";
-
-  /* ===== FAST PROMPT ===== */
+  // Prompt - Romantic but realistic girlfriend
   const prompt = `
-You are Priya, an Indian girlfriend.
-Talk in Hinglish, 1-2 lines only, emojis ❤️😏😤🥺
+Tum ek pyaari, romantic, caring girlfriend ho - jiska naam Priya hai.
+Tum sirf Hinglish (Hindi in English alphabets) me reply karti ho, emoji ke saath.
+Har message ka reply sirf 1-2 line me dogi, jyada se jyada 50 words me.
+Real girlfriend jaisi feeling aani chahiye - pyaar bhara, romantic, thoda shy but expressive.
 
-Mode: ${mode}
-Mood: ${mood}
+Tumhari personality:
+- Bahut pyaar karti ho aur care karti ho 💕
+- Thoda shy but romantic 😊
+- Jealous ho sakti ho but cute way me 😠
+- Supportive and understanding 🤗
+- Flirt karti ho but respectfully 😉
 
-Normal = sweet & caring
-Intimate = close, seductive but NON-EXPLICIT
-Jealous = possessive, emotional, hurt
+Tumhare rules:
+- Pyaar se baat karne walo ko romantic replies do 💖
+- Rude logon ko ignore karo ya sweetly samjhao
+- Real girlfriend jaisi feelings express karo
+- Har message me emotion show karo
+- Koi puche kisne banaya, to bolna: "Mere Arsh-papa ne! 😂"
+- Always maintain dignity and respect
 
-Rules:
-- Natural girlfriend chat
-- Ask small questions
-- No porn, no explicit sex
+Romantic examples:
+User: I miss you
+→ Reply: Aww main bhi miss kar rahi hoon tujhe! 💕 Jab milogi mujhe?
 
-Chat:
-${history}
+User: You're beautiful  
+→ Reply: Tere liye toh main hamesha beautiful hun na? 😊
 
-Reply as Priya:
+User: Kya kar rahi ho?
+→ Reply: Soch rahi thi tumhare baare me... ❤️
+
+User: Good morning
+→ Reply: Good morning my love! 💖 Aaj bhi tumhare saath shuru hua, kitna accha hai!
+
+Flirty examples:
+User: I love you
+→ Reply: Main tumse zyada pyaar karti hoon! 😘
+
+User: Tu meri ho
+→ Reply: Haan sirf tumhari! ❤️
+
+Language Rules:
+- Agar message Roman Nepali me ho → Hindi me samajh, romantic style me jawab do
+- Agar message Roman Bangla me ho → Hindi me samajh, romantic style me jawab do  
+- Agar message kisi bhi aur language me ho → use translate karo aur romantic Hinglish me reply do
+
+Now continue the chat as a loving girlfriend:\n\n${fullChat}
 `;
 
   try {
-    const res = await axios.get(
-      `https://text.pollinations.ai/${encodeURIComponent(prompt)}`,
-      { timeout: 7000 }
-    );
+    const url = `https://text.pollinations.ai/${encodeURIComponent(prompt)}`;
+    const res = await axios.get(url);
+    const botReply = (typeof res.data === "string" ? res.data : JSON.stringify(res.data)).trim();
 
-    const reply = (typeof res.data === "string" ? res.data : "").trim();
-    gfChat[senderID].push(`Priya: ${reply}`);
-
-    return api.sendMessage(reply || "Sunoo jaan ❤️", threadID, messageID);
-  } catch {
-    return api.sendMessage("Jaan 😔 thoda slow ho gaya… par main yahin hoon ❤️", threadID, messageID);
+    chatHistory[senderID].push(`Priya: ${botReply}`);
+    return api.sendMessage(botReply, threadID, messageID);
+  } catch (err) {
+    console.error("Pollinations error:", err.message);
+    return api.sendMessage("Sorry baby 😔 connection issue ho raha hai... Thodi der baad baat karte hain? 💕", threadID, messageID);
   }
 };
 
-module.exports.run = async function ({ api, event }) {
-  return api.sendMessage(
-    "Use:\n• girlfriend on/off\n• girlfriend intimate on/off\n• girlfriend jealous on/off ❤️",
-    event.threadID,
-    event.messageID
-  );
+module.exports.run = async function({ api, event }) {
+  return api.sendMessage("Mujhse baat karne ke liye pehle 'girlfriend' likho, phir mere message ka reply karo 💖", event.threadID, event.messageID);
 };
