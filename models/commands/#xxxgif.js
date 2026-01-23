@@ -1,5 +1,5 @@
 const fs = require("fs-extra");
-const request = require("request");
+const axios = require("axios");
 
 module.exports.config = {
   name: "xxxgif",
@@ -41,19 +41,49 @@ module.exports.run = async function ({ api, event }) {
     "https://i.postimg.cc/wvJ9zy1D/autumn-falls-amateurallure-doggystyle-sex.gif"
   ];
 
-  const randomLink = links[Math.floor(Math.random() * links.length)];
-  const extension = randomLink.split(".").pop();
-  const fileName = `gif.${extension}`;
-  const filePath = __dirname + `/cache/${fileName}`;
+  try {
+    const randomLink = links[Math.floor(Math.random() * links.length)];
+    const extension = randomLink.split(".").pop();
+    const fileName = `gif_${Date.now()}.${extension}`;
+    const cachePath = __dirname + "/cache/";
+    const filePath = cachePath + fileName;
 
-  const callback = () => {
-    api.sendMessage({
-      body: `💦 Here's your NSFW gif, Daddy 😏`,
-      attachment: fs.createReadStream(filePath)
-    }, event.threadID, () => fs.unlinkSync(filePath));
-  };
+    // Ensure cache directory exists
+    if (!fs.existsSync(cachePath)) {
+      fs.mkdirSync(cachePath, { recursive: true });
+    }
 
-  request(encodeURI(randomLink))
-    .pipe(fs.createWriteStream(filePath))
-    .on("close", callback);
+    // Download the file using axios
+    const response = await axios({
+      method: "GET",
+      url: randomLink,
+      responseType: "stream"
+    });
+
+    const writer = fs.createWriteStream(filePath);
+    response.data.pipe(writer);
+
+    writer.on("finish", () => {
+      api.sendMessage({
+        body: `💦 Here's your NSFW gif, Daddy 😏`,
+        attachment: fs.createReadStream(filePath)
+      }, event.threadID, (err) => {
+        if (err) console.error("Send message error:", err);
+        
+        // Clean up file after sending
+        fs.unlink(filePath, (unlinkErr) => {
+          if (unlinkErr) console.error("Error deleting file:", unlinkErr);
+        });
+      });
+    });
+
+    writer.on("error", (err) => {
+      console.error("Write stream error:", err);
+      api.sendMessage("❌ Error downloading the GIF. Please try again.", event.threadID, event.messageID);
+    });
+
+  } catch (error) {
+    console.error("Main error:", error);
+    api.sendMessage("❌ An error occurred while processing your request.", event.threadID, event.messageID);
+  }
 };
