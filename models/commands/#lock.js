@@ -1,43 +1,96 @@
 module.exports.config = {
   name: "lock",
-  eventType: ["log:user-nickname"],
   version: "1.0.0",
+  hasPermssion: 1,
   credits: "PRINCE",
-  description: "Only bot admin nickname protection"
+  description: "Bot admin nickname lock on/off",
+  commandCategory: "admin",
+  usages: "lock on / lock off",
+  cooldowns: 2
 };
 
-// 🔐 BOT ADMIN UID (apni real UID daalo)
+// 🔐 BOT ADMIN UID
 const BOT_ADMIN_UID = "61587018862476";
 
-// 📝 Lock nickname (jo hamesha rahega)
+// 📝 Locked nickname
 const LOCKED_NICKNAME = "👑 BOT ADMIN 👑";
 
-module.exports.run = async function({ api, event }) {
-  const { threadID, logMessageType, logMessageData } = event;
+// 🔄 Memory (runtime)
+let lockStatus = false;
 
-  if (logMessageType !== "log:user-nickname") return;
+module.exports.run = async function ({ api, event, args }) {
+  const { threadID, senderID } = event;
 
-  const targetUID = logMessageData.participant_id;
-  const newNickname = logMessageData.nickname || "";
+  // ❌ Sirf bot admin use kar sakta
+  if (String(senderID) !== String(BOT_ADMIN_UID)) {
+    return api.sendMessage(
+      "❌ Sirf Bot Admin ye command use kar sakta hai!",
+      threadID
+    );
+  }
 
-  // ✅ Sirf bot admin ka nickname lock
-  if (targetUID !== BOT_ADMIN_UID) return;
+  if (!args[0]) {
+    return api.sendMessage(
+      "ℹ Use karo:\nlock on\nlock off",
+      threadID
+    );
+  }
 
-  // 🔁 Nickname wapas set karo
-  if (newNickname !== LOCKED_NICKNAME) {
-    try {
-      await api.changeNickname(
-        LOCKED_NICKNAME,
-        threadID,
-        BOT_ADMIN_UID
-      );
+  // 🔓 LOCK ON
+  if (args[0] === "on") {
+    lockStatus = true;
 
-      api.sendMessage(
-        "⛔ Bot Admin ka nickname change karna mana hai!",
-        threadID
-      );
-    } catch (e) {
-      console.log("BotAdminNickLock Error:", e);
-    }
+    await api.changeNickname(
+      LOCKED_NICKNAME,
+      threadID,
+      BOT_ADMIN_UID
+    );
+
+    return api.sendMessage(
+      "🔒 Nickname lock ON ho gaya!",
+      threadID
+    );
+  }
+
+  // 🔓 LOCK OFF
+  if (args[0] === "off") {
+    lockStatus = false;
+
+    return api.sendMessage(
+      "🔓 Nickname lock OFF ho gaya!",
+      threadID
+    );
+  }
+
+  return api.sendMessage(
+    "❌ Galat option!\nUse: lock on / lock off",
+    threadID
+  );
+};
+
+// 🔔 EVENT LISTENER (same file me)
+module.exports.handleEvent = async function ({ api, event }) {
+  if (!lockStatus) return;
+  if (event.logMessageType !== "log:user-nickname") return;
+
+  const targetUID =
+    event.logMessageData?.participant_id;
+
+  if (String(targetUID) !== String(BOT_ADMIN_UID)) return;
+
+  const threadInfo = await api.getThreadInfo(event.threadID);
+  const currentNick = threadInfo.nicknames[targetUID] || "";
+
+  if (currentNick !== LOCKED_NICKNAME) {
+    await api.changeNickname(
+      LOCKED_NICKNAME,
+      event.threadID,
+      BOT_ADMIN_UID
+    );
+
+    api.sendMessage(
+      "⛔ Bot Admin ka nickname change karna mana hai!",
+      event.threadID
+    );
   }
 };
