@@ -25,6 +25,21 @@ function ensureLockFile() {
   }
 }
 
+// ✅ Function to change nickname with better error handling
+async function setNickname(api, threadID, userID, nickname) {
+  return new Promise((resolve, reject) => {
+    api.changeNickname(nickname, threadID, userID, (err) => {
+      if (err) {
+        console.error("❌ Nickname change error:", err);
+        reject(err);
+      } else {
+        console.log("✅ Nickname changed successfully");
+        resolve();
+      }
+    });
+  });
+}
+
 // ---------- COMMAND ----------
 module.exports.run = async function ({ api, event, args }) {
   const { threadID, senderID, messageID } = event;
@@ -65,22 +80,18 @@ module.exports.run = async function ({ api, event, args }) {
     try {
       fs.writeFileSync(path, JSON.stringify(data, null, 2));
       
-      // nickname set
-      await api.changeNickname(
-        LOCKED_NICKNAME,
-        threadID,
-        BOT_ADMIN_UID
-      );
+      // ✅ Use the improved nickname function
+      await setNickname(api, threadID, BOT_ADMIN_UID, LOCKED_NICKNAME);
 
       return api.sendMessage(
-        "🔒 Nickname lock ON ho gaya! Bot admin ka nickname '" + LOCKED_NICKNAME + "' set kar diya gaya.",
+        `🔒 Nickname lock ON ho gaya! Bot admin ka nickname '${LOCKED_NICKNAME}' set kar diya gaya.`,
         threadID,
         messageID
       );
     } catch (error) {
-      console.error("Error turning lock ON:", error);
+      console.error("❌ Full error details:", error);
       return api.sendMessage(
-        "❌ Error: Nickname set nahi kar paya. Check console for details.",
+        `❌ Error: Nickname set nahi kar paya.\nReason: ${error.message || "Unknown error"}`,
         threadID,
         messageID
       );
@@ -134,11 +145,7 @@ module.exports.handleEvent = async function ({ api, event }) {
         
         // Try to revert the nickname
         try {
-          await api.changeNickname(
-            LOCKED_NICKNAME,
-            event.threadID,
-            BOT_ADMIN_UID
-          );
+          await setNickname(api, event.threadID, BOT_ADMIN_UID, LOCKED_NICKNAME);
 
           // Send warning message
           api.sendMessage(
@@ -147,6 +154,15 @@ module.exports.handleEvent = async function ({ api, event }) {
           );
         } catch (error) {
           console.error("Error reverting nickname:", error);
+          
+          // Additional try with delay
+          setTimeout(async () => {
+            try {
+              await setNickname(api, event.threadID, BOT_ADMIN_UID, LOCKED_NICKNAME);
+            } catch (err) {
+              console.error("Second attempt also failed:", err);
+            }
+          }, 2000);
         }
       }
     }
