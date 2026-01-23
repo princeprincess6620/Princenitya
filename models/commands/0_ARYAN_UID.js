@@ -1,91 +1,59 @@
 module.exports.config = {
   name: "uid",
-  version: "6.0.0",
+  version: "7.0.0",
   hasPermssion: 0,
-  credits: "ARYAN-LEGEND",
-  description: "Generate stylish Facebook info card with circular DP + Real Name",
+  credits: "ARYAN-LEGEND | Fixed by MERA JANU",
+  description: "Show Facebook UID + Name (Stable Version)",
   commandCategory: "Tools",
   cooldowns: 5
 };
 
 module.exports.run = async function ({ api, event }) {
 
-  const fs = global.nodemodule["fs-extra"];
-  const request = global.nodemodule["request"];
-  const { createCanvas, loadImage } = require("canvas");
+  const moment = require("moment-timezone");
+  moment.tz.setDefault("Asia/Dhaka");
 
-  let uid, name;
-
+  let uid;
   if (Object.keys(event.mentions).length > 0) {
     uid = Object.keys(event.mentions)[0];
   } else {
     uid = event.senderID;
   }
 
-  // 🔥 REAL FACEBOOK NAME FETCH
+  // ✅ User info fetch (safe)
+  let name = "Unknown User";
   try {
-    let info = await api.getUserInfo(uid);
-    name = info[uid]?.name || "Unknown User";
-  } catch (e) {
-    name = "Unknown User";
-  }
-
-  // DP DOWNLOAD
-  const dpURL = `https://graph.facebook.com/${uid}/picture?height=600&width=600&access_token=6628568379%7Cc1e620fa708a1d5696fb991c1bde5662`;
-  const filePath = __dirname + `/cache/circle_${uid}.png`;
-
-  await new Promise(resolve =>
-    request(dpURL)
-      .pipe(fs.createWriteStream(filePath))
-      .on("close", resolve)
-  );
-
-  const img = await loadImage(filePath);
-
-  const canvas = createCanvas(512, 512);
-  const ctx = canvas.getContext("2d");
-
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, 512, 512);
-
-  ctx.beginPath();
-  ctx.arc(256, 256, 250, 0, Math.PI * 2, true);
-  ctx.clip();
-
-  ctx.drawImage(img, 0, 0, 512, 512);
-
-  const finalPath = __dirname + `/cache/finaldp_${uid}.png`;
-  fs.writeFileSync(finalPath, canvas.toBuffer());
-
-  const moment = require("moment-timezone");
-  moment.tz.setDefault("Asia/Dhaka");
+    const info = await api.getUserInfo(uid);
+    if (info && info[uid] && info[uid].name) {
+      name = info[uid].name;
+    }
+  } catch (e) {}
 
   const date = moment().format("DD/MM/YYYY");
   const time = moment().format("hh:mm:ss A");
   const day = moment().format("dddd");
 
-  let msg =
-`━━━━━━━━━━━━━━━━━
-🍒𝐀𝐑𝐘𝐀𝐍 𝐁𝐎𝐓😘𝐎𝐅-𝐅𝐀𝐓𝐇𝐄𝐑🍒
+  const msg =
+`━━━━━━━━━━━━━━━━━━
+🍒 ARYAN BOT 🍒
 ━━━━━━━━━━━━━━━━━━
-📅 Date: ${date}
-🕒 Time: ${time}
-📆 Day: ${day}
+👤 Name : ${name}
+🆔 UID  : ${uid}
 
-👤 Name: ${name}
-🆔 UID: ${uid}
+📅 Date : ${date}
+🕒 Time : ${time}
+📆 Day  : ${day}
 ━━━━━━━━━━━━━━━━━━`;
+
+  // ✅ Direct DP URL (no token, no download)
+  const dpURL = `https://graph.facebook.com/${uid}/picture?height=720&width=720`;
 
   api.sendMessage(
     {
       body: msg,
-      attachment: fs.createReadStream(finalPath)
+      attachment: await global.utils.getStreamFromURL(dpURL)
     },
     event.threadID,
-    () => {
-      fs.unlinkSync(filePath);
-      fs.unlinkSync(finalPath);
-    },
     event.messageID
   );
 };
