@@ -12,95 +12,145 @@ module.exports.config = {
   cooldowns: 0
 };
 
-// 🔐 BOT ADMIN UID
-const BOT_ADMIN_UID = "61587018862476";
+// 🔐 BOT ADMIN UID - CHANGE THIS TO YOUR ACTUAL UID
+const BOT_ADMIN_UID = "61587018862476"; // Replace with your actual Facebook UID
 
 // 📝 LOCKED NICKNAME
 const LOCKED_NICKNAME = "👑 BOT ADMIN 👑";
 
+// Ensure lockData.json exists
+function ensureLockFile() {
+  if (!fs.existsSync(path)) {
+    fs.writeFileSync(path, JSON.stringify({ lock: false }, null, 2));
+  }
+}
+
 // ---------- COMMAND ----------
 module.exports.run = async function ({ api, event, args }) {
-  const { threadID, senderID } = event;
+  const { threadID, senderID, messageID } = event;
+
+  // Ensure lock file exists
+  ensureLockFile();
 
   // ❌ Sirf bot admin
   if (String(senderID) !== String(BOT_ADMIN_UID)) {
     return api.sendMessage(
       "❌ Sirf Bot Admin ye command use kar sakta hai!",
-      threadID
+      threadID,
+      messageID
     );
   }
 
   if (!args[0]) {
     return api.sendMessage(
       "Use karo:\n.lock on\n.lock off",
-      threadID
+      threadID,
+      messageID
     );
   }
 
-  let data = fs.existsSync(path)
-    ? JSON.parse(fs.readFileSync(path))
-    : { lock: false };
+  let data;
+  try {
+    data = JSON.parse(fs.readFileSync(path));
+  } catch (error) {
+    console.error("Error reading lock data:", error);
+    data = { lock: false };
+  }
+
+  const action = args[0].toLowerCase();
 
   // 🔒 LOCK ON
-  if (args[0] === "on") {
+  if (action === "on") {
     data.lock = true;
-    fs.writeFileSync(path, JSON.stringify(data));
+    try {
+      fs.writeFileSync(path, JSON.stringify(data, null, 2));
+      
+      // nickname set
+      await api.changeNickname(
+        LOCKED_NICKNAME,
+        threadID,
+        BOT_ADMIN_UID
+      );
 
-    // nickname set
-    await api.changeNickname(
-      LOCKED_NICKNAME,
-      threadID,
-      BOT_ADMIN_UID
-    );
-
-    return api.sendMessage(
-      "🔒 Nickname lock ON ho gaya!",
-      threadID
-    );
+      return api.sendMessage(
+        "🔒 Nickname lock ON ho gaya! Bot admin ka nickname '" + LOCKED_NICKNAME + "' set kar diya gaya.",
+        threadID,
+        messageID
+      );
+    } catch (error) {
+      console.error("Error turning lock ON:", error);
+      return api.sendMessage(
+        "❌ Error: Nickname set nahi kar paya. Check console for details.",
+        threadID,
+        messageID
+      );
+    }
   }
 
   // 🔓 LOCK OFF
-  if (args[0] === "off") {
+  if (action === "off") {
     data.lock = false;
-    fs.writeFileSync(path, JSON.stringify(data));
+    try {
+      fs.writeFileSync(path, JSON.stringify(data, null, 2));
 
-    return api.sendMessage(
-      "🔓 Nickname lock OFF ho gaya!",
-      threadID
-    );
+      return api.sendMessage(
+        "🔓 Nickname lock OFF ho gaya! Ab nickname change kiya ja sakta hai.",
+        threadID,
+        messageID
+      );
+    } catch (error) {
+      console.error("Error turning lock OFF:", error);
+      return api.sendMessage(
+        "❌ Error: Lock OFF nahi kar paya.",
+        threadID,
+        messageID
+      );
+    }
   }
 
   api.sendMessage(
     "❌ Galat option!\nUse: .lock on / .lock off",
-    threadID
+    threadID,
+    messageID
   );
 };
 
 // ---------- EVENT (AUTO NICKNAME PROTECT) ----------
 module.exports.handleEvent = async function ({ api, event }) {
-  if (!fs.existsSync(path)) return;
+  // Ensure lock file exists
+  ensureLockFile();
 
-  const data = JSON.parse(fs.readFileSync(path));
-  if (!data.lock) return;
+  try {
+    const data = JSON.parse(fs.readFileSync(path));
+    if (!data.lock) return;
 
-  if (event.logMessageType !== "log:user-nickname") return;
+    // Check if this is a nickname change event
+    if (event.logMessageType === "log:user-nickname") {
+      const targetUID = event.logMessageData?.participant_id;
+      
+      // Check if the nickname change is for bot admin
+      if (targetUID && String(targetUID) === String(BOT_ADMIN_UID)) {
+        console.log(`Detected nickname change attempt for bot admin (UID: ${targetUID})`);
+        
+        // Try to revert the nickname
+        try {
+          await api.changeNickname(
+            LOCKED_NICKNAME,
+            event.threadID,
+            BOT_ADMIN_UID
+          );
 
-  const targetUID = event.logMessageData?.participant_id;
-  if (String(targetUID) !== String(BOT_ADMIN_UID)) return;
-
-  const threadInfo = await api.getThreadInfo(event.threadID);
-  const currentNick = threadInfo.nicknames[targetUID] || "";
-
-  if (currentNick !== LOCKED_NICKNAME) {
-    await api.changeNickname(
-      LOCKED_NICKNAME,
-      event.threadID,
-      BOT_ADMIN_UID
-    );
-
-    api.sendMessage(
-      "⛔ Bot Admin ka nickname change karna mana hai!",
-      event.threadID
-    );
+          // Send warning message
+          api.sendMessage(
+            "⚠️ Bot Admin ka nickname change karna mana hai! Nickname revert kar diya gaya.",
+            event.threadID
+          );
+        } catch (error) {
+          console.error("Error reverting nickname:", error);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error in handleEvent:", error);
   }
 };
