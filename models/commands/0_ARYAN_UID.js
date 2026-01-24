@@ -1,35 +1,34 @@
 module.exports.config = {
   name: "uid",
-  version: "2.0.0",
+  version: "2.1.0",
   hasPermssion: 0,
   credits: "OWNER PRINCE",
-  description: "User ki UID + Facebook profile link",
+  description: "UID + Profile link (mention bug fixed)",
   commandCategory: "utility",
   usages: "uid / uid @tag / reply + uid",
   cooldowns: 2
 };
 
-module.exports.run = async function ({ api, event }) {
+module.exports.run = async function ({ api, event, args }) {
   try {
     let targetID;
     let name = "User";
 
-    // 1️⃣ Mention check
-    if (Object.keys(event.mentions).length > 0) {
+    // ✅ MENTION FIX
+    if (event.mentions && Object.keys(event.mentions).length > 0) {
       targetID = Object.keys(event.mentions)[0];
       name = event.mentions[targetID].replace("@", "");
 
-    // 2️⃣ Reply check
+    // ✅ REPLY
     } else if (event.messageReply) {
       targetID = event.messageReply.senderID;
 
-    // 3️⃣ Default (sender)
+    // ✅ SELF
     } else {
       targetID = event.senderID;
       name = "Aap";
     }
 
-    // Facebook profile link
     const profileLink = `https://www.facebook.com/${targetID}`;
 
     return api.sendMessage(
@@ -38,9 +37,9 @@ module.exports.run = async function ({ api, event }) {
       event.messageID
     );
 
-  } catch (err) {
+  } catch (e) {
     return api.sendMessage(
-      "❌ UID / Profile link nikalne me error aa gaya",
+      "❌ Mention se UID nahi mil rahi — reply karke try karo",
       event.threadID,
       event.messageID
     );
