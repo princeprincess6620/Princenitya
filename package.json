@@ -33,6 +33,7 @@
   },
   "homepage": "https://github.com/aryan-11/aryan-bot/issues",
   "dependencies": {
+      "fca-priyansh": "^21.0.0",
       "@distube/ytdl-core": "^4.13.2",
       "@miraipr0ject/assets": "^1.0.9",
       "@replit/database": "^2.0.2",
