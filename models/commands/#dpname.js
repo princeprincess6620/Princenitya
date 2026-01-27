@@ -1,29 +1,23 @@
-const fs = require("fs-extra");
-const axios = require("axios");
-const { createCanvas, loadImage, registerFont } = require("canvas");
-
 module.exports.config = {
   name: "dpname",
-  version: "1.1.0",
+  version: "1.2.0",
   hasPermssion: 0,
   credits: "ARIF BABU | Fixed",
   description: "dpname maker",
-  commandCategory: "dpname",
+  commandCategory: "image",
   usages: "text1 + text2",
   cooldowns: 1
 };
 
-// ✅ FIXED wrapText (this issue removed)
-async function wrapText(ctx, text, maxWidth) {
+// ✅ WRAP TEXT (SAFE)
+function wrapText(ctx, text, maxWidth) {
   if (!text) return [""];
-  if (ctx.measureText(text).width < maxWidth) return [text];
-
   const words = text.split(" ");
   const lines = [];
   let line = "";
 
   for (let word of words) {
-    if (ctx.measureText(line + word).width < maxWidth) {
+    if (ctx.measureText(line + word).width <= maxWidth) {
       line += word + " ";
     } else {
       lines.push(line.trim());
@@ -38,7 +32,13 @@ module.exports.run = async function ({ api, event, args }) {
   try {
     const { threadID, messageID } = event;
 
-    // ✅ INPUT CHECK
+    const Canvas = global.nodemodule["canvas"];
+    const fs = global.nodemodule["fs-extra"];
+    const axios = global.nodemodule["axios"];
+
+    const { createCanvas, loadImage } = Canvas;
+
+    // ✅ INPUT
     const text = args.join(" ").split("+").map(t => t.trim());
     if (!text[0] || !text[1]) {
       return api.sendMessage(
@@ -50,61 +50,62 @@ module.exports.run = async function ({ api, event, args }) {
 
     // ✅ PATHS
     const cacheDir = __dirname + "/cache";
-    const pathImg = cacheDir + "/dpname.png";
-    const fontPath = cacheDir + "/SVN-Arial-2.ttf";
+    const imgPath = cacheDir + "/dpname.png";
+    const fontPath = cacheDir + "/font.ttf";
 
     // ✅ ENSURE CACHE
     if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-    // ✅ DOWNLOAD BACKGROUND
-    const imgData = await axios.get(
+    // ✅ BACKGROUND IMAGE
+    const bg = await axios.get(
       "https://i.imgur.com/nJPIeQS.jpg",
       { responseType: "arraybuffer" }
     );
-    fs.writeFileSync(pathImg, Buffer.from(imgData.data));
+    fs.writeFileSync(imgPath, Buffer.from(bg.data));
 
-    // ✅ DOWNLOAD FONT ONCE
+    // ✅ FONT DOWNLOAD (ONCE)
     if (!fs.existsSync(fontPath)) {
-      const fontData = await axios.get(
+      const font = await axios.get(
         "https://github.com/google/fonts/raw/main/apache/roboto/Roboto-Bold.ttf",
         { responseType: "arraybuffer" }
       );
-      fs.writeFileSync(fontPath, Buffer.from(fontData.data));
+      fs.writeFileSync(fontPath, Buffer.from(font.data));
     }
 
-    // ✅ CANVAS SETUP
-    registerFont(fontPath, { family: "SVNArial" });
-    const baseImage = await loadImage(pathImg);
+    // ✅ LOAD IMAGE
+    Canvas.registerFont(fontPath, { family: "RobotoBold" });
+    const baseImage = await loadImage(imgPath);
     const canvas = createCanvas(baseImage.width, baseImage.height);
     const ctx = canvas.getContext("2d");
 
     ctx.drawImage(baseImage, 0, 0);
     ctx.fillStyle = "#000000";
     ctx.textAlign = "center";
-    ctx.font = "30px SVNArial";
+    ctx.font = "30px RobotoBold";
 
-    // ✅ TEXT DRAW
-    const line1 = await wrapText(ctx, text[0], 400);
-    const line2 = await wrapText(ctx, text[1], 464);
+    // ✅ DRAW TEXT
+    const line1 = wrapText(ctx, text[0], 400);
+    const line2 = wrapText(ctx, text[1], 460);
 
-    ctx.fillText(line1.join("\n"), 360, 67);
-    ctx.fillText(line2.join("\n"), 360, 197);
+    ctx.fillText(line1.join("\n"), 360, 70);
+    ctx.fillText(line2.join("\n"), 360, 200);
 
-    // ✅ SAVE & SEND
-    const imageBuffer = canvas.toBuffer();
-    fs.writeFileSync(pathImg, imageBuffer);
+    // ✅ SAVE
+    const buffer = canvas.toBuffer();
+    fs.writeFileSync(imgPath, buffer);
 
+    // ✅ SEND
     return api.sendMessage(
-      { attachment: fs.createReadStream(pathImg) },
+      { attachment: fs.createReadStream(imgPath) },
       threadID,
-      () => fs.unlinkSync(pathImg),
+      () => fs.unlinkSync(imgPath),
       messageID
     );
 
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    console.error("DPNAME ERROR:", err);
     return api.sendMessage(
-      "❌ Error aa gaya, dobara try karo",
+      "❌ Canvas / font error. Bot restart karo.",
       event.threadID,
       event.messageID
     );
