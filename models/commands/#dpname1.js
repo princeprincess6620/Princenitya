@@ -1,11 +1,11 @@
 module.exports.config = {
   name: "dpname1",
-  version: "1.1.0",
+  version: "1.0.1",
   hasPermssion: 0,
-  credits: "PRINCE TAIMOOR / Gemini",
-  description: "Couple DP maker with custom names",
+  credits: "ARIF BABU | Fixed by ChatGPT",
+  description: "dp name maker",
   commandCategory: "image",
-  usages: "Name1 + Name2",
+  usages: "text1 + text2",
   cooldowns: 1
 };
 
@@ -14,14 +14,31 @@ const fs = require("fs-extra");
 const axios = require("axios");
 const path = require("path");
 
+module.exports.wrapText = async (ctx, text, maxWidth) => {
+  if (!text) return [""];
+  const words = text.split(" ");
+  let lines = [];
+  let line = "";
+
+  for (let word of words) {
+    let testLine = line + word + " ";
+    if (ctx.measureText(testLine).width > maxWidth) {
+      lines.push(line);
+      line = word + " ";
+    } else {
+      line = testLine;
+    }
+  }
+  lines.push(line);
+  return lines;
+};
+
 module.exports.run = async function ({ api, event, args }) {
   const { threadID, messageID } = event;
 
-  // Input check
-  const fullText = args.join(" ");
-  if (!fullText.includes("+")) {
+  if (!args.join(" ").includes("+")) {
     return api.sendMessage(
-      "❌ Galat format! Sahi tarika:\ndpname1 Name1 + Name2",
+      "❌ Format galat hai\n👉 dpname6 text1 + text2",
       threadID,
       messageID
     );
@@ -30,56 +47,42 @@ module.exports.run = async function ({ api, event, args }) {
   const cacheDir = path.join(__dirname, "cache");
   if (!fs.existsSync(cacheDir)) fs.mkdirSync(cacheDir);
 
-  const imgPath = path.join(cacheDir, `dp_${Date.now()}.png`);
+  const imgPath = path.join(cacheDir, "dpname.png");
   const fontPath = path.join(cacheDir, "SNAZZYSURGE.ttf");
 
-  const names = fullText.split("+").map(t => t.trim());
+  const text = args.join(" ").split("+");
 
-  try {
-    // Font download logic
-    if (!fs.existsSync(fontPath)) {
-      const fontUrl = "https://drive.google.com/uc?id=11YxymRp0y3Jle5cFBmLzwU89XNqHIZux&export=download";
-      const fontData = await axios.get(fontUrl, { responseType: "arraybuffer" });
-      fs.writeFileSync(fontPath, Buffer.from(fontData.data));
-    }
-
-    registerFont(fontPath, { family: "SNAZZYSURGE" });
-
-    // Background Image
-    const bgUrl = "https://i.ibb.co/KpjXky7R/5b2378c33eed.jpg";
-    const bg = await loadImage(bgUrl);
-    
-    const canvas = createCanvas(bg.width, bg.height);
-    const ctx = canvas.getContext("2d");
-
-    // Draw Background
-    ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-    
-    // Font styling
-    ctx.fillStyle = "#000000"; // Black color
-    ctx.textAlign = "center";
-    ctx.font = "50px SNAZZYSURGE"; // Size adjust kiya gaya hai
-
-    // --- Name 1 (Top Left Box) ---
-    // In coordinates ko image ke white box ke hisab se thoda adjust karein
-    ctx.fillText(names[0], 225, 735); 
-
-    // --- Name 2 (Bottom Right Box) ---
-    ctx.fillText(names[1], 255, 895);
-
-    // Buffer save karein
-    const buffer = canvas.toBuffer();
-    fs.writeFileSync(imgPath, buffer);
-
-    return api.sendMessage(
-      { body: "Aapki DP taiyaar hai! ❤️", attachment: fs.createReadStream(imgPath) },
-      threadID,
-      () => fs.unlinkSync(imgPath),
-      messageID
+  if (!fs.existsSync(fontPath)) {
+    const fontData = await axios.get(
+      "https://drive.google.com/uc?id=11YxymRp0y3Jle5cFBmLzwU89XNqHIZux&export=download",
+      { responseType: "arraybuffer" }
     );
-
-  } catch (error) {
-    console.error(error);
-    return api.sendMessage("An error occurred: " + error.message, threadID, messageID);
+    fs.writeFileSync(fontPath, fontData.data);
   }
+
+  registerFont(fontPath, { family: "SNAZZYSURGE" });
+
+  const bg = await loadImage("https://i.ibb.co/KpjXky7R/5b2378c33eed.jpg");
+  const canvas = createCanvas(bg.width, bg.height);
+  const ctx = canvas.getContext("2d");
+
+  ctx.drawImage(bg, 0, 0);
+  ctx.font = "50px SNAZZYSURGE";
+  ctx.fillStyle = "#000000";
+  ctx.textAlign = "center";
+
+  const line1 = await module.exports.wrapText(ctx, text[0], 800);
+  const line2 = await module.exports.wrapText(ctx, text[1], 733);
+
+  ctx.fillText(line1.join("\n"), 225, 735);
+  ctx.fillText(line2.join("\n"), 255, 895);
+
+  fs.writeFileSync(imgPath, canvas.toBuffer());
+
+  return api.sendMessage(
+    { attachment: fs.createReadStream(imgPath) },
+    threadID,
+    () => fs.unlinkSync(imgPath),
+    messageID
+  );
 };
