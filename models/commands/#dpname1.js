@@ -38,7 +38,7 @@ module.exports.run = async function ({ api, event, args }) {
 
   if (!args.join(" ").includes("+")) {
     return api.sendMessage(
-      "❌ Format galat hai\n👉 dpname6 text1 + text2",
+      "❌ Format galat hai\n👉 dpname1 text1 + text2",
       threadID,
       messageID
     );
@@ -74,7 +74,7 @@ module.exports.run = async function ({ api, event, args }) {
   const line1 = await module.exports.wrapText(ctx, text[0], 800);
   const line2 = await module.exports.wrapText(ctx, text[1], 733);
 
-  ctx.fillText(line1.join("\n"), 225, 735);
+  ctx.fillText(line1.join("\n"), 615, 600);
   ctx.fillText(line2.join("\n"), 255, 895);
 
   fs.writeFileSync(imgPath, canvas.toBuffer());
