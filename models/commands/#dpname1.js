@@ -75,7 +75,7 @@ const line1 = await module.exports.wrapText(ctx, text[0], 800);
 const line2 = await module.exports.wrapText(ctx, text[1], 733);
 
 ctx.fillText(line1.join("\n"), 105, 220);
-ctx.fillText(line2.join("\n"), 220, 105);
+ctx.fillText(line2.join("\n"), 40, 50);
 
 fs.writeFileSync(imgPath, canvas.toBuffer());
 
