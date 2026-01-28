@@ -1,99 +1,77 @@
+const fs = require("fs-extra");
+
 module.exports.config = {
     name: "code",
-    version: "1.0.0",
+    version: "1.1.0",
     hasPermssion: 2,
-    credits: "𝐏𝐫𝐢𝐲𝐚𝐧𝐬𝐡 𝐑𝐚𝐣𝐩𝐮𝐭",
-    description: "read/write/cre/edit/del/rename",
-    commandCategory: "code detect",
-    usages: "",
-    cooldowns: 2,
-    dependencies: {
-    }
+    credits: "M.R PRINCE",
+    description: "read / edit / create / delete / rename js files",
+    commandCategory: "admin",
+    usages: "code read/edit/cre/del/rename",
+    cooldowns: 2
 };
 
-module.exports.run = async({ api, event, args }) => {
-    const axios = global.nodemodule["axios"];
-    const fs = global.nodemodule["fs-extra"];
-    const cheerio = global.nodemodule["cheerio"];
+module.exports.run = async ({ api, event, args }) => {
 
-    if (args.length == 0) return api.sendMessage("Syntax Error", event.threadID);
-    var path = __dirname + '/';
-    if (args[0] == "edit") {
-        var newCode = event.body.slice(
-            8 + args[1].length + args[0].length,
-            event.body.length
-        );
-        console.log(newCode);
-        fs.writeFile(
-            `${__dirname}/${args[1]}.js`,
-            newCode,
-            "utf-8",
-            function(err) {
-                if (err)
-                    return api.sendMessage(
-                        `*An Error is occurred when applying new code to "${args[1]}.js".`
-                    );
-                api.sendMessage(
-                    `new code applied  "${args[1]}.js".`,
-                    event.threadID,
-                    event.messageID
-                );
-            }
-        );
-    } else if (args[0] == "read") {
-        var data = await fs.readFile(
-            `${__dirname}/${args[1]}.js`,
-            "utf-8",
-            (err, data) => {
-                if (err)
-                    return api.sendMessage(
-                        `error An occurred please try again later  when reading the command "${args[1]}.js".`,
-                        event.threadID,
-                        event.messageID
-                    );
-                api.sendMessage(data, event.threadID, event.messageID);
-            }
-        );
+    if (!args[0]) 
+        return api.sendMessage("❌ Use: code read/edit/cre/del/rename filename", event.threadID);
+
+    const filePath = (name) => `${__dirname}/${name}.js`;
+
+    try {
+
+        // 📖 READ
+        if (args[0] === "read" || args[0] === "-r") {
+            if (!args[1]) return api.sendMessage("❌ File name missing", event.threadID);
+            if (!fs.existsSync(filePath(args[1])))
+                return api.sendMessage("❌ File not found", event.threadID);
+
+            const data = await fs.readFile(filePath(args[1]), "utf-8");
+            return api.sendMessage(data, event.threadID);
+        }
+
+        // ✏️ EDIT
+        if (args[0] === "edit") {
+            if (!args[1]) return api.sendMessage("❌ File name missing", event.threadID);
+
+            const newCode = event.body.split(args[1]).slice(1).join(args[1]).trim();
+            if (!newCode) return api.sendMessage("❌ No code provided", event.threadID);
+
+            await fs.writeFile(filePath(args[1]), newCode, "utf-8");
+            return api.sendMessage(`✅ Updated ${args[1]}.js`, event.threadID);
+        }
+
+        // ➕ CREATE
+        if (args[0] === "cre") {
+            if (!args[1]) return api.sendMessage("❌ File name missing", event.threadID);
+            if (fs.existsSync(filePath(args[1])))
+                return api.sendMessage("❌ File already exists", event.threadID);
+
+            await fs.writeFile(filePath(args[1]), "// new file\n", "utf-8");
+            return api.sendMessage(`✅ Created ${args[1]}.js`, event.threadID);
+        }
+
+        // 🗑️ DELETE
+        if (args[0] === "del") {
+            if (!args[1]) return api.sendMessage("❌ File name missing", event.threadID);
+            if (!fs.existsSync(filePath(args[1])))
+                return api.sendMessage("❌ File not found", event.threadID);
+
+            await fs.unlink(filePath(args[1]));
+            return api.sendMessage(`✅ Deleted ${args[1]}.js`, event.threadID);
+        }
+
+        // 🔁 RENAME
+        if (args[0] === "rename") {
+            if (!args[1] || !args[2])
+                return api.sendMessage("❌ Use: code rename old new", event.threadID);
+
+            await fs.rename(filePath(args[1]), filePath(args[2]));
+            return api.sendMessage(`✅ Renamed ${args[1]}.js → ${args[2]}.js`, event.threadID);
+        }
+
+    } catch (err) {
+        console.log(err);
+        return api.sendMessage("❌ Error occurred, check console", event.threadID);
     }
-    else if (args[0] == "-r") {
-        var data = await fs.readFile(
-            `${__dirname}/${args[1]}.js`,
-            "utf-8",
-            (err, data) => {
-                if (err)
-                    return api.sendMessage(
-                        `*Error! An error occurred please try again later  when reading the command  "${args[1]}.js".`,
-                        event.threadID,
-                        event.messageID
-                    );
-                api.sendMessage(data, event.threadID, event.messageID);
-            }
-        );
-    } else if (args[0] == "cre") {
-        if (args[1].length == 0) return api.sendMessage("Unnamed  modules", event.threadID);
-        if (fs.existsSync(`${__dirname}/${args[1]}.js`))
-            return api.sendMessage(
-                `${args[1]}.js đã tồn tại.`,
-                event.threadID,
-                event.messageID
-            );
-        fs.copySync(__dirname + "/example.js", __dirname + "/" + args[1] + ".js");
-        return api.sendMessage(`successfully Created file "${args[1]}.js".`,
-            event.threadID,
-            event.messageID
-        );
-    }
-     else if (args[0] == "del") {
-        fs.unlink(`${__dirname}/${args[1]}.js`);
-        return api.sendMessage(`unused  file config "${args[1]}.js".`, event.threadID, event.messageID)
-    } 
-    else if (args[0] == "rename") {
-        fs.rename(`${__dirname}/${args[1]}.js`, `${__dirname}/${args[2]}.js`, function(err) {
-            if (err) throw err;
-            return api.sendMessage(
-                `File renamed successfully "${args[1]}.js" wall "${args[2]}.js".`,
-                event.threadID,
-                event.messageID)
-        });
-    }
-}
+};
