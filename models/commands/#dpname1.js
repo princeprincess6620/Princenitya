@@ -38,7 +38,7 @@ module.exports.run = async function ({ api, event, args }) {
 
   if (!args.join(" ").includes("+")) {
     return api.sendMessage(
-      "❌ Format galat hai\n👉 dpname6 text1 + text2",
+      "❌ Format galat hai\n👉 dpname1 text1 + text2",
       threadID,
       messageID
     );
