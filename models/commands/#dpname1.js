@@ -74,8 +74,8 @@ ctx.textAlign = "center";
 const line1 = await module.exports.wrapText(ctx, text[0], 800);
 const line2 = await module.exports.wrapText(ctx, text[1], 733);
 
-ctx.fillText(line1.join("\n"), 110, 210);
-ctx.fillText(line2.join("\n"), 320, 420);
+ctx.fillText(line1.join("\n"), 100, 215);
+ctx.fillText(line2.join("\n"), 320, 440);
 
 fs.writeFileSync(imgPath, canvas.toBuffer());
 
