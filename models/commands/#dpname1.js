@@ -2,7 +2,7 @@ module.exports.config = {
 name: "dpname1",
 version: "1.0.1",
 hasPermssion: 0,
-credits: "ARIF BABU | Fixed by ChatGPT",
+credits: "PRINCE TAIMOOR",
 description: "dp name maker",
 commandCategory: "image",
 usages: "text1 + text2",
@@ -75,7 +75,7 @@ const line1 = await module.exports.wrapText(ctx, text[0], 800);
 const line2 = await module.exports.wrapText(ctx, text[1], 733);
 
 ctx.fillText(line1.join("\n"), 100, 215);
-ctx.fillText(line2.join("\n"), 320, 440);
+ctx.fillText(line2.join("\n"), 320, 450);
 
 fs.writeFileSync(imgPath, canvas.toBuffer());
 
