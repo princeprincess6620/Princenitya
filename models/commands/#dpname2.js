@@ -62,7 +62,7 @@ fs.writeFileSync(fontPath, fontData.data);
 
 registerFont(fontPath, { family: "SNAZZYSURGE" });
 
-const bg = await loadImage("https://i.ibb.co/KpjXky7R/5b2378c33eed.jpg");
+const bg = await loadImage("https://i.ibb.co/ccn9XcGL/imgbb-1769655490609.jpg");
 const canvas = createCanvas(bg.width, bg.height);
 const ctx = canvas.getContext("2d");
 
